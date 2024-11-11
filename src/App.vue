@@ -3,6 +3,7 @@
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
 import Greet from "./components/Greet.vue";
 import Screenshot from "./components/Screenshot.vue";
+import AutoStart from "./components/AutoStart.vue";
 </script>
 
 <template>
@@ -23,6 +24,7 @@ import Screenshot from "./components/Screenshot.vue";
 
     <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
 
+    <AutoStart />
     <Greet />
     <Screenshot />
   </div>

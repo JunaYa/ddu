@@ -8,6 +8,9 @@ dependencies:
   '@tauri-apps/api':
     specifier: '>=2.0.0'
     version: 2.1.0
+  '@tauri-apps/plugin-autostart':
+    specifier: ~2
+    version: 2.0.0
   '@tauri-apps/plugin-dialog':
     specifier: ~2
     version: 2.0.1
@@ -539,6 +542,12 @@ packages:
       '@tauri-apps/cli-win32-ia32-msvc': 2.1.0
       '@tauri-apps/cli-win32-x64-msvc': 2.1.0
     dev: true
+
+  /@tauri-apps/plugin-autostart@2.0.0:
+    resolution: {integrity: sha512-NEwOQWVasZ8RczXkMLNJokRDujneuMH/UFA5t84DLkbNZUmiD3G7HZWhgSd1YQ0BFU9h9w+h2B/py3y6bzWg4Q==}
+    dependencies:
+      '@tauri-apps/api': 2.1.0
+    dev: false
 
   /@tauri-apps/plugin-dialog@2.0.1:
     resolution: {integrity: sha512-fnUrNr6EfvTqdls/ufusU7h6UbNFzLKvHk/zTuOiBq01R3dTODqwctZlzakdbfSp/7pNwTKvgKTAgl/NAP/Z0Q==}
