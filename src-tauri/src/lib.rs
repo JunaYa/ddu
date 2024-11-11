@@ -14,9 +14,9 @@ async fn take_screenshot(app_handle: tauri::AppHandle, path: String) -> Result<S
         let mut screenshot_path = PathBuf::from(path);
         std::fs::create_dir_all(&screenshot_path).map_err(|e| e.to_string())?;
 
-        // Save with timestamp
-        let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
-        screenshot_path.push(format!("screenshot_{}.png", timestamp));
+        // Save with timestamp yyyy-mm-dd_hh-mm-ss
+        let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
+        screenshot_path.push(format!("{}.png", timestamp));
 
         image.save(&screenshot_path).map_err(|e| e.to_string())?;
 
@@ -34,6 +34,8 @@ fn greet(name: &str) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![greet, take_screenshot])
         .run(tauri::generate_context!())
