@@ -14,6 +14,9 @@ enum MenuID {
     CAPTURE_SELECT,
     CAPTURE_WINDOW,
     SETTING_MANAGER,
+    SETTINGS,
+    HELP,
+    FEEDBACK,
     EXIT,
 }
 
@@ -62,13 +65,25 @@ pub fn get_app_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {
         "Ddu",
         true,
         &[
-            &PredefinedMenuItem::about(app, Some("Ddu"), Default::default())?,
+            &PredefinedMenuItem::about(app, Some("about"), Default::default())?,
+            &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(
+                app,
+                MenuID::SETTINGS.to_string(),
+                "Settings",
+                true,
+                None::<&str>,
+            )?,
             &PredefinedMenuItem::separator(app)?,
             &PredefinedMenuItem::hide(app, None)?,
+            &PredefinedMenuItem::hide_others(app, None)?,
+            &PredefinedMenuItem::show_all(app, None)?,
             &PredefinedMenuItem::quit(app, None)?,
         ],
     )?;
     app_menu.append(&menu)?;
+
+    // edit menu
     let edit_menu = Submenu::with_items(
         app,
         "Edit",
@@ -85,18 +100,26 @@ pub fn get_app_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {
         ],
     )?;
     app_menu.append(&edit_menu)?;
-    // setting menu
-    let setting_menu = Submenu::with_items(
+
+    // help menu
+    let help_menu = Submenu::with_items(
         app,
-        "Setting",
+        "Help",
         true,
-        &[&PredefinedMenuItem::about(
-            app,
-            Some("Setting"),
-            Default::default(),
-        )?],
+        &[
+            &MenuItem::with_id(app, MenuID::HELP.to_string(), "Help", true, None::<&str>)?,
+            &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(
+                app,
+                MenuID::FEEDBACK.to_string(),
+                "Feedback",
+                true,
+                None::<&str>,
+            )?,
+        ],
     )?;
-    app_menu.append(&setting_menu)?;
+    app_menu.append(&help_menu)?;
+
     Ok(app_menu)
 }
 
@@ -129,6 +152,15 @@ pub fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
         MenuID::EXIT => {
             println!("Exit");
             app.exit(0)
+        }
+        MenuID::SETTINGS => {
+            println!("Settings");
+        }
+        MenuID::HELP => {
+            println!("Help");
+        }
+        MenuID::FEEDBACK => {
+            println!("Feedback");
         }
     }
 }
