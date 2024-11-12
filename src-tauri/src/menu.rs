@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use strum_macros::{Display, EnumString};
 use tauri::{
-    menu::{Menu, MenuEvent, MenuItem},
+    menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu},
     tray::{TrayIcon, TrayIconEvent},
     AppHandle,
 };
@@ -56,12 +56,51 @@ pub fn get_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> 
 }
 
 pub fn get_app_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {
-    let menu = Menu::with_id(app, "app_menu")?;
-
-    Ok(menu)
+    let app_menu = Menu::new(app)?;
+    let menu = Submenu::with_items(
+        app,
+        "Ddu",
+        true,
+        &[
+            &PredefinedMenuItem::about(app, Some("Ddu"), Default::default())?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::hide(app, None)?,
+            &PredefinedMenuItem::quit(app, None)?,
+        ],
+    )?;
+    app_menu.append(&menu)?;
+    let edit_menu = Submenu::with_items(
+        app,
+        "Edit",
+        true,
+        &[
+            &PredefinedMenuItem::cut(app, None)?,
+            &PredefinedMenuItem::copy(app, None)?,
+            &PredefinedMenuItem::paste(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::select_all(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::undo(app, None)?,
+            &PredefinedMenuItem::redo(app, None)?,
+        ],
+    )?;
+    app_menu.append(&edit_menu)?;
+    // setting menu
+    let setting_menu = Submenu::with_items(
+        app,
+        "Setting",
+        true,
+        &[&PredefinedMenuItem::about(
+            app,
+            Some("Setting"),
+            Default::default(),
+        )?],
+    )?;
+    app_menu.append(&setting_menu)?;
+    Ok(app_menu)
 }
 
-pub fn handle_tray_icon_events(tray: &TrayIcon, event: TrayIconEvent) {
+pub fn handle_tray_icon_events(_tray: &TrayIcon, event: TrayIconEvent) {
     if let TrayIconEvent::DoubleClick { .. } = event {
         println!("Double click");
     }
@@ -89,6 +128,7 @@ pub fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
         }
         MenuID::EXIT => {
             println!("Exit");
+            app.exit(0)
         }
     }
 }

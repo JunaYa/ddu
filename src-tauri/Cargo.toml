@@ -31,6 +31,7 @@ tauri-plugin-clipboard-manager = "2.0.2"
 scrap = "0.5.0"
 strum_macros = "0.26.4"
 strum = "0.26.3"
+image = "0.25.5"
 
 [features]
 default = ["custom-protocol"]
