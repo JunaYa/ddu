@@ -15,10 +15,10 @@ name = "ddu_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.0.0", features = ["config-json5"] }
+tauri-build = { version = "2", features = ["config-json5"] }
 
 [dependencies]
-tauri = { version = "2.0.0", features = ["config-json5"] }
+tauri = { version = "2", features = ["config-json5", "tray-icon"] }
 tauri-plugin-shell = "2.0.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -27,6 +27,10 @@ anyhow = "1.0.93"
 screenshots = "0.8.10"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
+tauri-plugin-clipboard-manager = "2.0.2"
+scrap = "0.5.0"
+strum_macros = "0.26.4"
+strum = "0.26.3"
 
 [features]
 default = ["custom-protocol"]

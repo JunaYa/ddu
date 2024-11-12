@@ -11,6 +11,9 @@ dependencies:
   '@tauri-apps/plugin-autostart':
     specifier: ~2
     version: 2.0.0
+  '@tauri-apps/plugin-clipboard-manager':
+    specifier: ^2.0.0
+    version: 2.0.0
   '@tauri-apps/plugin-dialog':
     specifier: ~2
     version: 2.0.1
@@ -545,6 +548,12 @@ packages:
 
   /@tauri-apps/plugin-autostart@2.0.0:
     resolution: {integrity: sha512-NEwOQWVasZ8RczXkMLNJokRDujneuMH/UFA5t84DLkbNZUmiD3G7HZWhgSd1YQ0BFU9h9w+h2B/py3y6bzWg4Q==}
+    dependencies:
+      '@tauri-apps/api': 2.1.0
+    dev: false
+
+  /@tauri-apps/plugin-clipboard-manager@2.0.0:
+    resolution: {integrity: sha512-V1sXmbjnwfXt/r48RJMwfUmDMSaP/8/YbH4CLNxt+/sf1eHlIP8PRFdFDQwLN0cNQKu2rqQVbG/Wc/Ps6cDUhw==}
     dependencies:
       '@tauri-apps/api': 2.1.0
     dev: false
