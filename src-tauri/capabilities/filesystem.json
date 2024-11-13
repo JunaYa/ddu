@@ -1,5 +1,5 @@
 {
-  "identifier": "fs-main",
+  "identifier": "fs-capability",
   "description": "Allow access file access to main window",
   "local": true,
   "windows": ["main"],

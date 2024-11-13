@@ -1,5 +1,5 @@
 {
-  "identifier": "dialog",
+  "identifier": "dialog-capability",
   "description": "Allow to open a dialog",
   "local": true,
   "windows": ["main"],

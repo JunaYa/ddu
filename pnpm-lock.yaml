@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@tauri-apps/api':
-    specifier: '>=2.0.0'
-    version: 2.1.0
+    specifier: ^2.1.1
+    version: 2.1.1
   '@tauri-apps/plugin-autostart':
     specifier: ~2
     version: 2.0.0
@@ -29,7 +29,7 @@ dependencies:
 
 devDependencies:
   '@tauri-apps/cli':
-    specifier: '>=2.0.0'
+    specifier: ^2.1.0
     version: 2.1.0
   '@vitejs/plugin-vue':
     specifier: ^5.0.5
@@ -431,8 +431,8 @@ packages:
     dev: true
     optional: true
 
-  /@tauri-apps/api@2.1.0:
-    resolution: {integrity: sha512-1w/JygZOiUtdOU7qart78MaB4/qayZ2heB793KhbZRS7I9q4sxXcXaB7He6uFlprD8w5TI9P8HCuEByCvWRtfw==}
+  /@tauri-apps/api@2.1.1:
+    resolution: {integrity: sha512-fzUfFFKo4lknXGJq8qrCidkUcKcH2UHhfaaCNt4GzgzGaW2iS26uFOg4tS3H4P8D6ZEeUxtiD5z0nwFF0UN30A==}
     dev: false
 
   /@tauri-apps/cli-darwin-arm64@2.1.0:
@@ -549,31 +549,31 @@ packages:
   /@tauri-apps/plugin-autostart@2.0.0:
     resolution: {integrity: sha512-NEwOQWVasZ8RczXkMLNJokRDujneuMH/UFA5t84DLkbNZUmiD3G7HZWhgSd1YQ0BFU9h9w+h2B/py3y6bzWg4Q==}
     dependencies:
-      '@tauri-apps/api': 2.1.0
+      '@tauri-apps/api': 2.1.1
     dev: false
 
   /@tauri-apps/plugin-clipboard-manager@2.0.0:
     resolution: {integrity: sha512-V1sXmbjnwfXt/r48RJMwfUmDMSaP/8/YbH4CLNxt+/sf1eHlIP8PRFdFDQwLN0cNQKu2rqQVbG/Wc/Ps6cDUhw==}
     dependencies:
-      '@tauri-apps/api': 2.1.0
+      '@tauri-apps/api': 2.1.1
     dev: false
 
   /@tauri-apps/plugin-dialog@2.0.1:
     resolution: {integrity: sha512-fnUrNr6EfvTqdls/ufusU7h6UbNFzLKvHk/zTuOiBq01R3dTODqwctZlzakdbfSp/7pNwTKvgKTAgl/NAP/Z0Q==}
     dependencies:
-      '@tauri-apps/api': 2.1.0
+      '@tauri-apps/api': 2.1.1
     dev: false
 
   /@tauri-apps/plugin-fs@2.0.2:
     resolution: {integrity: sha512-4YZaX2j7ta81M5/DL8aN10kTnpUkEpkPo1FTYPT8Dd0ImHe3azM8i8MrtjrDGoyBYLPO3zFv7df/mSCYF8oA0Q==}
     dependencies:
-      '@tauri-apps/api': 2.1.0
+      '@tauri-apps/api': 2.1.1
     dev: false
 
   /@tauri-apps/plugin-shell@2.0.1:
     resolution: {integrity: sha512-akU1b77sw3qHiynrK0s930y8zKmcdrSD60htjH+mFZqv5WaakZA/XxHR3/sF1nNv9Mgmt/Shls37HwnOr00aSw==}
     dependencies:
-      '@tauri-apps/api': 2.1.0
+      '@tauri-apps/api': 2.1.1
     dev: false
 
   /@types/estree@1.0.6:
