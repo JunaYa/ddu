@@ -1,0 +1,7 @@
+{
+  "identifier": "dialog",
+  "description": "Allow to open a dialog",
+  "local": true,
+  "windows": ["main"],
+  "permissions": ["dialog:allow-ask"]
+}

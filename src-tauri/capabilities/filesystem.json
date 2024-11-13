@@ -1,0 +1,15 @@
+{
+  "identifier": "fs-main",
+  "description": "Allow access file access to main window",
+  "local": true,
+  "windows": ["main"],
+  "permissions": [
+    "fs:allow-read",
+    "fs:allow-write",
+    "fs:allow-exists",
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$HOME/test.txt" }]
+    }
+  ]
+}
