@@ -11,7 +11,11 @@
   },
   "app": {
     "windows": [
-      
+      {
+        "label": "setting",
+        "url": "/setting",
+        "visible": false
+    }
     ],
     "security": {
       "csp": null

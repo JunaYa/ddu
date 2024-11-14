@@ -4,7 +4,7 @@ use strum_macros::{Display, EnumString};
 use tauri::{
     menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu},
     tray::{TrayIcon, TrayIconEvent},
-    AppHandle,
+    AppHandle, Manager,
 };
 
 #[derive(Debug, Display, EnumString)]
@@ -155,6 +155,7 @@ pub fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
         }
         MenuID::SETTINGS => {
             println!("Settings");
+            app.get_webview_window("setting").unwrap().show().unwrap();
         }
         MenuID::HELP => {
             println!("Help");
