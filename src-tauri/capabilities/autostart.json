@@ -1,12 +1,12 @@
 {
-  "identifier": "desktop-capability",
+  "identifier": "autostart-capability",
   "platforms": [
     "macOS",
     "windows",
     "linux"
   ],
   "windows": [
-    "main"
+    "setting"
   ],
   "permissions": [
     "autostart:default",

@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   ssr: false,
   // Enables the development server to be discoverable by other devices when running on iOS physical devices
   devServer: { host: process.env.TAURI_DEV_HOST || 'localhost' },
-  modules: ['@nuxtjs/i18n'],
+  modules: ['@unocss/nuxt', '@nuxtjs/i18n', 'nuxtjs-naive-ui'],
   features: {
     inlineStyles: false,
   },

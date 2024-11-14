@@ -12,8 +12,14 @@
   "app": {
     "windows": [
       {
+        "title": "setting",
         "label": "setting",
         "url": "/setting",
+        "width": 600,
+        "height": 400,
+        "fullscreen": false,
+        "minimizable": false,
+        "maximizable": false,
         "visible": false
     }
     ],

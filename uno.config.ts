@@ -57,6 +57,9 @@ export default defineConfig({
 
       'select-settings': 'p3 border border-base rounded w-full block bg-base',
 
+      // page
+      'page': 'p4',
+
       // link
       'text-link-rounded': 'focus:outline-none focus:ring-(2 primary inset) hover:bg-active rounded md:rounded-full px2 mx--2',
 

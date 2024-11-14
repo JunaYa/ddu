@@ -17,6 +17,7 @@ type NuxtAppInjections =
   InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.14.159_@types+node@22.9.0_eslint@9.14.0_rollup@4.26.0_typescript@5.6.3_vite@5.4.11_vue-tsc@2.1.10/node_modules/nuxt/dist/pages/runtime/plugins/check-if-page-unused.js")> &
   InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+devtools@1.6.0_rollup@4.26.0_vite@5.4.11_vue@3.5.12/node_modules/@nuxt/devtools/dist/runtime/plugins/devtools.server.js")> &
   InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+devtools@1.6.0_rollup@4.26.0_vite@5.4.11_vue@3.5.12/node_modules/@nuxt/devtools/dist/runtime/plugins/devtools.client.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxtjs-naive-ui@1.0.2_rollup@4.26.0_vue@3.5.12/node_modules/nuxtjs-naive-ui/dist/runtime/plugin.js")> &
   InjectionType<typeof import("../../node_modules/.pnpm/@nuxtjs+i18n@9.0.0-rc.2_eslint@9.14.0_rollup@4.26.0_typescript@5.6.3_vue@3.5.12/node_modules/@nuxtjs/i18n/dist/runtime/plugins/switch-locale-path-ssr.js")> &
   InjectionType<typeof import("../../node_modules/.pnpm/@nuxtjs+i18n@9.0.0-rc.2_eslint@9.14.0_rollup@4.26.0_typescript@5.6.3_vue@3.5.12/node_modules/@nuxtjs/i18n/dist/runtime/plugins/i18n.js")> &
   InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.14.159_@types+node@22.9.0_eslint@9.14.0_rollup@4.26.0_typescript@5.6.3_vite@5.4.11_vue-tsc@2.1.10/node_modules/nuxt/dist/app/plugins/dev-server-logs.js")> &

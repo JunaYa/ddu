@@ -99,7 +99,7 @@
         "../node_modules/.pnpm/@intlify+message-compiler@10.0.0/node_modules/@intlify/message-compiler/dist/message-compiler"
       ],
       "@intlify/core-base": [
-        "../../node_modules/.pnpm/@intlify+core-base@10.0.4/node_modules/@intlify/core-base/dist/core-base"
+        "../node_modules/.pnpm/@intlify+core-base@10.0.4/node_modules/@intlify/core-base/dist/core-base"
       ],
       "@intlify/core": [
         "../node_modules/.pnpm/@intlify+core@10.0.4/node_modules/@intlify/core/dist/core.node"
@@ -161,21 +161,28 @@
     "./nuxt.d.ts",
     "../.config/nuxt.*",
     "../**/*",
+    "../node_modules/.pnpm/@unocss+nuxt@0.64.0_postcss@8.4.49_rollup@4.26.0_vite@5.4.11_vue@3.5.12_webpack@5.96.1/node_modules/@unocss/nuxt/runtime",
+    "../node_modules/.pnpm/@unocss+nuxt@0.64.0_postcss@8.4.49_rollup@4.26.0_vite@5.4.11_vue@3.5.12_webpack@5.96.1/node_modules/@unocss/nuxt/dist/runtime",
     "../node_modules/.pnpm/@nuxtjs+i18n@9.0.0-rc.2_eslint@9.14.0_rollup@4.26.0_typescript@5.6.3_vue@3.5.12/node_modules/@nuxtjs/i18n/runtime",
     "../node_modules/.pnpm/@nuxtjs+i18n@9.0.0-rc.2_eslint@9.14.0_rollup@4.26.0_typescript@5.6.3_vue@3.5.12/node_modules/@nuxtjs/i18n/dist/runtime",
+    "../node_modules/.pnpm/nuxtjs-naive-ui@1.0.2_rollup@4.26.0_vue@3.5.12/node_modules/nuxtjs-naive-ui/runtime",
+    "../node_modules/.pnpm/nuxtjs-naive-ui@1.0.2_rollup@4.26.0_vue@3.5.12/node_modules/nuxtjs-naive-ui/dist/runtime",
     "../node_modules/.pnpm/@nuxt+devtools@1.6.0_rollup@4.26.0_vite@5.4.11_vue@3.5.12/node_modules/@nuxt/devtools/runtime",
     "../node_modules/.pnpm/@nuxt+devtools@1.6.0_rollup@4.26.0_vite@5.4.11_vue@3.5.12/node_modules/@nuxt/devtools/dist/runtime",
     "../node_modules/.pnpm/@nuxt+telemetry@2.6.0_rollup@4.26.0/node_modules/@nuxt/telemetry/runtime",
     "../node_modules/.pnpm/@nuxt+telemetry@2.6.0_rollup@4.26.0/node_modules/@nuxt/telemetry/dist/runtime",
-    "..",
-    "../../node_modules/.pnpm/@intlify+core-base@10.0.4/node_modules/@intlify/core-base/dist/core-base"
+    ".."
   ],
   "exclude": [
     "../dist",
     "../node_modules",
     "../node_modules/.pnpm/nuxt@3.14.159_@types+node@22.9.0_eslint@9.14.0_rollup@4.26.0_typescript@5.6.3_vite@5.4.11_vue-tsc@2.1.10/node_modules/nuxt/node_modules",
+    "../node_modules/.pnpm/@unocss+nuxt@0.64.0_postcss@8.4.49_rollup@4.26.0_vite@5.4.11_vue@3.5.12_webpack@5.96.1/node_modules/@unocss/nuxt/runtime/server",
+    "../node_modules/.pnpm/@unocss+nuxt@0.64.0_postcss@8.4.49_rollup@4.26.0_vite@5.4.11_vue@3.5.12_webpack@5.96.1/node_modules/@unocss/nuxt/dist/runtime/server",
     "../node_modules/.pnpm/@nuxtjs+i18n@9.0.0-rc.2_eslint@9.14.0_rollup@4.26.0_typescript@5.6.3_vue@3.5.12/node_modules/@nuxtjs/i18n/runtime/server",
     "../node_modules/.pnpm/@nuxtjs+i18n@9.0.0-rc.2_eslint@9.14.0_rollup@4.26.0_typescript@5.6.3_vue@3.5.12/node_modules/@nuxtjs/i18n/dist/runtime/server",
+    "../node_modules/.pnpm/nuxtjs-naive-ui@1.0.2_rollup@4.26.0_vue@3.5.12/node_modules/nuxtjs-naive-ui/runtime/server",
+    "../node_modules/.pnpm/nuxtjs-naive-ui@1.0.2_rollup@4.26.0_vue@3.5.12/node_modules/nuxtjs-naive-ui/dist/runtime/server",
     "../node_modules/.pnpm/@nuxt+devtools@1.6.0_rollup@4.26.0_vite@5.4.11_vue@3.5.12/node_modules/@nuxt/devtools/runtime/server",
     "../node_modules/.pnpm/@nuxt+devtools@1.6.0_rollup@4.26.0_vite@5.4.11_vue@3.5.12/node_modules/@nuxt/devtools/dist/runtime/server",
     "../node_modules/.pnpm/@nuxt+telemetry@2.6.0_rollup@4.26.0/node_modules/@nuxt/telemetry/runtime/server",

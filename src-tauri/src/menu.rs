@@ -3,7 +3,7 @@ use std::str::FromStr;
 use strum_macros::{Display, EnumString};
 use tauri::{
     menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu},
-    tray::{TrayIcon, TrayIconEvent},
+    tray::{TrayIcon, TrayIconBuilder, TrayIconEvent},
     AppHandle, Manager,
 };
 
@@ -18,6 +18,18 @@ enum MenuID {
     HELP,
     FEEDBACK,
     EXIT,
+}
+
+pub fn create_tray(app: &mut tauri::App) -> Result<(), tauri::Error> {
+    let _ = TrayIconBuilder::with_id("main-tray")
+        .menu(&get_tray_menu(app.handle())?)
+        .icon(app.default_window_icon().unwrap().clone())
+        .icon_as_template(true)
+        .menu_on_left_click(true)
+        .on_menu_event(handle_tray_menu_events)
+        .on_tray_icon_event(handle_tray_icon_events)
+        .build(app)?;
+    Ok(())
 }
 
 pub fn get_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {
