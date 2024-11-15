@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { onMounted, ref } from "vue";
+import Button from '~/components/Button.vue'
 import PictureReview from "./PictureReview.vue";
 import { BaseDirectory, exists, mkdir, readFile } from "@tauri-apps/plugin-fs";
 
 const screenshotPath = ref('')
+const animate = ref(false)
 
 // take screenshot
 async function take_screenshot() {
@@ -101,14 +103,18 @@ onMounted(async () => {
     <div>
       <!-- <DirectorySelector v-model="selectedPath"/>       -->
       <div>
-        <button type="button" @click="take_screenshot">take screenshot</button>
-        <button type="button" @click="capture_screen">Capture Screen</button>
-        <button type="button" @click="capture_select">Capture Select</button>
-        <button type="button" @click="capture_window">Capture Window</button>
-        <button type="button" @click="take_capture_screen">Take Capture Screen</button>
+        <button class="btn-solid" type="button" @click="take_screenshot">take screenshot</button>
+        <Button text="Capture Screen" @click="take_screenshot"/>
+        <button class="btn-solid"type="button" @click="capture_screen">Capture Screen</button>
+        <button class="btn-solid"type="button" @click="capture_select">Capture Select</button>
+        <button class="btn-solid"type="button" @click="capture_window">Capture Window</button>
+        <Button text="Take Capture Screen" @click="take_capture_screen"/>
+        <Button text="Button Text" anim class="btn-text"/>
+        <Button text="Button Solid" anim class="btn-solid box-shadow-primary "/>
+        <Button text="Button outline" class="btn-outline "/>
       </div>
       <PictureReview v-if="screenshotPath" :image-path="screenshotPath"/>
-    </div>
+    </div> 
 </template>
 
 <style scoped>
