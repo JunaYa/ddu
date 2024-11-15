@@ -2,11 +2,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import { onMounted, ref } from "vue";
 import Button from '~/components/Button.vue'
+import Toggle from '~/components/Toggle.vue'
 import PictureReview from "./PictureReview.vue";
 import { BaseDirectory, exists, mkdir, readFile } from "@tauri-apps/plugin-fs";
 
 const screenshotPath = ref('')
-const animate = ref(false)
 
 // take screenshot
 async function take_screenshot() {
@@ -112,6 +112,8 @@ onMounted(async () => {
         <Button text="Button Text" anim class="btn-text"/>
         <Button text="Button Solid" anim class="btn-solid box-shadow-primary "/>
         <Button text="Button outline" class="btn-outline "/>
+        <Toggle label="Toggle" :value="true" />
+        <Toggle label="Toggle" :value="false" />
       </div>
       <PictureReview v-if="screenshotPath" :image-path="screenshotPath"/>
     </div> 
