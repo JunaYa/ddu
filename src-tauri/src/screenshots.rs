@@ -1,9 +1,10 @@
 use std::path::PathBuf;
 
 use screenshots::Screen;
+use tauri::{fs, Manager};
 
 #[tauri::command]
-pub async fn take_screenshot(_app_handle: tauri::AppHandle, path: String) -> Result<String, String> {
+pub async fn take_screenshot(app_handle: tauri::AppHandle, path: String) -> Result<String, String> {
     let screens = Screen::all().map_err(|e| e.to_string())?;
 
     // Take screenshot of primary screen
@@ -11,14 +12,21 @@ pub async fn take_screenshot(_app_handle: tauri::AppHandle, path: String) -> Res
         let image = screen.capture().map_err(|e| e.to_string())?;
 
         // Create screenshots directory if it doesn't exist
-        let mut screenshot_path = PathBuf::from(path);
-        std::fs::create_dir_all(&screenshot_path).map_err(|e| e.to_string())?;
+        // 获取 AppLocalData 路径
+        let app_local_data = app_handle.path().app_local_data_dir().unwrap();
+        println!("app_local_data: {:?}", app_local_data);
 
-        // Save with timestamp yyyy-mm-dd_hh-mm-ss
+        // 创建 images 文件夹
+        let images_dir = app_local_data.join(path);
+        println!("images_dir: {:?}", images_dir);
+        std::fs::create_dir_all(&images_dir).map_err(|e| e.to_string())?;
+
+        // 生成文件名（使用时间戳）
         let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
-        screenshot_path.push(format!("{}.png", timestamp));
+        let filename = format!("{}.png", timestamp);
+        let file_path = images_dir.join(&filename);
 
-        image.save(&screenshot_path).map_err(|e| e.to_string())?;
+        image.save(&file_path).map_err(|e| e.to_string())?;
 
         // app_handle.clipboard().clear().unwrap();
         // // ImageBuffer to Image
@@ -37,7 +45,7 @@ pub async fn take_screenshot(_app_handle: tauri::AppHandle, path: String) -> Res
         // let content = app_handle.clipboard().read_text();
         // println!("clipboard: {:?}", content.unwrap());
 
-        Ok(screenshot_path.to_string_lossy().into_owned())
+        Ok(filename)
     } else {
         Err("No screen found".into())
     }

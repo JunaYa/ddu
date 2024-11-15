@@ -13,7 +13,7 @@ async function greet() {
 }
 
 async function write(message: string) {
-    await writeTextFile('test.txt', message, { baseDir: BaseDirectory.Home });
+    await writeTextFile('images/test.txt', message, { baseDir: BaseDirectory.AppLocalData });
 }
 </script>
 

@@ -2,7 +2,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { exists } from '@tauri-apps/plugin-fs';
+import { BaseDirectory, exists } from '@tauri-apps/plugin-fs';
+import { appDataDir, join } from '@tauri-apps/api/path';
 
 const props = defineProps<{
   imagePath: string
@@ -18,15 +19,18 @@ async function loadImage() {
     error.value = ''
 
     // Check if file exists
-    const fileExists = await exists(props.imagePath)
-    console.log('fileExists:', fileExists);
+    const fileExists = await exists(props.imagePath, { baseDir: BaseDirectory.AppLocalData })
     if (!fileExists) {
       error.value = 'Image file not found'
       return
     }
 
+    const appDataDirPath = await appDataDir();
+    const filePath = await join(appDataDirPath, props.imagePath);
+    imageUrl.value = convertFileSrc(filePath);
+
     // Convert the file path to a URL that can be used in the browser
-    imageUrl.value = convertFileSrc(props.imagePath)
+    // imageUrl.value = convertFileSrc(props.imagePath)
     console.log('imageUrl:', imageUrl.value);
   } catch (err) {
     error.value = `Failed to load image: ${err}`
@@ -57,10 +61,9 @@ onMounted(loadImage)
     <!-- Image display -->
     <div v-else class="image-container">
       <img 
-        :src="imagePath" 
+        :src="imageUrl" 
         :alt="imagePath"
-        class="max-w-full h-auto rounded shadow-lg"
-        @error="error = 'Failed to display image'"
+        class="w-100 h-100"
       />
       
       <!-- Image path display -->

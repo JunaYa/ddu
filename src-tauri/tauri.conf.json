@@ -10,15 +10,36 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
+    "macOSPrivateApi": true,
     "windows": [
       {
+        "title": "Setting",
         "label": "setting",
         "url": "/setting",
-        "visible": false
+        "minimizable": false,
+        "maximizable": false,
+        "fullscreen": false,
+        "visible": false,
+        "height": 400,
+        "width": 600
     }
     ],
     "security": {
-      "csp": null
+      "csp": {
+        "default-src": "'self' customprotocol: asset:",
+        "connect-src": "ipc: http://ipc.localhost",
+        "font-src": ["https://fonts.gstatic.com"],
+        "img-src": "'self' asset: http://asset.localhost blob: data:",
+        "style-src": "'unsafe-inline' 'self' https://fonts.googleapis.com"
+      },
+      "freezePrototype": true,
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": ["$APPDATA/**", "$RESOURCE/**"]
+        }
+      }
     }
   },
   "bundle": {
