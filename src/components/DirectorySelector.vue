@@ -6,15 +6,15 @@ import { homeDir } from '@tauri-apps/api/path'
 import Button from '~/components/Button.vue'
 
 const props = defineProps<{
-  modelValue: string
+  value: string
   showPath?: boolean
   showClear?: boolean
 }>()
 
-const selectedPath = ref<string>(props.modelValue)
+const selectedPath = ref<string>(props.value)
 const isSelecting = ref(false)
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:value'])
 
 const selectDirectory = async () => {
   try {
@@ -31,7 +31,8 @@ const selectDirectory = async () => {
     
     if (selected) {
       selectedPath.value = selected as string
-      emit('update:modelValue', selectedPath.value)
+      console.log('selectedPath.value', selectedPath.value)
+      emit('update:value', selectedPath.value)
     }
   } catch (error) {
     console.error('选择目录失败:', error)

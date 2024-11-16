@@ -6,15 +6,16 @@ import DirectorySelector from '~/components/DirectorySelector.vue';
 const store = new LazyStore('settings.json');
 const screenshotPath = ref<string>('');
 
-const updateScreenshotPath = async () => {
-  await store.set('screenshot_path', { value: BaseDirectory.AppData });
-  await store.save();
+const updateScreenshotPath = async (path: string) => {
+  screenshotPath.value = path;
+  const res = await store.set('screenshot_path', { value: path });
+  console.log('res', res);
+  const res2 = await store.save();
+  console.log('res2', res2);
 }
 
 onMounted(async () => {
-  console.log('screenshot');
   const val = await store.get<{ value: string }>('screenshot_path');
-  console.log('val', val);
   screenshotPath.value = val?.value ?? BaseDirectory.AppData.toString();
 })
 </script>
@@ -23,7 +24,7 @@ onMounted(async () => {
   <div class="bg-card rounded-lg p-4">
     <div class="flex items-center justify-between">
       <span class="text-secondary">截图保存路径</span>
-      <DirectorySelector v-model="screenshotPath" />
+      <DirectorySelector :value="screenshotPath" @update:value="updateScreenshotPath" />
     </div>
     <div class="my-2 h-.5px w-full bg-border" />
     <div v-if="screenshotPath" class="flex items-center justify-between mt-0">

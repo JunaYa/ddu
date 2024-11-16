@@ -31,7 +31,7 @@ const toggleState = () => {
     >
       <div
         class="w-5 h-5 bg-white rounded-full absolute top-1/2 transform -translate-y-1/2 transition-transform duration-300"
-        :class="[state ? 'translate-x-4' : '']"
+        :class="[state ? 'translate-x-4.5' : 'translate-x-0.5']"
       ></div>
     </div>
      <span v-if="label" class="ml-2 text-secondary">{{ label }}</span>
@@ -39,7 +39,5 @@ const toggleState = () => {
 </template>
 
 <style>
-.active\:bg-blue-600 {
-  @apply bg-blue-600 transition-colors duration-300;
-}
+
 </style>

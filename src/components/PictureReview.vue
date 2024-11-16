@@ -2,8 +2,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { BaseDirectory, exists } from '@tauri-apps/plugin-fs';
-import { appDataDir, join } from '@tauri-apps/api/path';
+import { exists, FileInfo, stat } from '@tauri-apps/plugin-fs';
 
 const props = defineProps<{
   imagePath: string
@@ -19,22 +18,21 @@ async function loadImage() {
     error.value = ''
 
     // Check if file exists
-    const fileExists = await exists(props.imagePath, { baseDir: BaseDirectory.AppLocalData })
+    const fileExists = await exists(props.imagePath)
     if (!fileExists) {
       error.value = 'Image file not found'
       return
     }
 
-    const appDataDirPath = await appDataDir();
-    const filePath = await join(appDataDirPath, props.imagePath);
-    imageUrl.value = convertFileSrc(filePath);
+    const metadata: FileInfo = await stat(props.imagePath)
+    console.log('metadata:', JSON.stringify(metadata, null, 2));
+
+    imageUrl.value = convertFileSrc(props.imagePath);
 
     // Convert the file path to a URL that can be used in the browser
     // imageUrl.value = convertFileSrc(props.imagePath)
-    console.log('imageUrl:', imageUrl.value);
   } catch (err) {
     error.value = `Failed to load image: ${err}`
-    console.error('Image loading error:', err)
   } finally {
     isLoading.value = false
   }
@@ -47,48 +45,27 @@ onMounted(loadImage)
 </script>
 
 <template>
-  <div class="image-viewer">
+  <div class="">
     <!-- Loading state -->
     <div v-if="isLoading" class="loading">
-      <div class="text-gray-600">Loading image...</div>
+      <div class="text-secondary">Loading image...</div>
     </div>
 
     <!-- Error state -->
-    <div v-else-if="error" class="error">
+    <div v-else-if="error" class="text-danger">
       <div class="text-red-500">{{ error }}</div>
     </div>
 
     <!-- Image display -->
-    <div v-else class="image-container">
+    <div v-else class="flex flex-center overflow-hidden w-38 h-38 rounded-md">
       <img 
         :src="imageUrl" 
         :alt="imagePath"
-        class="w-100 h-100"
+        class="w-full h-full rounded-md"
       />
-      
-      <!-- Image path display -->
-      <div class="mt-2 text-sm text-gray-600 break-all">
-        {{ imagePath }}
-      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.image-viewer {
-  padding: 1rem;
-}
-
-.loading, .error {
-  padding: 2rem;
-  text-align: center;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-}
-
-.image-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
 </style>
