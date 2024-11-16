@@ -1,3 +1,7 @@
+use serde_json::json;
+use tauri::Manager;
+use tauri_plugin_store::StoreExt;
+
 mod menu;
 mod scrapshot;
 mod screenshot;
@@ -12,6 +16,7 @@ fn greet(name: &str) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::new().build())
         .setup(|app| {
             #[cfg(desktop)]
             configure_autostart(app);
@@ -19,6 +24,13 @@ pub fn run() {
             windows::create_window(app)?;
 
             menu::create_tray(app)?;
+
+            let app_local_data = app
+                .path()
+                .app_local_data_dir()
+                .expect("could not resolve app local data path");
+            let store = app.store("settings.json")?;
+            store.set("screenshot_path".to_string(), json!({ "value": app_local_data.to_string_lossy() }));
 
             Ok(())
         })

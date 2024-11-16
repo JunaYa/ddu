@@ -108,10 +108,10 @@ onMounted(async () => {
         <button class="btn-solid"type="button" @click="capture_screen">Capture Screen</button>
         <button class="btn-solid"type="button" @click="capture_select">Capture Select</button>
         <button class="btn-solid"type="button" @click="capture_window">Capture Window</button>
-        <Button text="Take Capture Screen" @click="take_capture_screen"/>
-        <Button text="Button Text" anim class="btn-text"/>
-        <Button text="Button Solid" anim class="btn-solid box-shadow-primary "/>
-        <Button text="Button outline" class="btn-outline "/>
+        <Button @click="take_capture_screen">Take Capture Screen</Button>
+        <Button anim class="btn-text">Button Text</Button>
+        <Button anim class="btn-solid box-shadow-primary ">Button Solid</Button>
+        <Button class="btn-outline ">Button Outline</Button>
         <Toggle label="Toggle" :value="true" />
         <Toggle label="Toggle" :value="false" />
       </div>

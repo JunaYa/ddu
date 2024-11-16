@@ -3,9 +3,12 @@
 import { ref, defineEmits } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { homeDir } from '@tauri-apps/api/path'
+import Button from '~/components/Button.vue'
 
 const props = defineProps<{
   modelValue: string
+  showPath?: boolean
+  showClear?: boolean
 }>()
 
 const selectedPath = ref<string>(props.modelValue)
@@ -44,26 +47,26 @@ const clearSelection = () => {
 </script>
 
 <template>
-  <div class="directory-selector">
+  <div class="">
     <div class="flex gap-4 items-center">
-      <button
+      <Button
         @click="selectDirectory"
         :disabled="isSelecting"
-        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
+        class="btn-solid"
       >
         {{ isSelecting ? '选择中...' : '选择目录' }}
-      </button>
+      </Button>
       
-      <button
-        v-if="selectedPath"
+      <Button
+        v-if="showClear && selectedPath"
         @click="clearSelection"
-        class="px-3 py-1 text-gray-600 border rounded hover:bg-gray-100"
+        class="btn-active-icon"
       >
         清除
-      </button>
+      </Button>
     </div>
 
-    <div v-if="selectedPath" class="mt-4">
+    <div v-if="showPath && selectedPath" class="mt-4">
       <p class="text-sm text-gray-600">已选择目录:</p>
       <p class="mt-1 p-2 bg-gray-50 rounded font-mono text-sm break-all">
         {{ selectedPath }}
@@ -71,9 +74,3 @@ const clearSelection = () => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.directory-selector {
-  padding: 1rem;
-}
-</style>

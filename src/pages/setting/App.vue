@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import AutoStart from '~/components/AutoStart.vue'
-
+import AutoStart from './componnets/AutoStart.vue'
+import ScreenshotPath from './componnets/ScreenshotPath.vue'
 </script>
 
 <template>
-  <div class="setting p-4 px-8">
+  <div class="setting p-4">
     <AutoStart />
+    <div class="my-4 h-.5px w-full bg-border" />
+    <ScreenshotPath />
   </div>
 </template>
 

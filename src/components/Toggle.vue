@@ -13,7 +13,6 @@ const props = defineProps<{
 }>()
 
 const state = ref(props.value)
-console.log('state', state.value)
 
 const toggleState = () => {
   state.value = !state.value

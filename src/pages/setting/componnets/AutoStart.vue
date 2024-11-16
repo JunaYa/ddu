@@ -19,17 +19,15 @@ onMounted(async () => {
   loading.value = true;
   isAutostartEnabled.value = await isEnabled();
   loading.value = false;
-  console.log('isAutostartEnabled', isAutostartEnabled.value)
 });
 
 </script>
 
 <template>
-  <div class="w-full flex justify-between bg-gray-100 p2">
+  <div class="flex justify-between bg-card p4">
     <div>
-      
-    <span class="text-secondary">开机自动启动</span>
-  </div>
+      <span class="text-secondary">开机自动启动</span>
+    </div>
     <Toggle v-if="!loading" :value="isAutostartEnabled" @change="toggleAutostart" />
   </div>
 </template>

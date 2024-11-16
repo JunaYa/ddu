@@ -6,7 +6,6 @@ const emit = defineEmits<{
 }>()
 
 const props = defineProps<{
-  text: string
   class?: string
   anim?: boolean
   onClick?: () => void
@@ -25,6 +24,6 @@ const onClick = () => {
 
 <template>
   <button :class="`${animate ? 'animate' : ''} ${props.class}`" v-on:animationend="animate = false" type="button" @click="onClick">
-    {{ props.text }}
+    <slot />
   </button>
 </template>
