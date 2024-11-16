@@ -1,16 +1,51 @@
-# Tauri + Vue + TypeScript
+# DDU (Dynamic Digital Utility)
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+**D**ynamic - 能够捕捉屏幕上动态变化的内容
+
+**D**igital - 专注于处理数字图像和媒体
+
+**U**tility - 提供了实用的屏幕截图功能
+
+所以完整的应用程序名称及其寓意为:
+
+"**DDU Screenshot**"
+
+- Dynamic：捕捉动态变化的屏幕内容
+- Digital：专注于数字图像和媒体
+- Utility：提供实用的屏幕截图功能
+
+这个名称不仅富有创意,而且每个字母都代表了该应用的核心特点和价值主张。用户可以通过这个名称快速了解这个应用程序的定位和功能。
+
+<!-- todo -->
+
+[x] 截图功能
+
+[x] 截图预览功能
+
+[x] 截图保存功能
+
+[ ] 截图自动复制
+
+[ ] 截图设置功能
+
+[ ] 多语言支持
+
+[ ] 图像文字识别提取 OCR 功能
+
+[ ] 云端同步图片能力，支持跨设备查看
+
+[ ] 自定义云盘服务器
+
+应用设置功能
+
+[x] 开机自动启动
+
+[ ] 截图快捷键设置
+
+[ ] 截图保存路径设置
+
+## 使用技术 Tauri + Vue3 + TypeScript
 
 ## Recommended IDE Setup
 
 - [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-
-## Type Support For `.vue` Imports in TS
-
-Since TypeScript cannot handle type information for `.vue` imports, they are shimmed to be a generic Vue component type by default. In most cases this is fine if you don't really care about component prop types outside of templates. However, if you wish to get actual prop types in `.vue` imports (for example to get props validation when using manual `h(...)` calls), you can enable Volar's Take Over mode by following these steps:
-
-1. Run `Extensions: Show Built-in Extensions` from VS Code's command palette, look for `TypeScript and JavaScript Language Features`, then right click and select `Disable (Workspace)`. By default, Take Over mode will enable itself if the default TypeScript extension is disabled.
-2. Reload the VS Code window by running `Developer: Reload Window` from the command palette.
-
-You can learn more about Take Over mode [here](https://github.com/johnsoncodehk/volar/discussions/471).
