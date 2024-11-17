@@ -15,19 +15,13 @@ export default await antfu(
     ignores: [
       'public/**',
       'src-tauri/**',
+      '',
     ],
   },
   {
     rules: {
       // TODO: migrate all process reference to `import.meta.env` and remove this rule
       'node/prefer-global/process': 'off',
-    },
-  },
-  // Sort local files
-  {
-    files: [],
-    rules: {
-      'jsonc/sort-keys': 'error',
     },
   },
 )

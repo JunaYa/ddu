@@ -1,6 +1,6 @@
 // 时间格式化
 // Date
-// return 
+// return
 /**
  * 时间格式化
  * @param time Date

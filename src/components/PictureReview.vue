@@ -1,8 +1,8 @@
 // ImageViewer.vue
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import { convertFileSrc } from '@tauri-apps/api/core';
-import { exists } from '@tauri-apps/plugin-fs';
+import { convertFileSrc } from '@tauri-apps/api/core'
+import { exists } from '@tauri-apps/plugin-fs'
+import { onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   imagePath: string
@@ -24,11 +24,12 @@ async function loadImage() {
       return
     }
 
-    imageUrl.value = convertFileSrc(props.imagePath);
-
-  } catch (err) {
+    imageUrl.value = convertFileSrc(props.imagePath)
+  }
+  catch (err) {
     error.value = `Failed to load image: ${err}`
-  } finally {
+  }
+  finally {
     isLoading.value = false
   }
 }
@@ -43,21 +44,25 @@ onMounted(loadImage)
   <div class="">
     <!-- Loading state -->
     <div v-if="isLoading" class="loading">
-      <div class="text-secondary">Loading image...</div>
+      <div class="text-secondary">
+        Loading image...
+      </div>
     </div>
 
     <!-- Error state -->
     <div v-else-if="error" class="text-danger">
-      <div class="text-red-500">{{ error }}</div>
+      <div class="text-red-500">
+        {{ error }}
+      </div>
     </div>
 
     <!-- Image display -->
-    <div v-else class="flex flex-center overflow-hidden w-58 h-48 rounded-md">
-      <img 
-        :src="imageUrl" 
+    <div v-else class="h-48 w-58 flex flex-center overflow-hidden rounded-md">
+      <img
+        :src="imageUrl"
         :alt="imagePath"
-        class="w-full h-full rounded-md"
-      />
+        class="h-full w-full rounded-md"
+      >
     </div>
   </div>
 </template>

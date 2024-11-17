@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { enable, isEnabled, disable } from '@tauri-apps/plugin-autostart';
-import { onMounted, ref } from 'vue';
+import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart'
+import { onMounted, ref } from 'vue'
 import Toggle from '~/components/Toggle.vue'
 
-const isAutostartEnabled = ref(false);
-const loading = ref(true);
+const isAutostartEnabled = ref(false)
+const loading = ref(true)
 
-const toggleAutostart = async () => {
+async function toggleAutostart() {
   if (await isEnabled()) {
-    await disable();
-  } else {
-    await enable();
+    await disable()
   }
-  isAutostartEnabled.value = await isEnabled();     
-};
+  else {
+    await enable()
+  }
+  isAutostartEnabled.value = await isEnabled()
+}
 
 onMounted(async () => {
-  loading.value = true;
-  isAutostartEnabled.value = await isEnabled();
-  loading.value = false;
-});
-
+  loading.value = true
+  isAutostartEnabled.value = await isEnabled()
+  loading.value = false
+})
 </script>
 
 <template>

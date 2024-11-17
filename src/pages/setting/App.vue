@@ -10,4 +10,3 @@ import ScreenshotPath from './componnets/ScreenshotPath.vue'
     <ScreenshotPath />
   </div>
 </template>
-

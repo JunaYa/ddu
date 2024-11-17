@@ -1,12 +1,14 @@
 {
   "name": "ddu",
-  "private": true,
-  "version": "0.1.0",
   "type": "module",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.vue,.tsx",
+    "lint:fix": "eslint --fix",
     "tauri": "tauri"
   },
   "dependencies": {
