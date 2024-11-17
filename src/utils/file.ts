@@ -56,6 +56,10 @@ class FileSizeFormatter {
     
     return `${formattedValue}${separator}${units[exponent]}`;
   }
+
+  static isPictureFile(path: string): boolean {
+    return ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(path.split('.').pop() ?? '');
+  }
 }
 
 export { FileSizeFormatter }

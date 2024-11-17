@@ -4,20 +4,21 @@ import { LazyStore } from "@tauri-apps/plugin-store";
 import { ref, onMounted } from "vue";
 import PictureReview from "./PictureReview.vue";
 import FileInfo from "./FileInfo.vue";
+import { FileSizeFormatter } from "~/utils/file";
 const store = new LazyStore('settings.json');
 
-const list = ref<{ id: string, image: string, title: string, description: string }[]>([]);
+const list = ref<{ id: string, image: string }[]>([]);
 
 onMounted(async () => {
   const val = await store.get<{ value: string }>('screenshot_path');
 
   const entries = await readDir(val?.value + '/images' ?? '');
 
-  list.value = entries.map((entry) => ({
+  console.log(entries);
+
+  list.value = entries.filter((entry) => entry.isFile && FileSizeFormatter.isPictureFile(entry.name)).map((entry) => ({
     id: entry.name,
     image: `${val?.value}/images/${entry.name}`,
-    title: entry.name,
-    description: entry.name,
   }));
 })
 </script>
