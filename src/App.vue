@@ -6,6 +6,7 @@ import Screenshot from "./components/Screenshot.vue";
 
 <template>
   <div class="p-4">
+    <div class="text-lg font-bold mb-2">Screenshot</div>
     <Screenshot />
   </div>
 </template>

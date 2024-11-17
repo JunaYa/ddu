@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { FileInfo, stat } from '@tauri-apps/plugin-fs';
 import { onMounted, ref } from 'vue';
-
+import { formatTime } from '~/utils/datetime';
+import { FileSizeFormatter } from '~/utils/file';
 const props = defineProps<{
   path: string
 }>()
@@ -15,13 +16,21 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div><span>size</span><span>{{ metadata?.size }}</span></div>
-    <div><span>Last modified</span><span>{{ metadata?.mtime }}</span></div>
-    <div><span>Last accessed</span><span>{{ metadata?.atime }}</span></div>
-    <div><span>Creation time</span><span>{{ metadata?.birthtime }}</span></div>
-    <div><span>readonly</span><span>{{ metadata?.readonly }}</span></div>
-    <div><span>gid</span><span>{{ metadata?.gid }}</span></div>
-    <div><span>uid</span><span>{{ metadata?.uid }}</span></div>
-    <div><span>ino</span><span>{{ metadata?.ino }}</span></div>
+    <div class="flex flex-row justify-between">
+      <span class="text-secondary text-sm">size: </span>
+      <span class="text-secondary text-sm">{{ FileSizeFormatter.format(metadata?.size || 0, { binary: false }) }}</span>
+    </div>
+    <div class="flex flex-row justify-between">
+      <span class="text-secondary text-sm">最近修改: </span>
+      <span class="text-secondary text-sm">{{ metadata?.mtime ? formatTime(new Date(metadata.mtime), 'YYYY-MM-DD HH:mm:ss') : '' }}</span>
+    </div>
+    <div class="flex flex-row justify-between">
+      <span class="text-secondary text-sm">最近访问: </span>
+      <span class="text-secondary text-sm">{{ metadata?.atime ? formatTime(new Date(metadata?.atime), 'YYYY-MM-DD HH:mm:ss') : '' }}</span>
+    </div>
+    <div class="flex flex-row justify-between">
+      <span class="text-secondary text-sm">创建时间: </span>
+      <span class="text-secondary text-sm">{{ metadata?.birthtime ? formatTime(new Date(metadata?.birthtime), 'YYYY-MM-DD HH:mm:ss') : '' }}</span>
+    </div>
   </div>
 </template>

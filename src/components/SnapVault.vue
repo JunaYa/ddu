@@ -25,9 +25,8 @@ onMounted(async () => {
 <template>
   <div>
     <div class="text-lg font-bold mb-2">SnapVault</div>
-    <div class="snap-vault-list flex flex-row flex-wrap gap-2">
-      <div class="snap-vault-item" v-for="item in list" :key="item.id">
-        <!-- <img :src="item.image" alt="screenshot" class="w-38 h-38 rounded-md overflow-hidden" /> -->
+    <div class="flex flex-row flex-wrap gap-2">
+      <div class="bg-card rounded-md p-2" v-for="item in list" :key="item.id">
         <PictureReview :image-path="item.image" />
         <FileInfo :path="item.image" />
       </div>

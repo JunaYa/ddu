@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { exists, FileInfo, stat } from '@tauri-apps/plugin-fs';
+import { exists } from '@tauri-apps/plugin-fs';
 
 const props = defineProps<{
   imagePath: string
@@ -24,13 +24,8 @@ async function loadImage() {
       return
     }
 
-    const metadata: FileInfo = await stat(props.imagePath)
-    console.log('metadata:', JSON.stringify(metadata, null, 2));
-
     imageUrl.value = convertFileSrc(props.imagePath);
 
-    // Convert the file path to a URL that can be used in the browser
-    // imageUrl.value = convertFileSrc(props.imagePath)
   } catch (err) {
     error.value = `Failed to load image: ${err}`
   } finally {
@@ -57,7 +52,7 @@ onMounted(loadImage)
     </div>
 
     <!-- Image display -->
-    <div v-else class="flex flex-center overflow-hidden w-38 h-38 rounded-md">
+    <div v-else class="flex flex-center overflow-hidden w-58 h-48 rounded-md">
       <img 
         :src="imageUrl" 
         :alt="imagePath"
