@@ -5,7 +5,6 @@ use tauri_plugin_store::StoreExt;
 mod menu;
 mod scrapshot;
 mod screenshot;
-mod screenshots;
 mod windows;
 
 #[tauri::command]
@@ -30,7 +29,10 @@ pub fn run() {
                 .app_local_data_dir()
                 .expect("could not resolve app local data path");
             let store = app.store("settings.json")?;
-            store.set("screenshot_path".to_string(), json!({ "value": app_local_data.to_string_lossy() }));
+            store.set(
+                "screenshot_path".to_string(),
+                json!({ "value": app_local_data.to_string_lossy() }),
+            );
 
             Ok(())
         })
@@ -44,7 +46,6 @@ pub fn run() {
             screenshot::capture_screen,
             screenshot::capture_select,
             screenshot::capture_window,
-            screenshots::take_screenshot,
             scrapshot::scrap_capture_screen,
         ])
         .run(tauri::generate_context!())

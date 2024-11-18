@@ -12,21 +12,14 @@ const store = new LazyStore('settings.json')
 const screenshotPath = ref('')
 const BASE_DIR = BaseDirectory.AppData
 
-// take screenshot
-async function take_screenshot() {
-  const result = await invoke('take_screenshot', {
-    path: `images`,
-  })
-  const val = await store.get<{ value: string }>('screenshot_path')
-  screenshotPath.value = `${val?.value}/` + `images/${result}`
-}
-
 // capture_screen
 async function capture_screen() {
   const result = await invoke('capture_screen', {
     path: `images`,
   })
-  screenshotPath.value = result as string
+  console.log('capture_screen result:', result) 
+  const val = await store.get<{ value: string }>('screenshot_path')
+  screenshotPath.value = `${val?.value}/` + `images/${result}`
 }
 
 // capture select
@@ -34,7 +27,8 @@ async function capture_select() {
   const result = await invoke('capture_select', {
     path: `images`,
   })
-  screenshotPath.value = result as string
+  const val = await store.get<{ value: string }>('screenshot_path')
+  screenshotPath.value = `${val?.value}/` + `images/${result}`
 }
 
 // capture window
@@ -42,7 +36,9 @@ async function capture_window() {
   const result = await invoke('capture_window', {
     path: `images`,
   })
-  screenshotPath.value = result as string
+   const val = await store.get<{ value: string }>('screenshot_path')
+  screenshotPath.value = `${val?.value}/` + `images/${result}`
+
 }
 
 // take_capture_screen
@@ -77,12 +73,6 @@ onMounted(async () => {
 <template>
   <div>
     <div>
-      <Button class="btn-solid" @click="take_screenshot">
-        take screenshot
-      </Button>
-      <Button class="btn-solid" @click="take_screenshot">
-        Capture Screen
-      </Button>
       <Button class="btn-solid" @click="capture_screen">
         Capture Screen
       </Button>
