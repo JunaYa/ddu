@@ -17,7 +17,6 @@ async function capture_screen() {
   const result = await invoke('capture_screen', {
     path: `images`,
   })
-  console.log('capture_screen result:', result) 
   const val = await store.get<{ value: string }>('screenshot_path')
   screenshotPath.value = `${val?.value}/` + `images/${result}`
 }
@@ -36,7 +35,7 @@ async function capture_window() {
   const result = await invoke('capture_window', {
     path: `images`,
   })
-   const val = await store.get<{ value: string }>('screenshot_path')
+  const val = await store.get<{ value: string }>('screenshot_path')
   screenshotPath.value = `${val?.value}/` + `images/${result}`
 
 }
@@ -44,10 +43,25 @@ async function capture_window() {
 // take_capture_screen
 async function take_capture_screen() {
   try {
-    const result = await invoke('scrap_capture_screen', {
+    const result = await invoke('xcap_window', {
       path: `images`,
     })
-    screenshotPath.value = result as string
+    const val = await store.get<{ value: string }>('screenshot_path')
+    screenshotPath.value = `${val?.value}/` + `images/${result}`
+  }
+  catch (error) {
+    console.error('take_capture_screen error:', error)
+  }
+}
+
+// take_capture_monitor
+async function take_capture_monitor() {
+  try {
+    const result = await invoke('xcap_monitor', {
+      path: `images`,
+    })
+    const val = await store.get<{ value: string }>('screenshot_path')
+    screenshotPath.value = `${val?.value}/` + `images/${result}`
   }
   catch (error) {
     console.error('take_capture_screen error:', error)
@@ -82,8 +96,11 @@ onMounted(async () => {
       <Button class="btn-solid" @click="capture_window">
         Capture Window
       </Button>
-      <Button class="btn-solid" @click="take_capture_screen">
-        Take Capture Screen
+        <Button class="btn-solid" @click="take_capture_screen">
+          Take Capture Screen
+        </Button>
+      <Button class="btn-solid" @click="take_capture_monitor">
+        Take Capture Monitor
       </Button>
     </div>
     <PictureReview v-if="screenshotPath" :image-path="screenshotPath" />

@@ -46,7 +46,8 @@ pub fn run() {
             screenshot::capture_screen,
             screenshot::capture_select,
             screenshot::capture_window,
-            scrapshot::scrap_capture_screen,
+            scrapshot::xcap_window,
+            scrapshot::xcap_monitor,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

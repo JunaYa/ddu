@@ -7,6 +7,8 @@ use tauri::{
     AppHandle, Manager,
 };
 
+use crate::windows;
+
 #[derive(Debug, Display, EnumString)]
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 enum MenuID {
@@ -154,9 +156,11 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
         }
         MenuID::CAPTURE_SELECT => {
             println!("Capture Select");
+            windows::display_monitors();
         }
         MenuID::CAPTURE_WINDOW => {
             println!("Capture Window");
+            windows::display_windows();
         }
         MenuID::SETTING_MANAGER => {
             println!("Setting Manager");

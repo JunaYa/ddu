@@ -61,7 +61,7 @@ onMounted(loadImage)
       <img
         :src="imageUrl"
         :alt="imagePath"
-        class="h-full w-full rounded-md"
+        class="h-full w-full rounded-md object-contain"
       >
     </div>
   </div>
