@@ -14,7 +14,7 @@ const isAscending = ref(false)
 async function loadData() {
   const val = await store.get<{ value: string }>('screenshot_path')
 
-  const entries = await readDir(`${val?.value}/images` ?? '')
+  const entries = await readDir(val?.value ? `${val?.value}/images` : '')
 
   list.value = entries.filter(entry => entry.isFile && FileSizeFormatter.isPictureFile(entry.name)).map(entry => ({
     id: entry.name,
