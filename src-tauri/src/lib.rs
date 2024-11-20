@@ -2,10 +2,11 @@ use serde_json::json;
 use tauri::Manager;
 use tauri_plugin_store::StoreExt;
 
+mod cmd;
+mod constants;
 mod menu;
-mod scrapshot;
-mod screenshot;
-mod windows;
+mod platform;
+mod window;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -20,7 +21,7 @@ pub fn run() {
             #[cfg(desktop)]
             configure_autostart(app);
 
-            windows::create_window(app)?;
+            window::create_window(app)?;
 
             menu::create_tray(app)?;
 
@@ -43,11 +44,11 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             greet,
-            screenshot::capture_screen,
-            screenshot::capture_select,
-            screenshot::capture_window,
-            scrapshot::xcap_window,
-            scrapshot::xcap_monitor,
+            cmd::capture_screen,
+            cmd::capture_select,
+            cmd::capture_window,
+            cmd::xcap_window,
+            cmd::xcap_monitor,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

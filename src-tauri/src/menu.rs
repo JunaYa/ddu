@@ -7,7 +7,7 @@ use tauri::{
     AppHandle, Manager,
 };
 
-use crate::windows;
+use crate::window;
 
 #[derive(Debug, Display, EnumString)]
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
@@ -153,14 +153,16 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
     match menu_id {
         MenuID::CAPTURE_SCREEN => {
             println!("Capture Screen");
+            window::show_main_window(app);
         }
         MenuID::CAPTURE_SELECT => {
             println!("Capture Select");
-            windows::display_monitors();
+            window::hide_main_window(app);
+            let window = window::get_preview_window(app);
+            window::show_preview_window(&window);
         }
         MenuID::CAPTURE_WINDOW => {
             println!("Capture Window");
-            windows::display_windows();
         }
         MenuID::SETTING_MANAGER => {
             println!("Setting Manager");
