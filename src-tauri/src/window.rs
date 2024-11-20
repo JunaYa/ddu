@@ -46,20 +46,29 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
                 .transparent(true)
                 .visible(true)
                 .shadow(false)
-                // .disable_file_drop_handler()
                 .resizable(false)
-                .inner_size(640.0, 108.0);
+                .inner_size(240.0, 240.0)
+                .position(100.0, 100.0);
 
         let window = window.build().expect("Unable to build startup window");
         #[cfg(target_os = "macos")]
         {
-            use cocoa::appkit::NSWindow;
-            use cocoa::base::id;
+            use cocoa::appkit::{NSColor, NSWindow};
+            use cocoa::base::{id, nil};
 
             let ns_window = window.ns_window().unwrap() as id;
             unsafe {
                 // macOS: Handle multiple spaces correctly
                 ns_window.setCollectionBehavior_(cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorMoveToActiveSpace);
+
+                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
+                    nil,
+                    50.0 / 255.0,
+                    158.0 / 255.0,
+                    163.5 / 255.0,
+                    0.5,
+                );
+                ns_window.setBackgroundColor_(bg_color);
             }
         }
 

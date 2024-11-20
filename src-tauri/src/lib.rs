@@ -8,11 +8,6 @@ mod menu;
 mod platform;
 mod window;
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -43,12 +38,13 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
-            greet,
+            cmd::greet,
             cmd::capture_screen,
             cmd::capture_select,
             cmd::capture_window,
             cmd::xcap_window,
             cmd::xcap_monitor,
+            cmd::show_preview_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -19,6 +19,7 @@ async function capture_screen() {
   })
   const val = await store.get<{ value: string }>('screenshot_path')
   screenshotPath.value = `${val?.value}/` + `images/${result}`
+  await showPreviewWindow()
 }
 
 // capture select
@@ -28,6 +29,7 @@ async function capture_select() {
   })
   const val = await store.get<{ value: string }>('screenshot_path')
   screenshotPath.value = `${val?.value}/` + `images/${result}`
+  await showPreviewWindow()
 }
 
 // capture window
@@ -37,7 +39,7 @@ async function capture_window() {
   })
   const val = await store.get<{ value: string }>('screenshot_path')
   screenshotPath.value = `${val?.value}/` + `images/${result}`
-
+  await showPreviewWindow()
 }
 
 // take_capture_screen
@@ -48,6 +50,7 @@ async function take_capture_screen() {
     })
     const val = await store.get<{ value: string }>('screenshot_path')
     screenshotPath.value = `${val?.value}/` + `images/${result}`
+    await showPreviewWindow()
   }
   catch (error) {
     console.error('take_capture_screen error:', error)
@@ -62,6 +65,7 @@ async function take_capture_monitor() {
     })
     const val = await store.get<{ value: string }>('screenshot_path')
     screenshotPath.value = `${val?.value}/` + `images/${result}`
+    await showPreviewWindow()
   }
   catch (error) {
     console.error('take_capture_screen error:', error)
@@ -77,6 +81,10 @@ async function create_dir() {
       baseDir: BASE_DIR,
     })
   }
+}
+
+async function showPreviewWindow() {
+  await invoke('show_preview_window')
 }
 
 onMounted(async () => {
