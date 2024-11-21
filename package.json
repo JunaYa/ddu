@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .ts,.vue,.tsx",
-    "lint:fix": "eslint --fix",
+    "lint": "eslint --fix",
     "tauri": "tauri"
   },
   "dependencies": {
@@ -32,7 +31,6 @@
     "eslint": "^9.14.0",
     "typescript": "^5.6.3",
     "unocss": "^0.64.1",
-    "unplugin-auto-import": "^0.18.4",
     "vite": "^5.4.11",
     "vue-tsc": "^2.1.10"
   },

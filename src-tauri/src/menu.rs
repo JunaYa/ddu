@@ -15,8 +15,8 @@ enum MenuID {
     CAPTURE_SCREEN,
     CAPTURE_SELECT,
     CAPTURE_WINDOW,
-    SETTING_MANAGER,
-    SETTINGS,
+    SHOW_SETTING_WINDOW,
+    SHOW_MAIN_WINDOW,
     HELP,
     FEEDBACK,
     EXIT,
@@ -59,9 +59,18 @@ pub fn get_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> 
             true,
             None::<&str>,
         )?,
+        &PredefinedMenuItem::separator(app)?,
         &MenuItem::with_id(
             app,
-            MenuID::SETTING_MANAGER.to_string(),
+            MenuID::SHOW_MAIN_WINDOW.to_string(),
+            "Show Home",
+            true,
+            None::<&str>,
+        )?,
+        &PredefinedMenuItem::separator(app)?,
+        &MenuItem::with_id(
+            app,
+            MenuID::SHOW_SETTING_WINDOW.to_string(),
             "Setting Manager",
             true,
             None::<&str>,
@@ -83,7 +92,7 @@ pub fn get_app_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {
             &PredefinedMenuItem::separator(app)?,
             &MenuItem::with_id(
                 app,
-                MenuID::SETTINGS.to_string(),
+                MenuID::SHOW_SETTING_WINDOW.to_string(),
                 "Settings",
                 true,
                 None::<&str>,
@@ -153,27 +162,26 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
     match menu_id {
         MenuID::CAPTURE_SCREEN => {
             println!("Capture Screen");
-            window::show_main_window(app);
         }
         MenuID::CAPTURE_SELECT => {
             println!("Capture Select");
             window::hide_main_window(app);
-            let window = window::get_preview_window(app);
-            window::show_preview_window(&window);
+            window::show_preview_window(app);
         }
         MenuID::CAPTURE_WINDOW => {
             println!("Capture Window");
         }
-        MenuID::SETTING_MANAGER => {
+        MenuID::SHOW_MAIN_WINDOW => {
+            println!("Show Home");
+            window::show_main_window(app);
+        }
+        MenuID::SHOW_SETTING_WINDOW => {
             println!("Setting Manager");
+            window::show_setting_window(app);
         }
         MenuID::EXIT => {
             println!("Exit");
             app.exit(0)
-        }
-        MenuID::SETTINGS => {
-            println!("Settings");
-            app.get_webview_window("setting").unwrap().show().unwrap();
         }
         MenuID::HELP => {
             println!("Help");

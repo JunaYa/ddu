@@ -16,8 +16,6 @@ pub fn run() {
             #[cfg(desktop)]
             configure_autostart(app);
 
-            window::create_window(app)?;
-
             menu::create_tray(app)?;
 
             let app_local_data = app
@@ -45,6 +43,11 @@ pub fn run() {
             cmd::xcap_window,
             cmd::xcap_monitor,
             cmd::show_preview_window,
+            cmd::hide_preview_window,
+            cmd::show_main_window,
+            cmd::hide_main_window,
+            cmd::show_setting_window,
+            cmd::hide_setting_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
