@@ -3,6 +3,7 @@ use tauri::Manager;
 use tauri_plugin_store::StoreExt;
 
 mod cmd;
+mod common;
 mod constants;
 mod menu;
 mod platform;

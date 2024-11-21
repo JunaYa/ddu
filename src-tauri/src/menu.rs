@@ -7,7 +7,7 @@ use tauri::{
     AppHandle, Manager,
 };
 
-use crate::window;
+use crate::{platform, window};
 
 #[derive(Debug, Display, EnumString)]
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
@@ -162,22 +162,38 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
     match menu_id {
         MenuID::CAPTURE_SCREEN => {
             println!("Capture Screen");
+            let _ = tauri::async_runtime::block_on(platform::capture_screen(
+                &app,
+                "images".to_string(),
+            ));
+            window::hide_main_window(app);
+            window::show_preview_window(app);
         }
         MenuID::CAPTURE_SELECT => {
             println!("Capture Select");
+            let _ = tauri::async_runtime::block_on(platform::capture_select(
+                &app,
+                "images".to_string(),
+            ));
             window::hide_main_window(app);
             window::show_preview_window(app);
         }
         MenuID::CAPTURE_WINDOW => {
             println!("Capture Window");
+            let _ = tauri::async_runtime::block_on(platform::capture_window(
+                &app,
+                "images".to_string(),
+            ));
+            window::hide_main_window(app);
+            window::show_preview_window(app);
         }
         MenuID::SHOW_MAIN_WINDOW => {
             println!("Show Home");
-            window::show_main_window(app);
+            window::show_main_window(&app);
         }
         MenuID::SHOW_SETTING_WINDOW => {
             println!("Setting Manager");
-            window::show_setting_window(app);
+            window::show_setting_window(&app);
         }
         MenuID::EXIT => {
             println!("Exit");

@@ -186,9 +186,8 @@ pub fn show_preview_window(app: &AppHandle) {
 pub fn hide_preview_window(app: &AppHandle) {
     if let Some(preview_window) = app.get_webview_window(PREVIEW_WINDOW) {
         if preview_window.is_visible().unwrap_or_default() {
-            return;
+            platform::hide_preview_window(&preview_window);
         }
-        platform::hide_preview_window(&preview_window);
     }
 }
 
@@ -201,7 +200,6 @@ pub fn hide_main_window(app: &AppHandle) {
     if let Some(main_window) = app.get_webview_window(MAIN_WINDOW) {
         if main_window.is_visible().unwrap_or_default() {
             platform::hide_main_window(&main_window);
-            return;
         }
     }
 }
@@ -215,7 +213,6 @@ pub fn hide_setting_window(app: &AppHandle) {
     if let Some(setting_window) = app.get_webview_window(SETTING_WINDOW) {
         if setting_window.is_visible().unwrap_or_default() {
             platform::hide_setting_window(&setting_window);
-            return;
         }
     }
 }
