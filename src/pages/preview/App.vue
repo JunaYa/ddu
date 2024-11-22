@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { invoke } from '@tauri-apps/api/core'
 import { useElementHover } from '@vueuse/core'
 import { ref } from 'vue'
 import Button from '~/components/Button.vue'
@@ -18,17 +17,11 @@ function dragStart() {
   appWindow.setCursorIcon('move')
 }
 
-async function closeWindow() {
-  await invoke('hide_preview_window')
-}
-
 function onEdit() {
-  // closeWindow()
   appWindow.close()
 }
 
 function onSave() {
-  // closeWindow()
   appWindow.close()
 }
 </script>

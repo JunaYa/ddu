@@ -1,5 +1,5 @@
 use tauri::{window::Color, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
-use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, Runtime, WebviewWindow};
+use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
 
 use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW};
 use crate::platform;

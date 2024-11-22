@@ -1,10 +1,6 @@
 use crate::window;
 use tauri::WebviewWindow;
 
-pub fn is_visible(window: &WebviewWindow) -> bool {
-    window.is_visible().unwrap_or_default()
-}
-
 pub fn show_preview_window(window: &WebviewWindow) {
     let _ = window.show();
     let _ = window.unminimize();

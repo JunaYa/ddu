@@ -4,7 +4,7 @@ use strum_macros::{Display, EnumString};
 use tauri::{
     menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu},
     tray::{TrayIcon, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager,
+    AppHandle,
 };
 
 use crate::{platform, window};
