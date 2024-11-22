@@ -2,25 +2,23 @@ use serde_json::json;
 use tauri::Manager;
 use tauri_plugin_store::StoreExt;
 
+mod cmd;
+mod common;
+mod constants;
+mod global_shortcut;
 mod menu;
-mod scrapshot;
-mod screenshot;
-mod windows;
-
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+mod platform;
+mod window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_store::Builder::new().build())
         .setup(|app| {
             #[cfg(desktop)]
             configure_autostart(app);
 
-            windows::create_window(app)?;
+            #[cfg(desktop)]
+            let _ = global_shortcut::register_global_shortcut(app);
 
             menu::create_tray(app)?;
 
@@ -37,17 +35,25 @@ pub fn run() {
             Ok(())
         })
         .menu(menu::get_app_menu)
+        .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(global_shortcut::tauri_plugin_global_shortcut())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
-            greet,
-            screenshot::capture_screen,
-            screenshot::capture_select,
-            screenshot::capture_window,
-            scrapshot::xcap_window,
-            scrapshot::xcap_monitor,
+            cmd::greet,
+            cmd::capture_screen,
+            cmd::capture_select,
+            cmd::capture_window,
+            cmd::xcap_window,
+            cmd::xcap_monitor,
+            cmd::show_preview_window,
+            cmd::hide_preview_window,
+            cmd::show_main_window,
+            cmd::hide_main_window,
+            cmd::show_setting_window,
+            cmd::hide_setting_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

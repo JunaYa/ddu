@@ -44,6 +44,7 @@ export default defineConfig(async () => ({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         setting: path.resolve(__dirname, 'setting.html'),
+        preview: path.resolve(__dirname, 'preview.html'),
       },
     },
   },

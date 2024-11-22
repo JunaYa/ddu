@@ -2,14 +2,12 @@
 import { invoke } from '@tauri-apps/api/core'
 import { BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs'
 import { LazyStore } from '@tauri-apps/plugin-store'
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import Button from '~/components/Button.vue'
-import PictureReview from './PictureReview.vue'
 import SnapVault from './SnapVault.vue'
 
 const store = new LazyStore('settings.json')
 
-const screenshotPath = ref('')
 const BASE_DIR = BaseDirectory.AppData
 
 // capture_screen
@@ -18,7 +16,7 @@ async function capture_screen() {
     path: `images`,
   })
   const val = await store.get<{ value: string }>('screenshot_path')
-  screenshotPath.value = `${val?.value}/` + `images/${result}`
+  await showPreviewWindow(`${val?.value}/` + `images/${result}`)
 }
 
 // capture select
@@ -27,7 +25,7 @@ async function capture_select() {
     path: `images`,
   })
   const val = await store.get<{ value: string }>('screenshot_path')
-  screenshotPath.value = `${val?.value}/` + `images/${result}`
+  await showPreviewWindow(`${val?.value}/` + `images/${result}`)
 }
 
 // capture window
@@ -36,8 +34,7 @@ async function capture_window() {
     path: `images`,
   })
   const val = await store.get<{ value: string }>('screenshot_path')
-  screenshotPath.value = `${val?.value}/` + `images/${result}`
-
+  await showPreviewWindow(`${val?.value}/` + `images/${result}`)
 }
 
 // take_capture_screen
@@ -47,7 +44,7 @@ async function take_capture_screen() {
       path: `images`,
     })
     const val = await store.get<{ value: string }>('screenshot_path')
-    screenshotPath.value = `${val?.value}/` + `images/${result}`
+    await showPreviewWindow(`${val?.value}/` + `images/${result}`)
   }
   catch (error) {
     console.error('take_capture_screen error:', error)
@@ -61,7 +58,7 @@ async function take_capture_monitor() {
       path: `images`,
     })
     const val = await store.get<{ value: string }>('screenshot_path')
-    screenshotPath.value = `${val?.value}/` + `images/${result}`
+    await showPreviewWindow(`${val?.value}/` + `images/${result}`)
   }
   catch (error) {
     console.error('take_capture_screen error:', error)
@@ -77,6 +74,12 @@ async function create_dir() {
       baseDir: BASE_DIR,
     })
   }
+}
+
+async function showPreviewWindow(path: string) {
+  await invoke('show_preview_window', {
+    path,
+  })
 }
 
 onMounted(async () => {
@@ -96,14 +99,13 @@ onMounted(async () => {
       <Button class="btn-solid" @click="capture_window">
         Capture Window
       </Button>
-        <Button class="btn-solid" @click="take_capture_screen">
-          Take Capture Screen
-        </Button>
+      <Button class="btn-solid" @click="take_capture_screen">
+        Take Capture Screen
+      </Button>
       <Button class="btn-solid" @click="take_capture_monitor">
         Take Capture Monitor
       </Button>
     </div>
-    <PictureReview v-if="screenshotPath" :image-path="screenshotPath" />
     <SnapVault />
   </div>
 </template>
