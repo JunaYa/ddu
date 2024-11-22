@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { LazyStore } from '@tauri-apps/plugin-store'
 import { useElementHover } from '@vueuse/core'
 import { onMounted, ref } from 'vue'
 import Button from '~/components/Button.vue'
 import PictureReview from '~/components/PictureReview.vue'
-import { LazyStore } from '@tauri-apps/plugin-store'
 
 const store = new LazyStore('settings.json')
 
@@ -29,13 +29,11 @@ function onSave() {
   appWindow.close()
 }
 
-onMounted(async() => {
+onMounted(async () => {
   const val = await store.get<{ value: string }>('screenshot_path')
   appWindow.listen<string>('image-prepared', (event: any) => {
-    console.log('image-prepared', event.payload)
-    imagePath.value = `${val?.value}/images/` + event.payload.Ok
-    console.log('imagePath', imagePath.value)
-  });
+    imagePath.value = `${val?.value}/images/${event.payload.Ok}`
+  })
 })
 </script>
 
