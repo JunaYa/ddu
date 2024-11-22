@@ -2,7 +2,7 @@
   "identifier": "fs-capability",
   "description": "Allow access file access to main window",
   "local": true,
-  "windows": ["main"],
+  "windows": ["main", "preview"],
   "permissions": [
     {
       "identifier": "fs:scope",

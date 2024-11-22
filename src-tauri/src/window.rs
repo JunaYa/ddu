@@ -178,9 +178,10 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
     }
 }
 
-pub fn show_preview_window(app: &AppHandle) {
+pub fn show_preview_window(app: &AppHandle) -> WebviewWindow {
     let window = get_preview_window(app);
     platform::show_preview_window(&window);
+    window
 }
 
 pub fn hide_preview_window(app: &AppHandle) {

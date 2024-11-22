@@ -1,5 +1,5 @@
-use std::str::FromStr;
-use tauri::plugin::TauriPlugin;
+use std::{str::FromStr, thread::sleep, time::Duration};
+use tauri::{plugin::TauriPlugin, Emitter};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 use crate::{platform, window};
@@ -44,12 +44,16 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                 match event.state() {
                     ShortcutState::Pressed => {
                         println!("Capture Screen Pressed!");
-                        let _ = tauri::async_runtime::block_on(platform::capture_screen(
+                        let filename = tauri::async_runtime::block_on(platform::capture_screen(
                             &app,
                             "images".to_string(),
                         ));
                         window::hide_main_window(&app);
-                        window::show_preview_window(&app);
+                        let window = window::show_preview_window(&app);
+                        tauri::async_runtime::spawn(async move {
+                            sleep(Duration::from_millis(500));
+                            window.emit("image-prepared", filename).unwrap();
+                        });
                     }
                     ShortcutState::Released => {
                         println!("Capture Screen Released!");
@@ -58,12 +62,16 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
             } else if shortcut.id == Shortcut::from_str(DEFUALT_HOTKEY_S).unwrap().id {
                 match event.state() {
                     ShortcutState::Pressed => {
-                        let _ = tauri::async_runtime::block_on(platform::capture_select(
+                        let filename = tauri::async_runtime::block_on(platform::capture_select(
                             &app,
                             "images".to_string(),
                         ));
                         window::hide_main_window(app);
-                        window::show_preview_window(app);
+                        let window = window::show_preview_window(app);
+                        tauri::async_runtime::spawn(async move {
+                            sleep(Duration::from_millis(500));
+                            window.emit("image-prepared", filename).unwrap();
+                        });
                     }
                     ShortcutState::Released => {
                         println!("Capture Select Released!");
@@ -72,12 +80,16 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
             } else if shortcut.id == Shortcut::from_str(DEFUALT_HOTKEY_W).unwrap().id {
                 match event.state() {
                     ShortcutState::Pressed => {
-                        let _ = tauri::async_runtime::block_on(platform::capture_window(
+                        let filename = tauri::async_runtime::block_on(platform::capture_window(
                             &app,
                             "images".to_string(),
                         ));
                         window::hide_main_window(app);
-                        window::show_preview_window(app);
+                        let window = window::show_preview_window(app);
+                        tauri::async_runtime::spawn(async move {
+                            sleep(Duration::from_millis(500));
+                            window.emit("image-prepared", filename).unwrap();
+                        });
                     }
                     ShortcutState::Released => {
                         println!("Capture Window Released!");
