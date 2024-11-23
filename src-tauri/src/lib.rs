@@ -1,5 +1,5 @@
 use serde_json::json;
-use tauri::Manager;
+use tauri::{ActivationPolicy, Manager};
 use tauri_plugin_store::StoreExt;
 
 mod cmd;
@@ -9,6 +9,7 @@ mod global_shortcut;
 mod menu;
 mod platform;
 mod window;
+mod xcap_utils;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,6 +20,8 @@ pub fn run() {
 
             #[cfg(desktop)]
             let _ = global_shortcut::register_global_shortcut(app);
+
+            app.set_activation_policy(ActivationPolicy::Accessory);
 
             menu::create_tray(app)?;
 

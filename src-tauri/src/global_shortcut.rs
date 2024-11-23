@@ -1,6 +1,7 @@
 use std::{str::FromStr, thread::sleep, time::Duration};
 use tauri::{plugin::TauriPlugin, Emitter};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
+use tracing::info;
 
 use crate::{platform, window};
 
@@ -9,10 +10,10 @@ const DEFUALT_HOTKEY_S: &str = "CmdOrCtrl+Shift+S";
 const DEFUALT_HOTKEY_W: &str = "CmdOrCtrl+Shift+W";
 
 pub fn register_global_shortcut(app: &tauri::App) -> anyhow::Result<()> {
-    println!("Registering global shortcuts");
+    info!("Registering global shortcuts");
     let shortcuts = app.global_shortcut();
     if let Err(error) = shortcuts.unregister_all() {
-        println!("Unable to unregister shortcuts {}", error.to_string());
+        info!("Unable to unregister shortcuts {}", error.to_string());
     }
 
     // capture_screen: ctrl + shift + A
@@ -43,7 +44,7 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
             if shortcut.id == Shortcut::from_str(DEFUALT_HOTKEY_A).unwrap().id {
                 match event.state() {
                     ShortcutState::Pressed => {
-                        println!("Capture Screen Pressed!");
+                        info!("Capture Screen Pressed!");
                         let filename = tauri::async_runtime::block_on(platform::capture_screen(
                             &app,
                             "images".to_string(),
@@ -56,7 +57,7 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                         });
                     }
                     ShortcutState::Released => {
-                        println!("Capture Screen Released!");
+                        info!("Capture Screen Released!");
                     }
                 }
             } else if shortcut.id == Shortcut::from_str(DEFUALT_HOTKEY_S).unwrap().id {
@@ -74,7 +75,7 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                         });
                     }
                     ShortcutState::Released => {
-                        println!("Capture Select Released!");
+                        info!("Capture Select Released!");
                     }
                 }
             } else if shortcut.id == Shortcut::from_str(DEFUALT_HOTKEY_W).unwrap().id {
@@ -92,7 +93,7 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                         });
                     }
                     ShortcutState::Released => {
-                        println!("Capture Window Released!");
+                        info!("Capture Window Released!");
                     }
                 }
             }

@@ -20,6 +20,7 @@
         "minimizable": false,
         "maximizable": false,
         "fullscreen": false,
+        "skipTaskbar": true,
         "visible": false,
         "height": 400,
         "width": 600

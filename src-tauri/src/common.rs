@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use tauri::Manager;
 use tauri_plugin_store::StoreExt;
+use tracing::info;
 
 pub fn get_images_dir(app_handle: &tauri::AppHandle, path: String) -> Result<PathBuf, String> {
     let store = app_handle
@@ -11,7 +12,7 @@ pub fn get_images_dir(app_handle: &tauri::AppHandle, path: String) -> Result<Pat
     let screenshot_path = store
         .get("screenshot_path")
         .ok_or_else(|| "Screenshot path not found in settings".to_string())?;
-    println!("screenshot_path: {:?}", screenshot_path);
+    info!("screenshot_path: {:?}", screenshot_path);
 
     // get value from Option<JsonValue>
     let screenshot_path = screenshot_path
@@ -27,7 +28,7 @@ pub fn get_images_dir(app_handle: &tauri::AppHandle, path: String) -> Result<Pat
     } else {
         PathBuf::from(screenshot_path)
     };
-    println!("app_local_data: {:?}", app_local_data);
+    info!("app_local_data: {:?}", app_local_data);
 
     // 创建 images 文件夹
     // path 如果为空，则使用 app_local_data
@@ -37,7 +38,7 @@ pub fn get_images_dir(app_handle: &tauri::AppHandle, path: String) -> Result<Pat
         app_local_data.join(path)
     };
 
-    println!("images_dir: {:?}", images_dir);
+    info!("images_dir: {:?}", images_dir);
     std::fs::create_dir_all(&images_dir).map_err(|e| e.to_string())?;
 
     // let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));

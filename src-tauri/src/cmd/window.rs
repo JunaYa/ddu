@@ -10,7 +10,6 @@ pub fn show_preview_window(app: AppHandle, path: String) -> Result<String, Strin
 
 #[tauri::command]
 pub fn hide_preview_window(app: AppHandle) -> Result<(), String> {
-    println!("hide_preview_window");
     window::hide_preview_window(&app);
     Ok(())
 }

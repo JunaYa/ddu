@@ -38,6 +38,8 @@ strum = "0.26.3"
 image = "0.25.5"
 tauri-plugin-store = "2"
 xcap = "0.0.14"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing = "0.1.40"
 
 [features]
 default = ["custom-protocol"]
