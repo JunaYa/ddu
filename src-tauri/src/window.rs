@@ -1,5 +1,6 @@
 use tauri::{window::Color, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
+use tracing::info;
 
 use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW};
 use crate::platform;
@@ -38,7 +39,7 @@ pub fn center_position(window: &WebviewWindow) {
 
         let _ = window.set_position(tauri::Position::Physical(new_position));
     } else {
-        println!("Unable to detect any monitors.");
+        info!("Unable to detect any monitors.");
     }
 }
 
@@ -64,7 +65,7 @@ pub fn bottom_right_position(window: &WebviewWindow) {
 
         let _ = window.set_position(tauri::Position::Physical(new_position));
     } else {
-        println!("Unable to detect any monitors.");
+        info!("Unable to detect any monitors.");
     }
 }
 
@@ -76,6 +77,7 @@ pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
             .title("ddu")
             .title_bar_style(TitleBarStyle::Transparent)
             .background_color(Color(10, 100, 100, 1))
+            .skip_taskbar(true)
             .inner_size(800.0, 600.0);
 
         let window = win_builder.build().unwrap();
@@ -111,6 +113,7 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
             .minimizable(false)
             .maximizable(false)
             .resizable(false)
+            .skip_taskbar(true)
             .fullscreen(false)
             .inner_size(600.0, 400.0);
 
@@ -148,6 +151,7 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
                 .decorations(false)
                 .transparent(true)
                 .visible(true)
+                .skip_taskbar(true)
                 .shadow(false)
                 .resizable(false)
                 .inner_size(240.0, 240.0);

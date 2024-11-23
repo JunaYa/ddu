@@ -5,6 +5,7 @@ use std::{
 };
 
 use chrono::Local;
+use tracing::info;
 
 use crate::common::get_images_dir;
 
@@ -13,7 +14,7 @@ pub async fn capture_screen(app_handle: &tauri::AppHandle, path: String) -> Resu
 
     let images_dir = get_images_dir(&app_handle, path)?;
 
-    println!("images_dir: {:?}", images_dir);
+    info!("images_dir: {:?}", images_dir);
     std::fs::create_dir_all(&images_dir).map_err(|e| e.to_string())?;
 
     let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
@@ -25,7 +26,7 @@ pub async fn capture_screen(app_handle: &tauri::AppHandle, path: String) -> Resu
         .output()
         .map_err(|e| e.to_string())?;
 
-    println!("capture_screen 运行耗时: {:?}", start.elapsed());
+    info!("capture_screen 运行耗时: {:?}", start.elapsed());
     Ok(filename)
 }
 
@@ -44,7 +45,7 @@ pub async fn capture_select(app_handle: &tauri::AppHandle, path: String) -> Resu
         .output()
         .map_err(|e| e.to_string())?;
 
-    println!("capture_select 运行耗时: {:?}", start.elapsed());
+    info!("capture_select 运行耗时: {:?}", start.elapsed());
     Ok(filename)
 }
 
@@ -81,10 +82,10 @@ pub async fn capture_window(app_handle: &tauri::AppHandle, path: String) -> Resu
         .map_err(|e| e.to_string())?;
 
     if !output.status.success() {
-        println!("screencapture -wx 失败: {:?}", output.status);
+        info!("screencapture -wx 失败: {:?}", output.status);
     }
 
-    println!("capture_window 运行耗时: {:?}", start.elapsed());
+    info!("capture_window 运行耗时: {:?}", start.elapsed());
 
     Ok(filename)
 }

@@ -1,6 +1,7 @@
 use std::time::Instant;
 use tauri::{window::Color, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 use tauri::{AppHandle, PhysicalPosition, WebviewWindow};
+use tracing::info;
 use xcap::Monitor;
 use xcap::Window;
 
@@ -8,10 +9,10 @@ use xcap::Window;
 pub fn display_windows() {
     let start = Instant::now();
     let windows = Window::all().unwrap();
-    println!("Window::all() 运行耗时: {:?}", start.elapsed());
+    info!("Window::all() 运行耗时: {:?}", start.elapsed());
 
     for window in windows {
-        println!(
+        info!(
             "Window:\n id: {}\n title: {}\n app_name: {}\n monitor: {:?}\n position: {:?}\n size {:?}\n state {:?}\n",
             window.id(),
             window.title(),
@@ -23,16 +24,16 @@ pub fn display_windows() {
         );
     }
 
-    println!("运行耗时: {:?}", start.elapsed());
+    info!("运行耗时: {:?}", start.elapsed());
 }
 
 pub fn display_monitors() {
     let start = Instant::now();
     let monitors = Monitor::all().unwrap();
-    println!("Monitor::all() 运行耗时: {:?}", start.elapsed());
+    info!("Monitor::all() 运行耗时: {:?}", start.elapsed());
 
     for monitor in monitors {
-        println!(
+        info!(
             "Monitor:\n id: {}\n name: {}\n position: {:?}\n size: {:?}\n state:{:?}\n",
             monitor.id(),
             monitor.name(),
@@ -49,12 +50,12 @@ pub fn display_monitors() {
 
     let monitor = Monitor::from_point(100, 100).unwrap();
 
-    println!("Monitor::from_point(): {}", monitor.name());
-    println!(
+    info!("Monitor::from_point(): {}", monitor.name());
+    info!(
         "Monitor::from_point(100, 100) 运行耗时: {:?}",
         start.elapsed()
     );
 
-    println!("运行耗时: {:?}", start.elapsed());
+    info!("运行耗时: {:?}", start.elapsed());
 }
 
