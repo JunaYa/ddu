@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use chrono::Local;
+use tracing::info;
 use std::time::Instant;
 use xcap::{Monitor, Window};
 
@@ -44,7 +45,7 @@ fn window_capture(path: PathBuf) -> Result<String, String> {
             continue;
         }
 
-        println!(
+        info!(
             "Window: {:?} {:?} {:?}",
             window.title(),
             (window.x(), window.y(), window.width(), window.height()),
@@ -62,14 +63,14 @@ fn window_capture(path: PathBuf) -> Result<String, String> {
 
         let output_path = path.join(&filename);
 
-        println!("保存图片: {}", &output_path.to_str().unwrap());
+        info!("保存图片: {}", &output_path.to_str().unwrap());
 
         image.save(output_path).unwrap();
 
         i += 1;
     }
 
-    println!("运行耗时: {:?}", start.elapsed());
+    info!("运行耗时: {:?}", start.elapsed());
 
     Ok(filename)
 }
@@ -94,7 +95,7 @@ fn monitor_capture(path: PathBuf) -> Result<String, String> {
         image.save(output_path.to_str().unwrap()).unwrap();
     }
 
-    println!("运行耗时: {:?}", start.elapsed());
+    info!("运行耗时: {:?}", start.elapsed());
 
     Ok(filename)
 }

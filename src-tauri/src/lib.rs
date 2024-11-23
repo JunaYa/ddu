@@ -9,6 +9,7 @@ mod global_shortcut;
 mod menu;
 mod platform;
 mod window;
+mod xcap_utils;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

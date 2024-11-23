@@ -1,5 +1,6 @@
 use tauri::{window::Color, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
+use tracing::info;
 
 use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW};
 use crate::platform;
@@ -38,7 +39,7 @@ pub fn center_position(window: &WebviewWindow) {
 
         let _ = window.set_position(tauri::Position::Physical(new_position));
     } else {
-        println!("Unable to detect any monitors.");
+        info!("Unable to detect any monitors.");
     }
 }
 
@@ -64,7 +65,7 @@ pub fn bottom_right_position(window: &WebviewWindow) {
 
         let _ = window.set_position(tauri::Position::Physical(new_position));
     } else {
-        println!("Unable to detect any monitors.");
+        info!("Unable to detect any monitors.");
     }
 }
 

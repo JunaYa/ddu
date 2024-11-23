@@ -6,6 +6,7 @@ use tauri::{
     tray::{TrayIcon, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter,
 };
+use tracing::info;
 
 use crate::{platform, window};
 
@@ -148,7 +149,7 @@ pub fn get_app_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {
 
 fn handle_tray_icon_events(_tray: &TrayIcon, event: TrayIconEvent) {
     if let TrayIconEvent::DoubleClick { .. } = event {
-        println!("Double click");
+        info!("Double click");
     }
 }
 
@@ -161,7 +162,7 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
 
     match menu_id {
         MenuID::CAPTURE_SCREEN => {
-            println!("Capture Screen");
+            info!("Capture Screen");
             // 获取到 file na
             let filename = tauri::async_runtime::block_on(platform::capture_screen(
                 &app,
@@ -176,7 +177,7 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
             });
         }
         MenuID::CAPTURE_SELECT => {
-            println!("Capture Select");
+            info!("Capture Select");
             let filename = tauri::async_runtime::block_on(platform::capture_select(
                 &app,
                 "images".to_string(),
@@ -189,7 +190,7 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
             });
         }
         MenuID::CAPTURE_WINDOW => {
-            println!("Capture Window");
+            info!("Capture Window");
             let filename = tauri::async_runtime::block_on(platform::capture_window(
                 &app,
                 "images".to_string(),
@@ -202,22 +203,22 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
             });
         }
         MenuID::SHOW_MAIN_WINDOW => {
-            println!("Show Home");
+            info!("Show Home");
             window::show_main_window(&app);
         }
         MenuID::SHOW_SETTING_WINDOW => {
-            println!("Setting Manager");
+            info!("Setting Manager");
             window::show_setting_window(&app);
         }
         MenuID::EXIT => {
-            println!("Exit");
+            info!("Exit");
             app.exit(0)
         }
         MenuID::HELP => {
-            println!("Help");
+            info!("Help");
         }
         MenuID::FEEDBACK => {
-            println!("Feedback");
+            info!("Feedback");
         }
     }
 }
