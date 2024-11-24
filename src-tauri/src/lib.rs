@@ -18,6 +18,8 @@ pub fn run() {
             #[cfg(desktop)]
             configure_autostart(app);
 
+            window::show_startup_window(&app.handle());
+
             #[cfg(desktop)]
             let _ = global_shortcut::register_global_shortcut(app);
 
@@ -57,6 +59,7 @@ pub fn run() {
             cmd::hide_main_window,
             cmd::show_setting_window,
             cmd::hide_setting_window,
+            cmd::open_screen_capture_preferences,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

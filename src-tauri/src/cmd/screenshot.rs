@@ -17,3 +17,8 @@ pub async fn capture_window(app_handle: tauri::AppHandle, path: String) -> Resul
     let filename = platform::capture_window(&app_handle, path).await?;
     Ok(filename)
 }
+
+#[tauri::command]
+pub fn open_screen_capture_preferences() {
+    platform::open_screen_capture_preferences();
+}

@@ -42,9 +42,11 @@ export default defineConfig(async () => ({
   build: {
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html'),
-        setting: path.resolve(__dirname, 'setting.html'),
-        preview: path.resolve(__dirname, 'preview.html'),
+        index: path.resolve(__dirname, './index.html'),
+        main: path.resolve(__dirname, './public/main.html'),
+        setting: path.resolve(__dirname, './public/setting.html'),
+        preview: path.resolve(__dirname, './public/preview.html'),
+        startup: path.resolve(__dirname, './public/startup.html'),
       },
     },
   },

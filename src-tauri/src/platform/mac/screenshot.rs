@@ -89,3 +89,10 @@ pub async fn capture_window(app_handle: &tauri::AppHandle, path: String) -> Resu
 
     Ok(filename)
 }
+
+pub fn open_screen_capture_preferences() {
+    Command::new("open")
+        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
+        .spawn()
+        .expect("failed to open system preferences");
+}
