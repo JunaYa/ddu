@@ -2,7 +2,7 @@
 import { confirm } from '@tauri-apps/plugin-dialog'
 import { remove } from '@tauri-apps/plugin-fs'
 import { useElementHover } from '@vueuse/core'
-import { defineEmits, defineProps, ref } from 'vue'
+import { ref } from 'vue'
 import Button from '~/components/Button.vue'
 import FileInfo from './FileInfo.vue'
 import PictureReview from './PictureReview.vue'
