@@ -74,10 +74,10 @@ pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
         window
     } else {
         let win_builder =
-            WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("/main".into()))
+            WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("/main.html".into()))
                 .title("ddu")
                 .title_bar_style(TitleBarStyle::Transparent)
-                .background_color(Color(10, 100, 100, 1))
+                .transparent(true)
                 .skip_taskbar(true)
                 .inner_size(800.0, 600.0);
 
@@ -110,7 +110,7 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
         window
     } else {
         let win_builder =
-            WebviewWindowBuilder::new(app, SETTING_WINDOW, WebviewUrl::App("/setting".into()))
+            WebviewWindowBuilder::new(app, SETTING_WINDOW, WebviewUrl::App("/setting.html".into()))
                 .title("Setting")
                 .minimizable(false)
                 .maximizable(false)
@@ -148,8 +148,8 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
         window
     } else {
         let window =
-            WebviewWindowBuilder::new(app, PREVIEW_WINDOW, WebviewUrl::App("/preview".into()))
-                .title("ddu")
+            WebviewWindowBuilder::new(app, PREVIEW_WINDOW, WebviewUrl::App("/preview.html".into()))
+                .title("preview")
                 .decorations(false)
                 .transparent(true)
                 .visible(true)
@@ -189,15 +189,15 @@ pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
         window
     } else {
         let win_builder =
-            WebviewWindowBuilder::new(app, STARTUP_WINDOW, WebviewUrl::App("/startup".into()))
-                .title("Ddu")
-                .decorations(false)
+            WebviewWindowBuilder::new(app, STARTUP_WINDOW, WebviewUrl::App("/startup.html".into()))
+                .title("Startup")
+                .decorations(true)
                 .transparent(true)
                 .visible(true)
-                .skip_taskbar(true)
-                .shadow(false)
+                .skip_taskbar(false)
+                .shadow(true)
                 .resizable(false)
-                .inner_size(240.0, 240.0);
+                .inner_size(360.0, 280.0);
 
         let window = win_builder.build().unwrap();
 

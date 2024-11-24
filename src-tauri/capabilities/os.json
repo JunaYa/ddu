@@ -1,0 +1,16 @@
+{
+  "identifier": "os-capability",
+  "description": "Allow access os to window",
+  "platforms": [
+    "macOS",
+    "windows",
+    "linux"
+  ],
+  "windows": [
+    "startup"
+  ],
+  "permissions": [
+    "os:default",
+    "os:allow-version"
+  ]
+}
