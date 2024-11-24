@@ -9,11 +9,11 @@ mod global_shortcut;
 mod menu;
 mod platform;
 mod window;
-mod xcap_utils;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_os::init())
         .setup(|app| {
             #[cfg(desktop)]
             configure_autostart(app);
@@ -60,6 +60,7 @@ pub fn run() {
             cmd::show_setting_window,
             cmd::hide_setting_window,
             cmd::open_screen_capture_preferences,
+            cmd::check_accessibility_permissions,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
