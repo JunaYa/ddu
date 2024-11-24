@@ -2,7 +2,7 @@ use tauri::{window::Color, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
 use tracing::info;
 
-use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW};
+use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW, STARTUP_WINDOW};
 use crate::platform;
 
 fn find_monitor(window: &WebviewWindow) -> Option<Monitor> {
@@ -73,12 +73,13 @@ pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
         window
     } else {
-        let win_builder = WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::default())
-            .title("ddu")
-            .title_bar_style(TitleBarStyle::Transparent)
-            .background_color(Color(10, 100, 100, 1))
-            .skip_taskbar(true)
-            .inner_size(800.0, 600.0);
+        let win_builder =
+            WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("/main.html".into()))
+                .title("ddu")
+                .title_bar_style(TitleBarStyle::Transparent)
+                .transparent(true)
+                .skip_taskbar(true)
+                .inner_size(800.0, 600.0);
 
         let window = win_builder.build().unwrap();
 
@@ -108,14 +109,15 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
     if let Some(window) = app.get_webview_window(SETTING_WINDOW) {
         window
     } else {
-        let win_builder = WebviewWindowBuilder::new(app, SETTING_WINDOW, WebviewUrl::default())
-            .title("Setting")
-            .minimizable(false)
-            .maximizable(false)
-            .resizable(false)
-            .skip_taskbar(true)
-            .fullscreen(false)
-            .inner_size(600.0, 400.0);
+        let win_builder =
+            WebviewWindowBuilder::new(app, SETTING_WINDOW, WebviewUrl::App("/setting.html".into()))
+                .title("Setting")
+                .minimizable(false)
+                .maximizable(false)
+                .resizable(false)
+                .skip_taskbar(true)
+                .fullscreen(false)
+                .inner_size(600.0, 400.0);
 
         let window = win_builder.build().unwrap();
 
@@ -146,8 +148,8 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
         window
     } else {
         let window =
-            WebviewWindowBuilder::new(app, PREVIEW_WINDOW, WebviewUrl::App("/preview".into()))
-                .title("ddu")
+            WebviewWindowBuilder::new(app, PREVIEW_WINDOW, WebviewUrl::App("/preview.html".into()))
+                .title("preview")
                 .decorations(false)
                 .transparent(true)
                 .visible(true)
@@ -179,6 +181,45 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
         }
 
         window
+    }
+}
+
+pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
+    if let Some(window) = app.get_webview_window(STARTUP_WINDOW) {
+        window
+    } else {
+        let win_builder =
+            WebviewWindowBuilder::new(app, STARTUP_WINDOW, WebviewUrl::App("/startup.html".into()))
+                .title("Startup")
+                .decorations(true)
+                .transparent(true)
+                .visible(true)
+                .skip_taskbar(false)
+                .shadow(true)
+                .resizable(false)
+                .inner_size(360.0, 280.0);
+
+        let window = win_builder.build().unwrap();
+
+        // set background color only when building for macOS
+        #[cfg(target_os = "macos")]
+        {
+            use cocoa::appkit::{NSColor, NSWindow};
+            use cocoa::base::{id, nil};
+
+            let ns_window = window.ns_window().unwrap() as id;
+            unsafe {
+                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
+                    nil,
+                    50.0 / 255.0,
+                    158.0 / 255.0,
+                    163.5 / 255.0,
+                    0.5,
+                );
+                ns_window.setBackgroundColor_(bg_color);
+            }
+            window
+        }
     }
 }
 
@@ -218,6 +259,19 @@ pub fn hide_setting_window(app: &AppHandle) {
     if let Some(setting_window) = app.get_webview_window(SETTING_WINDOW) {
         if setting_window.is_visible().unwrap_or_default() {
             platform::hide_setting_window(&setting_window);
+        }
+    }
+}
+
+pub fn show_startup_window(app: &AppHandle) {
+    let window = get_startup_window(app);
+    platform::show_startup_window(&window);
+}
+
+pub fn hide_startup_window(app: &AppHandle) {
+    if let Some(startup_window) = app.get_webview_window(STARTUP_WINDOW) {
+        if startup_window.is_visible().unwrap_or_default() {
+            platform::hide_startup_window(&startup_window);
         }
     }
 }

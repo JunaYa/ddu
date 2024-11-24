@@ -32,3 +32,14 @@ pub fn show_setting_window(window: &WebviewWindow) {
 pub fn hide_setting_window(window: &WebviewWindow) {
     let _ = window.minimize();
 }
+
+pub fn show_startup_window(window: &WebviewWindow) {
+    let _ = window.show();
+    window::center_position(window);
+    let _ = window.set_focus();
+    let _ = window.unminimize();
+}
+
+pub fn hide_startup_window(window: &WebviewWindow) {
+    let _ = window.minimize();
+}

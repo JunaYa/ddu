@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { homeDir } from '@tauri-apps/api/path'
 import { open } from '@tauri-apps/plugin-dialog'
-import { defineEmits, ref } from 'vue'
+import { ref } from 'vue'
 import Button from '~/components/Button.vue'
 
 const props = defineProps<{
