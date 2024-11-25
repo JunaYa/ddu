@@ -31,7 +31,7 @@ onMounted(async () => {
       Ddu 版本: V{{ appVersion }}
     </div>
     <div v-if="!hasAccessibilityPermissions" class="mt-8 flex flex-col items-center justify-center gap-2">
-      <div class="text-secondary text-base">
+      <div class="text-base text-secondary">
         请授予 Ddu 截屏功能权限
       </div>
       <Button class="btn-solid" anim @click="openScreenCapturePreferences">

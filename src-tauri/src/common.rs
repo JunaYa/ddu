@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
-use tauri::Manager;
+use image::ImageReader;
+use tauri::{image::Image, Manager};
+use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_store::StoreExt;
 use tracing::info;
 
@@ -45,4 +47,36 @@ pub fn get_images_dir(app_handle: &tauri::AppHandle, path: String) -> Result<Pat
     // let output_path = images_dir.join(&filename);
 
     Ok(images_dir)
+}
+
+pub async fn copy_picture_to_clipboard(
+    app_handle: tauri::AppHandle,
+    path: String,
+) -> Result<(), String> {
+    use std::path::Path;
+
+    // Validate file exists
+    let path = Path::new(&path);
+    if !path.exists() {
+        return Err("Image file does not exist".to_string());
+    }
+
+    let img = ImageReader::open(&path)
+        .map_err(|e| e.to_string())?
+        .decode()
+        .map_err(|e| e.to_string())?;
+
+    let rgba = img.into_rgba8();
+    let width = rgba.width() as u32;
+    let height = rgba.height() as u32;
+    let rgba_data = rgba.into_raw();
+    let img = Image::new(&rgba_data, width, height);
+
+    // Copy to clipboard
+    app_handle
+        .clipboard()
+        .write_image(&img)
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }

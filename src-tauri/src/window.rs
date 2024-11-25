@@ -1,4 +1,4 @@
-use tauri::{window::Color, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
+use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
 use tracing::info;
 
