@@ -18,8 +18,6 @@ pub fn run() {
             #[cfg(desktop)]
             configure_autostart(app);
 
-            window::show_startup_window(&app.handle());
-
             #[cfg(desktop)]
             let _ = global_shortcut::register_global_shortcut(app);
 
@@ -36,6 +34,15 @@ pub fn run() {
                 "screenshot_path".to_string(),
                 json!({ "value": app_local_data.to_string_lossy() }),
             );
+
+            // check if first run
+            let value = store
+                .get("first_run")
+                .unwrap_or_else(|| json!({ "value": false }));
+            if value.is_null() {
+                store.set("first_run".to_string(), json!({ "value": true }));
+                window::show_startup_window(&app.handle());
+            }
 
             Ok(())
         })
