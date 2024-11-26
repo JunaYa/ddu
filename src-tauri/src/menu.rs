@@ -148,6 +148,7 @@ pub fn get_app_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {
 }
 
 fn handle_tray_icon_events(_tray: &TrayIcon, event: TrayIconEvent) {
+    tauri_plugin_positioner::on_tray_event(_tray.app_handle(), &event);
     if let TrayIconEvent::DoubleClick { .. } = event {
         info!("Double click");
     }

@@ -93,10 +93,10 @@ pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
             unsafe {
                 let bg_color = NSColor::colorWithRed_green_blue_alpha_(
                     nil,
-                    50.0 / 255.0,
-                    158.0 / 255.0,
-                    163.5 / 255.0,
-                    0.5,
+                    33.0 / 255.0,
+                    54.0 / 255.0,
+                    201.0 / 255.0,
+                    0.1,
                 );
                 ns_window.setBackgroundColor_(bg_color);
             }
@@ -131,10 +131,10 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
             unsafe {
                 let bg_color = NSColor::colorWithRed_green_blue_alpha_(
                     nil,
-                    50.0 / 255.0,
-                    158.0 / 255.0,
-                    163.5 / 255.0,
-                    0.5,
+                    33.0 / 255.0,
+                    54.0 / 255.0,
+                    201.0 / 255.0,
+                    0.1,
                 );
                 ns_window.setBackgroundColor_(bg_color);
             }
@@ -171,10 +171,10 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
 
                 let bg_color = NSColor::colorWithRed_green_blue_alpha_(
                     nil,
-                    50.0 / 255.0,
-                    158.0 / 255.0,
-                    163.5 / 255.0,
-                    0.5,
+                    33.0 / 255.0,
+                    54.0 / 255.0,
+                    201.0 / 255.0,
+                    0.0,
                 );
                 ns_window.setBackgroundColor_(bg_color);
             }
@@ -211,10 +211,10 @@ pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
             unsafe {
                 let bg_color = NSColor::colorWithRed_green_blue_alpha_(
                     nil,
-                    50.0 / 255.0,
-                    158.0 / 255.0,
-                    163.5 / 255.0,
-                    0.5,
+                    33.0 / 255.0,
+                    54.0 / 255.0,
+                    201.0 / 255.0,
+                    0.1,
                 );
                 ns_window.setBackgroundColor_(bg_color);
             }

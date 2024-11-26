@@ -10,6 +10,8 @@
     "core:event:allow-emit",
     "core:event:allow-emit-to",
     "core:event:allow-listen",
-    "core:event:allow-unlisten"
+    "core:event:allow-unlisten",
+    "positioner:allow-move-window",
+    "positioner:allow-set-tray-icon-state"
   ]
 }
