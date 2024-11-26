@@ -1,11 +1,11 @@
-use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
+use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 use tracing::info;
 
 use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW, STARTUP_WINDOW};
 use crate::platform;
 
-fn find_monitor(window: &WebviewWindow) -> Option<Monitor> {
+pub fn find_monitor(window: &WebviewWindow) -> Option<Monitor> {
     if let Ok(Some(mon)) = window.primary_monitor() {
         Some(mon)
     } else if let Ok(Some(mon)) = window.current_monitor() {
@@ -226,6 +226,12 @@ pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
 pub fn show_preview_window(app: &AppHandle) -> WebviewWindow {
     let window = get_preview_window(app);
     platform::show_preview_window(&window);
+    window
+}
+
+pub fn update_preview_window(app: &AppHandle) -> WebviewWindow {
+    let window = get_preview_window(app);
+    platform::update_preview_window(&window);
     window
 }
 

@@ -13,6 +13,7 @@ mod window;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             #[cfg(desktop)]
@@ -62,6 +63,7 @@ pub fn run() {
             cmd::xcap_monitor,
             cmd::show_preview_window,
             cmd::hide_preview_window,
+            cmd::update_preview_window,
             cmd::show_main_window,
             cmd::hide_main_window,
             cmd::show_setting_window,

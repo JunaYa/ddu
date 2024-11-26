@@ -22,8 +22,9 @@ function dragStart() {
   appWindow.setCursorIcon('move')
 }
 
-function onEdit() {
-  appWindow.close()
+async function onEdit() {
+  await invoke('update_preview_window')
+  // appWindow.close()
 }
 
 async function onCopy() {
@@ -46,7 +47,7 @@ onMounted(async () => {
 
 <template>
   <div ref="snapHoverableElement" class="preview cursor-move" @mousedown="dragStart">
-    <div class="h-100vh flex select-none items-center justify-center rounded-md bg-amber text-12">
+    <div class="h-100vh flex select-none items-center justify-center rounded-md text-12">
       <!-- img -->
       <PictureReview v-if="imagePath" :image-path="imagePath" />
     </div>
