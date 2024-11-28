@@ -47,6 +47,7 @@ export default defineConfig({
       'btn-outline': 'btn-base px-4 py-2 rounded text-$c-primary bg-border border border-$c-primary hover:bg-$c-primary hover:text-inverted',
       'btn-text': 'btn-base px-4 py-2 text-$c-primary bg-transparent hover:text-$c-primary-active',
       'btn-action-icon': 'btn-base hover:bg-active rounded-full h9 w9 flex items-center justify-center disabled:bg-transparent disabled:text-$c-text-secondary',
+      'btn-icon': 'btn-base p-1 aspect-square rounded-md bg-$c-primary hover:bg-$c-primary-active active:bg-$c-primary-active active:scale-98 flex items-center justify-center disabled:bg-transparent disabled:text-$c-text-secondary',
       'btn-danger': 'btn-base px-4 py-2 rounded text-white bg-$c-danger hover:bg-$c-danger-active',
 
       // input
