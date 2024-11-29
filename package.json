@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint --fix",
     "tauri": "tauri"
@@ -36,7 +36,7 @@
     "eslint": "^9.15.0",
     "typescript": "^5.7.2",
     "unocss": "^0.64.1",
-    "vite": "^5.4.11",
+    "vite": "^6.0.1",
     "vue-tsc": "^2.1.10"
   },
   "dmg": {
