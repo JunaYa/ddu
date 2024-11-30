@@ -44,7 +44,7 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <div class="flex flex-row flex-wrap gap-4">
+    <div class="grid grid-cols-3 gap-4">
       <SnapVaultItem v-for="item in list" :key="item.id" :item="item" @change="loadData" />
     </div>
   </div>

@@ -34,7 +34,7 @@ onMounted(async () => {
       <div class="text-base text-secondary">
         请授予 Ddu 截屏功能权限
       </div>
-      <Button class="btn-solid" anim @click="openScreenCapturePreferences">
+      <Button class-name="btn-solid" anim @click="openScreenCapturePreferences">
         授权
       </Button>
     </div>

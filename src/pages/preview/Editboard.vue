@@ -16,16 +16,16 @@ function handleShare() {
 
 <template>
   <div class="flex gap-1">
-    <Button class="btn-solid" anim @click="handleRevert">
+    <Button class-name="btn-solid" anim @click="handleRevert">
       Revert
     </Button>
-    <Button class="btn-solid" anim @click="handleDelete">
+    <Button class-name="btn-solid" anim @click="handleDelete">
       Delete
     </Button>
-    <Button class="btn-solid" anim @click="handleDone">
+    <Button class-name="btn-solid" anim @click="handleDone">
       Done
     </Button>
-    <Button class="btn-solid" anim @click="handleShare">
+    <Button class-name="btn-solid" anim @click="handleShare">
       Share
     </Button>
   </div>

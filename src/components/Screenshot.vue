@@ -90,19 +90,19 @@ onMounted(async () => {
 <template>
   <div>
     <div>
-      <Button class="btn-solid" @click="capture_screen">
+      <Button class-name="btn-solid" @click="capture_screen">
         Capture Screen
       </Button>
-      <Button class="btn-solid" @click="capture_select">
+      <Button class-name="btn-solid" @click="capture_select">
         Capture Select
       </Button>
-      <Button class="btn-solid" @click="capture_window">
+      <Button class-name="btn-solid" @click="capture_window">
         Capture Window
       </Button>
-      <Button class="btn-solid" @click="take_capture_screen">
+      <Button class-name="btn-solid" @click="take_capture_screen">
         Take Capture Screen
       </Button>
-      <Button class="btn-solid" @click="take_capture_monitor">
+      <Button class-name="btn-solid" @click="take_capture_monitor">
         Take Capture Monitor
       </Button>
     </div>

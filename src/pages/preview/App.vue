@@ -9,7 +9,6 @@ import { useElementHover } from '@vueuse/core'
 import { onMounted, ref } from 'vue'
 import Button from '~/components/Button.vue'
 import PictureReview from '~/components/PictureReview.vue'
-import Editboard from './Editboard.vue'
 // Import Pintura styles
 import '@pqina/pintura/pintura.css'
 
@@ -63,11 +62,11 @@ onMounted(async () => {
 
 <template>
   <div ref="snapHoverableElement" :class="`preview ${!isEdit ? 'cursor-move' : ''}`" @mousedown="dragStart">
-    <Editboard v-if="isEdit" />
     <div v-if="isEdit && imagePath" style="height: 70vh">
       <PinturaEditor
         v-bind="getEditorDefaults()"
         :src="imageSrc"
+        :imageCropAspectRatio="1"
       />
     </div>
     <div v-if="!isEdit" class="h-100vh flex select-none items-center justify-center rounded-md text-12">
@@ -75,13 +74,13 @@ onMounted(async () => {
       <PictureReview v-if="imagePath" :image-path="imagePath" />
     </div>
     <div v-if="isHovered && !isEdit" class="absolute bottom-0 left-0 right-0 top-0 flex items-center justify-around bg-#0000002F">
-      <Button class="btn-solid" :anim="true" @click="onEdit">
+      <Button class-name="btn-solid" :anim="true" @click="onEdit">
         Edit
       </Button>
-      <Button class="btn-solid" :anim="true" @click="onCopy">
+      <Button class-name="btn-solid" :anim="true" @click="onCopy">
         Copy
       </Button>
-      <Button class="btn-solid" :anim="true" @click="onSave">
+      <Button class-name="btn-solid" :anim="true" @click="onSave">
         Save
       </Button>
     </div>

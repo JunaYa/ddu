@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { defineEmits, defineProps, ref } from 'vue'
 
 const props = defineProps<{
-  class?: string
+  className?: string
   anim?: boolean
   onClick?: () => void
 }>()
@@ -22,7 +22,7 @@ function onClick() {
 </script>
 
 <template>
-  <button :class="`${animate ? 'animate' : ''} ${props.class}`" type="button" @animationend="animate = false" @click="onClick">
+  <button :class="`${animate ? 'animate' : ''} ${props.className}`" type="button" @animationend="animate = false" @click="onClick">
     <slot />
   </button>
 </template>
