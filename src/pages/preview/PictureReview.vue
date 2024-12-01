@@ -57,15 +57,23 @@ onMounted(loadImage)
     </div>
 
     <!-- Image display -->
-    <div v-else class="h-48 w-58 flex flex-center overflow-hidden rounded-md">
-      <img
-        :src="imageUrl"
-        :alt="imagePath"
-        class="h-full w-full rounded-md object-contain"
-      >
+    <div v-else class="mac_os_bg relative h-48 w-58 flex flex-center overflow-hidden overflow-hidden rounded-md">
+      <div class="h-full w-full px-4 py-8">
+        <img
+          :src="imageUrl"
+          :alt="imagePath"
+          class="h-full w-full rounded-md object-contain"
+        >
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.mac_os_bg {
+  background-image: url(./mac_os_bg.jpg);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 </style>

@@ -8,7 +8,7 @@ import { LazyStore } from '@tauri-apps/plugin-store'
 import { useElementHover } from '@vueuse/core'
 import { onMounted, ref } from 'vue'
 import Button from '~/components/Button.vue'
-import PictureReview from '~/components/PictureReview.vue'
+import PictureReview from './PictureReview.vue'
 // Import Pintura styles
 import '@pqina/pintura/pintura.css'
 
@@ -88,6 +88,9 @@ onMounted(async () => {
 </template>
 
 <style>
+:root {
+  background-color: transparent !important;
+}
 /* bright / dark mode */
 .pintura-editor {
   --color-background: 255, 255, 255;
