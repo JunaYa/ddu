@@ -947,6 +947,7 @@ name = "ddu"
 version = "0.1.2"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "chrono",
  "cocoa 0.25.0",
  "core-foundation 0.10.0",

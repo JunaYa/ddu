@@ -71,6 +71,7 @@ pub fn run() {
             cmd::open_screen_capture_preferences,
             cmd::check_accessibility_permissions,
             cmd::copy_image_to_clipboard,
+            cmd::get_image_base64,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

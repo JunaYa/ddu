@@ -43,6 +43,7 @@ tracing = "0.1.40"
 tauri-plugin-os = "2"
 core-foundation = "0.10.0"
 libc = "0.2.164"
+base64 = "0.22.1"
 
 [features]
 default = ["custom-protocol"]

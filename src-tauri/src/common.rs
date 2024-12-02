@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use image::ImageReader;
 use tauri::{image::Image, Manager};
@@ -53,8 +53,6 @@ pub async fn copy_picture_to_clipboard(
     app_handle: tauri::AppHandle,
     path: String,
 ) -> Result<(), String> {
-    use std::path::Path;
-
     // Validate file exists
     let path = Path::new(&path);
     if !path.exists() {
@@ -79,4 +77,27 @@ pub async fn copy_picture_to_clipboard(
         .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+pub async fn get_image_base64_by_path(path: String) -> Result<String, String> {
+    use base64::{
+        alphabet,
+        engine::{self, general_purpose},
+        Engine as _,
+    };
+    // Validate file exists
+    let path = Path::new(&path);
+    if !path.exists() {
+        return Err("Image file does not exist".to_string());
+    }
+
+    let img = ImageReader::open(&path)
+        .map_err(|e| e.to_string())?
+        .decode()
+        .map_err(|e| e.to_string())?;
+
+    // Convert to base64 string
+    let b64 = general_purpose::STANDARD.encode(img.as_bytes());
+
+    Ok(b64)
 }
