@@ -5,7 +5,7 @@ import { useElementHover } from '@vueuse/core'
 import { ref } from 'vue'
 import Button from '~/components/Button.vue'
 import FileInfo from './FileInfo.vue'
-import PictureReview from './PictureReview.vue'
+import PictureReview from '~/pages/preview/PictureReview.vue'
 
 defineProps<{
   item: { id: string, image: string }
