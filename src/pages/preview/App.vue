@@ -11,7 +11,6 @@ import Button from '~/components/Button.vue'
 import PictureReview from './PictureReview.vue'
 // Import Pintura styles
 import '@pqina/pintura/pintura.css'
-import { getChatCompletion } from '~/api'
 
 const store = new LazyStore('settings.json')
 
@@ -53,17 +52,6 @@ function onSave() {
   appWindow.close()
 }
 
-async function getImageAnalysis() {
-  // get image base64
-  const imageBase64 = await invoke('get_image_base64', {
-    path: imagePath.value,
-  })
-  console.log("imageBase64", imageBase64)
-  const imageUrl = `data:image/jpeg;base64,${imageBase64}`
-  const response = await getChatCompletion(imageUrl)
-  console.log('response', response)
-}
-
 onMounted(async () => {
   const val = await store.get<{ value: string }>('screenshot_path')
   appWindow.listen<string>('image-prepared', (event: any) => {
@@ -95,9 +83,6 @@ onMounted(async () => {
       </Button>
       <Button class-name="btn-solid" :anim="true" @click="onSave">
         Save
-      </Button>
-      <Button class-name="btn-solid" :anim="true" @click="getImageAnalysis">
-        Fetch
       </Button>
     </div>
   </div>
