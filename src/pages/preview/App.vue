@@ -60,7 +60,6 @@ onMounted(async () => {
 <template>
   <div ref="snapHoverableElement" :class="`preview ${!isEdit ? 'cursor-move' : ''}`" @mousedown="dragStart">
     <div class="h-100vh flex select-none items-center justify-center rounded-md text-12">
-      <!-- img -->
       <PictureReview v-if="imagePath" :image-path="imagePath" />
     </div>
     <div v-if="isHovered && !isEdit" class="absolute bottom-0 left-0 right-0 top-0 flex items-center justify-around bg-#0000002F">
