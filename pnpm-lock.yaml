@@ -8,12 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@pqina/pintura':
-        specifier: ^8.90.0
-        version: 8.90.0
-      '@pqina/vue-pintura':
-        specifier: ^9.0.1
-        version: 9.0.1(@pqina/pintura@8.90.0)(vue@3.5.13(typescript@5.6.2))
       '@tauri-apps/api':
         specifier: ^2.1.1
         version: 2.1.1
@@ -581,15 +575,6 @@ packages:
 
   '@polka/url@1.0.0-next.28':
     resolution: {integrity: sha512-8LduaNlMZGwdZ6qWrKlfa+2M4gahzFkprZiAt2TF8uS0qQgBizKXpXURqvTJ4WtmupWxaLqjRb2UCTe72mu+Aw==}
-
-  '@pqina/pintura@8.90.0':
-    resolution: {integrity: sha512-JxPt9Zh+KOV3pNZkPgN+cgI9pWHMwMuJWFrPV5t9/WGgy7ZXFNkVLHfjyeTq1EDZZoo9l41bEC7/weNuQNc2Qg==}
-
-  '@pqina/vue-pintura@9.0.1':
-    resolution: {integrity: sha512-D8qvMp0DWfjJV07y/FjfdPNOgg/ouFZhI1v7zAUAp4osNMcNfycz79WzOg8KSN50eAqiE1ybIOWZ38SiZClBIQ==}
-    peerDependencies:
-      '@pqina/pintura': ^8.x
-      vue: 2.x - 3.x
 
   '@rollup/pluginutils@5.1.3':
     resolution: {integrity: sha512-Pnsb6f32CD2W3uCaLZIzDmeFyQ2b8UWMFI7xtwUezpcGBDVDW6y9XgAWIlARiGAo6eNF5FK5aQTr0LFyNyqq5A==}
@@ -2763,13 +2748,6 @@ snapshots:
   '@pkgr/core@0.1.1': {}
 
   '@polka/url@1.0.0-next.28': {}
-
-  '@pqina/pintura@8.90.0': {}
-
-  '@pqina/vue-pintura@9.0.1(@pqina/pintura@8.90.0)(vue@3.5.13(typescript@5.6.2))':
-    dependencies:
-      '@pqina/pintura': 8.90.0
-      vue: 3.5.13(typescript@5.6.2)
 
   '@rollup/pluginutils@5.1.3(rollup@4.27.4)':
     dependencies:
