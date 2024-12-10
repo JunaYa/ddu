@@ -4,14 +4,7 @@ import antfu from '@antfu/eslint-config'
 export default await antfu(
   {
     unocss: true,
-    vue: {
-      overrides: {
-        'vue/no-restricted-syntax': ['error', {
-          selector: 'VElement[name=\'a\']',
-          message: 'Use NuxtLink instead.',
-        }],
-      },
-    },
+    vue: {},
     ignores: [
       'public/**',
       'src-tauri/**',
