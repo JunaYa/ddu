@@ -169,13 +169,21 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
                 &app,
                 "images".to_string(),
             ));
-            window::hide_main_window(app);
-            let window = window::show_preview_window(app);
-            // notify preview window payload
-            tauri::async_runtime::spawn(async move {
-                sleep(Duration::from_millis(500));
-                window.emit("image-prepared", filename).unwrap();
-            });
+            match filename {
+                Ok(name) => {
+                    if name == "NoExist" {
+                        return;
+                    }
+                    window::hide_main_window(app);
+                    let window = window::show_preview_window(app);
+                    // notify preview window payload
+                    tauri::async_runtime::spawn(async move {
+                        sleep(Duration::from_millis(500));
+                        window.emit("image-prepared", name).unwrap();
+                    });
+                }
+                Err(_) => return
+            }
         }
         MenuID::CAPTURE_SELECT => {
             info!("Capture Select");
@@ -183,12 +191,20 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
                 &app,
                 "images".to_string(),
             ));
-            window::hide_main_window(app);
-            let window = window::show_preview_window(app);
-            tauri::async_runtime::spawn(async move {
-                sleep(Duration::from_millis(500));
-                window.emit("image-prepared", filename).unwrap();
-            });
+            match filename {
+                Ok(name) => {
+                    if name == "NoExist" {
+                        return;
+                    }
+                    window::hide_main_window(app);
+                    let window = window::show_preview_window(app);
+                    tauri::async_runtime::spawn(async move {
+                        sleep(Duration::from_millis(500));
+                        window.emit("image-prepared", name).unwrap();
+                    });
+                }
+                Err(_) => return
+            }   
         }
         MenuID::CAPTURE_WINDOW => {
             info!("Capture Window");
@@ -196,12 +212,20 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
                 &app,
                 "images".to_string(),
             ));
-            window::hide_main_window(app);
-            let window = window::show_preview_window(app);
-            tauri::async_runtime::spawn(async move {
-                sleep(Duration::from_millis(500));
-                window.emit("image-prepared", filename).unwrap();
-            });
+            match filename {
+                Ok(name) => {
+                    if name == "NoExist" {
+                        return;
+                    }
+                    window::hide_main_window(app);
+                    let window = window::show_preview_window(app);
+                    tauri::async_runtime::spawn(async move {
+                        sleep(Duration::from_millis(500));
+                        window.emit("image-prepared", name).unwrap();
+                    });
+                }
+                Err(_) => return
+            }
         }
         MenuID::SHOW_MAIN_WINDOW => {
             info!("Show Home");
