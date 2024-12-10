@@ -49,12 +49,20 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                             &app,
                             "images".to_string(),
                         ));
-                        window::hide_main_window(&app);
-                        let window = window::show_preview_window(&app);
-                        tauri::async_runtime::spawn(async move {
-                            sleep(Duration::from_millis(500));
-                            window.emit("image-prepared", filename).unwrap();
-                        });
+                        match filename {
+                            Ok(name) => {
+                                if name == "NoExist" {
+                                    return;
+                                }
+                                window::hide_main_window(&app);
+                                let window = window::show_preview_window(&app);
+                                tauri::async_runtime::spawn(async move {
+                                sleep(Duration::from_millis(500));
+                                    window.emit("image-prepared", name).unwrap();
+                                });
+                            }
+                            Err(_) => return
+                        }
                     }
                     ShortcutState::Released => {
                         info!("Capture Screen Released!");
@@ -67,12 +75,20 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                             &app,
                             "images".to_string(),
                         ));
-                        window::hide_main_window(app);
-                        let window = window::show_preview_window(app);
-                        tauri::async_runtime::spawn(async move {
-                            sleep(Duration::from_millis(500));
-                            window.emit("image-prepared", filename).unwrap();
-                        });
+                        match filename {
+                            Ok(name) => {
+                                if name == "NoExist" {
+                                    return;
+                                }
+                                window::hide_main_window(&app);
+                                let window = window::show_preview_window(&app);
+                                tauri::async_runtime::spawn(async move {
+                                    sleep(Duration::from_millis(500));
+                                    window.emit("image-prepared", name).unwrap();
+                                });
+                            }
+                            Err(_) => return
+                        }
                     }
                     ShortcutState::Released => {
                         info!("Capture Select Released!");
@@ -85,12 +101,20 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                             &app,
                             "images".to_string(),
                         ));
-                        window::hide_main_window(app);
-                        let window = window::show_preview_window(app);
-                        tauri::async_runtime::spawn(async move {
-                            sleep(Duration::from_millis(500));
-                            window.emit("image-prepared", filename).unwrap();
-                        });
+                        match filename {
+                            Ok(name) => {
+                                if name == "NoExist" {
+                                    return;
+                                }
+                                window::hide_main_window(&app);
+                                let window = window::show_preview_window(&app);
+                                tauri::async_runtime::spawn(async move {
+                                    sleep(Duration::from_millis(500));
+                                    window.emit("image-prepared", name).unwrap();
+                                });
+                            }
+                            Err(_) => return
+                        }
                     }
                     ShortcutState::Released => {
                         info!("Capture Window Released!");

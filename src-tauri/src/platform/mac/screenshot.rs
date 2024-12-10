@@ -1,7 +1,5 @@
 use std::{
-    process::Command,
-    thread,
-    time::{Duration, Instant},
+    path::Path, process::Command, thread, time::{Duration, Instant}
 };
 
 use chrono::Local;
@@ -47,6 +45,12 @@ pub async fn capture_select(app_handle: &tauri::AppHandle, path: String) -> Resu
         .output()
         .map_err(|e| e.to_string())?;
 
+    // check file exist
+    if !Path::new(&output_path).exists() {
+        info!("no exist: {:?}", output_path);
+        return Err("NoExist".to_string());
+    }
+
     info!("capture_select 运行耗时: {:?}", start.elapsed());
     Ok(filename)
 }
@@ -82,10 +86,6 @@ pub async fn capture_window(app_handle: &tauri::AppHandle, path: String) -> Resu
         ])
         .output()
         .map_err(|e| e.to_string())?;
-
-    if !output.status.success() {
-        info!("screencapture -wx 失败: {:?}", output.status);
-    }
 
     info!("capture_window 运行耗时: {:?}", start.elapsed());
 

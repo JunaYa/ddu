@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { PinturaEditor } from '@pqina/vue-pintura'
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { readFile } from '@tauri-apps/plugin-fs'
@@ -52,7 +51,7 @@ function onSave() {
 onMounted(async () => {
   const val = await store.get<{ value: string }>('screenshot_path')
   appWindow.listen<string>('image-prepared', (event: any) => {
-    imagePath.value = `${val?.value}/images/${event.payload.Ok}`
+    imagePath.value = `${val?.value}/images/${event.payload}`
   })
 })
 </script>
