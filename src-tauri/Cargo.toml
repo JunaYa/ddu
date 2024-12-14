@@ -53,6 +53,7 @@ custom-protocol = ["tauri/custom-protocol"]
 tauri-plugin-autostart = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-positioner = { version = "2.0.0", features = ["tray-icon"] }
+tauri-plugin-window-state = "2"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 cocoa = "0.25"

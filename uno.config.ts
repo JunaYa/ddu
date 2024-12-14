@@ -65,6 +65,7 @@ export default defineConfig({
       'flex-center': 'items-center justify-center',
       'flex-v-center': 'items-center',
       'flex-h-center': 'justify-center',
+      'flex-row-start': 'flex items-center justify-start',
       'bg-hover-overflow': 'relative z-0 transition-colors duration-250 after-content-empty after:(absolute inset--4px bg-transparent rounded-full z--1 transition-colors duration-250) hover:after:(bg-active)',
 
       'timeline-title-style': 'text-primary text-lg font-bold',
