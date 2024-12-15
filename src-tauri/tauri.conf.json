@@ -13,18 +13,7 @@
     "withGlobalTauri": true,
     "macOSPrivateApi": true,
     "windows": [
-      {
-        "title": "Setting",
-        "label": "setting",
-        "url": "/setting",
-        "minimizable": false,
-        "maximizable": false,
-        "fullscreen": false,
-        "skipTaskbar": true,
-        "visible": false,
-        "height": 400,
-        "width": 600
-    }
+      
     ],
     "security": {
       "csp": {

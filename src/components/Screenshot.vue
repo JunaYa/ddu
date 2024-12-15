@@ -4,7 +4,7 @@ import { BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs'
 import { LazyStore } from '@tauri-apps/plugin-store'
 import { onMounted } from 'vue'
 import Button from '~/components/Button.vue'
-import SnapVault from './SnapVault.vue'
+import SnapVault from '../pages/main/components/SnapVault.vue'
 
 const store = new LazyStore('settings.json')
 
