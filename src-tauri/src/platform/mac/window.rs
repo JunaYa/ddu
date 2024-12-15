@@ -44,6 +44,7 @@ pub fn hide_preview_window(window: &WebviewWindow) {
 pub fn show_main_window(window: &WebviewWindow) {
     let _ = window.show();
     window::center_position(window);
+    let _ = window.set_focus();
     let _ = window.unminimize();
 }
 
@@ -54,6 +55,7 @@ pub fn hide_main_window(window: &WebviewWindow) {
 pub fn show_setting_window(window: &WebviewWindow) {
     let _ = window.show();
     window::center_position(window);
+    let _ = window.set_focus();
     let _ = window.unminimize();
 }
 
