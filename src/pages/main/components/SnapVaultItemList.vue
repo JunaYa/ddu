@@ -35,8 +35,8 @@ async function handleDelete(path: string) {
 </script>
 
 <template>
-  <div ref="snapHoverableElement" class="relative rounded-md bg-card p-2">
-    <PictureReview :image-path="item.image" />
+  <div ref="snapHoverableElement" class="flex flex-row items-center relative rounded-md bg-card p-2">
+    <PictureReview :image-path="item.image" width="100" height="60" />
     <div v-if="isHovered" class="absolute right-3 top-3 z-11 flex flex-row gap-2">
       <Button class-name="btn-action-icon" anim @click="() => handleDelete(item.image)">
         <i class="h-4 w-4">
@@ -44,6 +44,6 @@ async function handleDelete(path: string) {
         </i>
       </Button>
     </div>
-    <FileInfo :path="item.image" show-label />
+    <FileInfo :path="item.image" class-name="ml-8 flex flex-1 flex-row items-center justify-between gap-2" />
   </div>
 </template>
