@@ -6,6 +6,8 @@ import { onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   imagePath: string
+  width?: number
+  height?: number
 }>()
 
 const imageUrl = ref<string>('')
@@ -57,11 +59,15 @@ onMounted(loadImage)
     </div>
 
     <!-- Image display -->
-    <div v-else class="mac_os_bg relative h-48 w-58 flex flex-center overflow-hidden overflow-hidden rounded-md">
+    <div v-else class="mac_os_bg relative h-48 w-58 flex flex-center overflow-hidden overflow-hidden rounded-md"
+      :style="{ width: width ? `${width}px` : 'auto', height: height ? `${height}px` : 'auto' }"
+    >
       <div class="h-full w-full px-4 py-8">
         <img
           :src="imageUrl"
           :alt="imagePath"
+          :width="width"
+          :height="height"
           class="h-full w-full rounded-md object-contain"
         >
       </div>

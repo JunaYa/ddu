@@ -4,10 +4,12 @@ import { LazyStore } from '@tauri-apps/plugin-store'
 import { onMounted, ref } from 'vue'
 import { FileSizeFormatter } from '~/utils/file'
 import SnapVaultItem from './SnapVaultItem.vue'
-
+import SnapVaultItemList from './SnapVaultItemList.vue'
 const store = new LazyStore('settings.json')
 
 const list = ref<{ id: string, image: string }[]>([])
+
+const displayMode = ref<'list' | 'grid'>('list')
 
 const isAscending = ref(false)
 
@@ -42,9 +44,19 @@ onMounted(async () => {
             <svg v-show="!isAscending" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9l3-3l3 3" /><rect x="5" y="5" width="5" height="5" rx=".5" /><rect x="5" y="14" width="5" height="5" rx=".5" /><path d="M17 6v12" /></g></svg>
           </i>
         </div>
+        <div class="flex flex-row items-center justify-center">
+          <span class="mx-1 text-sm text-base">Display</span>
+          <i class="h-5 w-5 cursor-pointer text-primary" @click="displayMode = displayMode === 'list' ? 'grid' : 'list'">
+            <svg v-if="displayMode === 'list'" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M10 6h18v2H10z" fill="currentColor"></path><path d="M10 24h18v2H10z" fill="currentColor"></path><path d="M10 15h18v2H10z" fill="currentColor"></path><path d="M4 15h2v2H4z" fill="currentColor"></path><path d="M4 6h2v2H4z" fill="currentColor"></path><path d="M4 24h2v2H4z" fill="currentColor"></path></svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M12 4H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 8H6V6h6z" fill="currentColor"></path><path d="M26 4h-6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 8h-6V6h6z" fill="currentColor"></path><path d="M12 18H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2zm0 8H6v-6h6z" fill="currentColor"></path><path d="M26 18h-6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2zm0 8h-6v-6h6z" fill="currentColor"></path></svg>
+          </i>
+        </div>
       </div>
     </div>
-    <div class="grid grid-cols-3 gap-4">
+    <div v-if="displayMode === 'list'" class="grid grid-cols-1 gap-4">
+      <SnapVaultItemList v-for="item in list" :key="item.id" :item="item" @change="loadData" />
+    </div>
+    <div v-else class="grid grid-cols-3 gap-4">
       <SnapVaultItem v-for="item in list" :key="item.id" :item="item" @change="loadData" />
     </div>
   </div>
