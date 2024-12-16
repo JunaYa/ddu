@@ -1,17 +1,25 @@
 <script setup lang="ts">
-import { readDir } from '@tauri-apps/plugin-fs'
+import { readDir, remove } from '@tauri-apps/plugin-fs'
 import { LazyStore } from '@tauri-apps/plugin-store'
-import { onMounted, ref } from 'vue'
+import { confirm } from '@tauri-apps/plugin-dialog'
+import { computed, onMounted, ref } from 'vue'
 import { FileSizeFormatter } from '~/utils/file'
+import Checkbox from '~/components/Checkbox.vue'
 import SnapVaultItem from './SnapVaultItem.vue'
 import SnapVaultItemList from './SnapVaultItemList.vue'
 const store = new LazyStore('settings.json')
 
-const list = ref<{ id: string, image: string }[]>([])
+const list = ref<{ id: string, image: string, checked: boolean }[]>([])
 
 const displayMode = ref<'list' | 'grid'>('list')
 
 const isAscending = ref(false)
+
+const deleteLoading = ref(false)
+
+const isCheckedAll = computed(() => list.value.every(item => item.checked))
+
+const hasChecked = computed(() => list.value.some(item => item.checked))
 
 async function loadData() {
   const val = await store.get<{ value: string }>('screenshot_path')
@@ -22,6 +30,34 @@ async function loadData() {
     id: entry.name,
     image: `${val?.value}/images/${entry.name}`,
   }))
+}
+
+function onChangeAll(checked: boolean) {
+  list.value = list.value.map(item => ({ ...item, checked }))
+}
+
+function onChange(index: number, checked: boolean) {
+  console.log('onChange', index, checked)
+  let newList = list.value.slice()
+  newList[index].checked = checked
+  list.value = newList
+}
+
+async function handleDelete() {
+  if (deleteLoading.value) return
+  deleteLoading.value = true
+  const newList = list.value.filter(item => !item.checked)
+  const confirmation = await confirm(
+    `是否确认删除 ${ list.value.length } 个文件?`,
+    { title: '确认删除', kind: 'warning' },
+  )
+  if (confirmation) {
+    for (const item of list.value) {
+      await remove(item.image)
+    }
+  }
+  deleteLoading.value = false
+
 }
 
 onMounted(async () => {
@@ -53,8 +89,19 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+    <div class="flex flex-row items-center justify-start gap-4">
+      <div class="flex flex-row items-center justify-center gap-2"> 
+        <span>全部</span>
+        <Checkbox :checked="isCheckedAll" @change="onChangeAll" />
+      </div>
+      <div v-if="hasChecked" class="flex flex-row items-center justify-center gap-2" @click="handleDelete">
+        <i class="h-6 w-6 cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M12 12h2v12h-2z" fill="currentColor" /><path d="M18 12h2v12h-2z" fill="currentColor" /><path d="M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z" fill="#232323" /><path d="M12 2h8v2h-8z" fill="#232323" /></svg>
+        </i>
+      </div>
+    </div>
     <div v-if="displayMode === 'list'" class="grid grid-cols-1 gap-4">
-      <SnapVaultItemList v-for="item in list" :key="item.id" :item="item" @change="loadData" />
+      <SnapVaultItemList v-for="(item, index) in list" :key="item.id" :item="item" @remove="loadData" @change="(val: boolean) => onChange(index, val)" />
     </div>
     <div v-else class="grid grid-cols-3 gap-4">
       <SnapVaultItem v-for="item in list" :key="item.id" :item="item" @change="loadData" />
