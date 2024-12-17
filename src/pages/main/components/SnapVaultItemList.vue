@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { confirm } from '@tauri-apps/plugin-dialog'
 import { remove } from '@tauri-apps/plugin-fs'
-import { useElementHover } from '@vueuse/core'
 import { ref } from 'vue'
 import Button from '~/components/Button.vue'
 import Checkbox from '~/components/Checkbox.vue'
@@ -13,12 +12,9 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'change'): void
+  (e: 'change', val: boolean): void
   (e: 'remove'): void
 }>()
-
-const snapHoverableElement = ref()
-const isHovered = useElementHover(snapHoverableElement)
 
 const deleteLoading = ref(false)
 
@@ -37,11 +33,11 @@ async function handleDelete(path: string) {
 </script>
 
 <template>
-  <div ref="snapHoverableElement" class="flex flex-row items-center justify-between gap-2 relative rounded-md bg-card p-2">
+  <div class="flex flex-row items-center justify-between gap-2 relative rounded-md bg-card p-2">
     <div class="flex flex-row items-center justify-center w-8 h-8">
-      <Checkbox :checked="item.checked" @change="() => emit('change', !checked)" />
+      <Checkbox :checked="item.checked" @change="() => emit('change', !item.checked)" />
     </div>
-    <PictureReview :image-path="item.image" width="100" height="60" />
+    <PictureReview :image-path="item.image" :width="100" :height="60" />
     <FileInfo :path="item.image" class-name="ml-8 flex flex-1 flex-row items-center justify-between gap-2" />
     <div class="flex flex-row items-center justify-center gap-2">
       <Button class-name="btn-action-icon" anim @click="() => handleDelete(item.image)">
