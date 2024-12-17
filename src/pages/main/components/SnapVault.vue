@@ -17,7 +17,7 @@ const isAscending = ref(false)
 
 const deleteLoading = ref(false)
 
-const isCheckedAll = computed(() => list.value.every(item => item.checked))
+const isCheckedAll = computed(() => list.value.length > 0 && list.value.every(item => item.checked))
 
 const hasChecked = computed(() => list.value.some(item => item.checked))
 
@@ -47,7 +47,7 @@ function onChange(index: number, checked: boolean) {
 async function handleDelete() {
   if (deleteLoading.value) return
   deleteLoading.value = true
-  const newList = list.value.filter(item => !item.checked)
+  const newList = list.value.filter(item => item.checked)
   const confirmation = await confirm(
     `是否确认删除 ${ newList.length } 个文件?`,
     { title: '确认删除', kind: 'warning' },
@@ -56,6 +56,7 @@ async function handleDelete() {
     for (const item of newList) {
       await remove(item.image)
     }
+    await loadData()
   }
   deleteLoading.value = false
 
@@ -90,10 +91,10 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <div class="flex flex-row items-center justify-start gap-4">
+    <div class="flex flex-row items-center justify-start gap-4 my-4">
       <div class="flex flex-row items-center justify-center gap-2"> 
         <span>全部</span>
-        <Checkbox :checked="isCheckedAll" @change="onChangeAll" />
+        <Checkbox :checked="isCheckedAll" :some-checked="hasChecked && !isCheckedAll" :disabled="list.length === 0" @change="onChangeAll" />
       </div>
       <div v-if="hasChecked" class="flex flex-row items-center justify-center gap-2" @click="handleDelete">
         <i class="h-6 w-6 cursor-pointer">
