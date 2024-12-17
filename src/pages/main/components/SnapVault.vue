@@ -29,6 +29,7 @@ async function loadData() {
   list.value = entries.filter(entry => entry.isFile && FileSizeFormatter.isPictureFile(entry.name)).map(entry => ({
     id: entry.name,
     image: `${val?.value}/images/${entry.name}`,
+    checked: false,
   }))
 }
 
@@ -48,11 +49,11 @@ async function handleDelete() {
   deleteLoading.value = true
   const newList = list.value.filter(item => !item.checked)
   const confirmation = await confirm(
-    `是否确认删除 ${ list.value.length } 个文件?`,
+    `是否确认删除 ${ newList.length } 个文件?`,
     { title: '确认删除', kind: 'warning' },
   )
   if (confirmation) {
-    for (const item of list.value) {
+    for (const item of newList) {
       await remove(item.image)
     }
   }
