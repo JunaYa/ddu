@@ -1,6 +1,6 @@
 [package]
 name = "ddu"
-version = "0.1.8"
+version = "0.1.9"
 description = "Ddu screenshot tool"
 authors = [ "ayac3j@gmail.com" ]
 edition = "2021"
