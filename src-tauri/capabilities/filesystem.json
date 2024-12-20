@@ -12,7 +12,7 @@
     "fs:allow-write",
     {
       "identifier": "fs:allow-exists",
-      "allow": [{ "path": "$APPDATA/*" }, { "path": "$HOME/*" } ]
+      "allow": [{ "path": "$APPDATA/*" }, { "path": "$HOME/*" }]
     },
     {
       "identifier": "fs:allow-mkdir",
