@@ -6,7 +6,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { FileSizeFormatter } from '~/utils/file'
 import Checkbox from '~/components/Checkbox.vue'
 import SnapVaultItem from './SnapVaultItem.vue'
+import Empty from './Empty.vue'
 import SnapVaultItemList from './SnapVaultItemList.vue'
+
 const store = new LazyStore('settings.json')
 
 const list = ref<{ id: string, image: string, checked: boolean, datetime: Date }[]>([])
@@ -113,11 +115,14 @@ onMounted(async () => {
         </i>
       </div>
     </div>
-    <div v-if="displayMode === 'list'" class="grid grid-cols-1 gap-4">
-      <SnapVaultItemList v-for="(item, index) in list" :key="item.id" :item="item" @remove="loadData" @change="(val: boolean) => onChange(index, val)" />
+    <div v-if="list.length > 0" class="flex flex-row items-center justify-center">
+      <div v-if="displayMode === 'list'" class="grid grid-cols-1 gap-4">
+        <SnapVaultItemList v-for="(item, index) in list" :key="item.id" :item="item" @remove="loadData" @change="(val: boolean) => onChange(index, val)" />
+      </div>
+        <div v-else class="grid grid-cols-3 gap-4">
+          <SnapVaultItem v-for="item in list" :key="item.id" :item="item" @change="loadData" />
+      </div>
     </div>
-    <div v-else class="grid grid-cols-3 gap-4">
-      <SnapVaultItem v-for="item in list" :key="item.id" :item="item" @change="loadData" />
-    </div>
+    <Empty v-else />
   </div>
 </template>
