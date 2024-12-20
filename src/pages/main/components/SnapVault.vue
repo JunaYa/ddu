@@ -2,14 +2,14 @@
 import { readDir, remove } from '@tauri-apps/plugin-fs'
 import { LazyStore } from '@tauri-apps/plugin-store'
 import { confirm } from '@tauri-apps/plugin-dialog'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { FileSizeFormatter } from '~/utils/file'
 import Checkbox from '~/components/Checkbox.vue'
 import SnapVaultItem from './SnapVaultItem.vue'
 import SnapVaultItemList from './SnapVaultItemList.vue'
 const store = new LazyStore('settings.json')
 
-const list = ref<{ id: string, image: string, checked: boolean }[]>([])
+const list = ref<{ id: string, image: string, checked: boolean, datetime: Date }[]>([])
 
 const displayMode = ref<'list' | 'grid'>('list')
 
@@ -25,20 +25,26 @@ async function loadData() {
   const val = await store.get<{ value: string }>('screenshot_path')
 
   const entries = await readDir(val?.value ? `${val?.value}/images` : '')
-
+  
   list.value = entries.filter(entry => entry.isFile && FileSizeFormatter.isPictureFile(entry.name)).map(entry => ({
     id: entry.name,
     image: `${val?.value}/images/${entry.name}`,
     checked: false,
+    datetime: new Date(parseInt(entry.name.replace(/^screenshot_|_|\.png$/g, ''))),
   }))
 }
+
+watch(isAscending, () => {
+  list.value.sort((a, b) => {
+    return isAscending.value ? a.datetime.getTime() - b.datetime.getTime() : b.datetime.getTime() - a.datetime.getTime()
+  })
+})
 
 function onChangeAll(checked: boolean) {
   list.value = list.value.map(item => ({ ...item, checked }))
 }
 
 function onChange(index: number, checked: boolean) {
-  console.log('onChange', index, checked)
   let newList = list.value.slice()
   newList[index].checked = checked
   list.value = newList
