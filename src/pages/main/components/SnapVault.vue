@@ -32,12 +32,17 @@ async function loadData() {
     checked: false,
     datetime: new Date(parseInt(entry.name.replace(/^screenshot_|_|\.png$/g, ''))),
   }))
-}
-
-watch(isAscending, () => {
   list.value.sort((a, b) => {
     return isAscending.value ? a.datetime.getTime() - b.datetime.getTime() : b.datetime.getTime() - a.datetime.getTime()
   })
+}
+
+watch(isAscending, () => {
+  if (list.value.length > 0) {
+    list.value.sort((a, b) => {
+      return isAscending.value ? a.datetime.getTime() - b.datetime.getTime() : b.datetime.getTime() - a.datetime.getTime()
+    })
+  }
 })
 
 function onChangeAll(checked: boolean) {
