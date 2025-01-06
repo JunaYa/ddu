@@ -63,7 +63,7 @@ onMounted(async () => {
     </div>
     <div v-if="isHovered && !isEdit" class="absolute bottom-0 left-0 right-0 top-0 flex items-center justify-around bg-#0000002F">
       <Button class-name="btn-solid" :anim="true" @click="onEdit">
-        Edit
+        Preview
       </Button>
       <Button class-name="btn-solid" :anim="true" @click="onCopy">
         Copy

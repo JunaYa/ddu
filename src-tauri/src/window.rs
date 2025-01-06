@@ -156,7 +156,7 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
                 .skip_taskbar(true)
                 .shadow(false)
                 .resizable(false)
-                .inner_size(240.0, 240.0);
+                .inner_size(140.0, 140.0);
 
         let window = window.build().expect("Unable to build startup window");
         #[cfg(target_os = "macos")]
