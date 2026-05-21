@@ -35,30 +35,30 @@ fn normalized(filename: &str) -> String {
 
 fn window_capture(path: PathBuf) -> Result<String, String> {
     let start = Instant::now();
-    let windows = Window::all().unwrap();
+    let windows = Window::all().map_err(|e| e.to_string())?;
 
     let mut i = 0;
     let mut filename = String::new();
     for window in windows {
-        // 最小化的窗口不能截屏
-        if window.is_minimized() {
+        if window.is_minimized().unwrap_or(false) {
             continue;
         }
 
+        let title = window.title().unwrap_or_default();
         info!(
             "Window: {:?} {:?} {:?}",
-            window.title(),
-            (window.x(), window.y(), window.width(), window.height()),
-            (window.is_minimized(), window.is_maximized())
+            title,
+            (window.x().unwrap_or(0), window.y().unwrap_or(0), window.width().unwrap_or(0), window.height().unwrap_or(0)),
+            (window.is_minimized().unwrap_or(false), window.is_maximized().unwrap_or(false))
         );
 
-        let image = window.capture_image().unwrap();
+        let image = window.capture_image().map_err(|e| e.to_string())?;
 
         filename = format!(
             "{}-{}-{}.png",
             Local::now().format("%Y%m%d_%H%M%S"),
             i,
-            normalized(window.title())
+            normalized(&title)
         );
 
         let output_path = path.join(&filename);
@@ -77,17 +77,18 @@ fn window_capture(path: PathBuf) -> Result<String, String> {
 
 fn monitor_capture(path: PathBuf) -> Result<String, String> {
     let start = Instant::now();
-    let monitors = Monitor::all().unwrap();
+    let monitors = Monitor::all().map_err(|e| e.to_string())?;
 
     let mut filename = String::new();
 
     for monitor in monitors {
-        let image = monitor.capture_image().unwrap();
+        let image = monitor.capture_image().map_err(|e| e.to_string())?;
 
+        let name = monitor.name().unwrap_or_default();
         filename = format!(
             "{}-{}.png",
             Local::now().format("%Y%m%d_%H%M%S"),
-            normalized(monitor.name())
+            normalized(&name)
         );
 
         let output_path = path.join(&filename);
