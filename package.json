@@ -24,6 +24,7 @@
     "@tauri-apps/plugin-store": "^2.4.3",
     "@tauri-apps/plugin-window-state": "^2.4.1",
     "@vueuse/core": "^14.3.0",
+    "fabric": "^6.9.1",
     "vue": "^3.5.34"
   },
   "devDependencies": {

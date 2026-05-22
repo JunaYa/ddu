@@ -1,9 +1,21 @@
 mod common;
+mod diagnostics;
+mod export;
+mod history;
+mod ocr;
+mod recording;
 mod window;
 mod screenshot;
+mod workflow;
 mod xcreenshot;
 
 pub use self::common::*;
+pub use self::diagnostics::*;
+pub use self::export::*;
+pub use self::history::*;
+pub use self::ocr::*;
+pub use self::recording::*;
 pub use self::window::*;
 pub use self::screenshot::*;
+pub use self::workflow::*;
 pub use self::xcreenshot::*;

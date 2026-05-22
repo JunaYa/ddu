@@ -114,10 +114,10 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
                 .title("Setting")
                 .minimizable(false)
                 .maximizable(false)
-                .resizable(false)
+                .resizable(true)
                 .skip_taskbar(true)
                 .fullscreen(false)
-                .inner_size(600.0, 400.0);
+                .inner_size(600.0, 620.0);
 
         let window = win_builder.build().unwrap();
 

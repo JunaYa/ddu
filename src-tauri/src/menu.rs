@@ -154,6 +154,28 @@ fn handle_tray_icon_events(_tray: &TrayIcon, event: TrayIconEvent) {
     }
 }
 
+fn handle_capture_result(app: &AppHandle, result: Result<platform::CaptureResult, String>) {
+    match result {
+        Ok(capture) => {
+            window::hide_main_window(app);
+            let window = window::show_preview_window(app);
+            let payload = serde_json::json!({
+                "filename": capture.filename,
+                "fullPath": capture.full_path,
+                "width": capture.width,
+                "height": capture.height,
+                "mode": capture.mode,
+                "capturedAt": capture.captured_at,
+            });
+            tauri::async_runtime::spawn(async move {
+                sleep(Duration::from_millis(500));
+                window.emit("image-prepared", payload).unwrap();
+            });
+        }
+        Err(_) => {}
+    }
+}
+
 fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
     let menu_id = if let Ok(menu_id) = MenuID::from_str(event.id.as_ref()) {
         menu_id
@@ -164,76 +186,26 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
     match menu_id {
         MenuID::CAPTURE_SCREEN => {
             info!("Capture Screen");
-            // 获取到 file na
-            let filename = tauri::async_runtime::block_on(platform::capture_screen(
-                &app,
-                "images".to_string(),
-            ));
-            match filename {
-                Ok(name) => {
-                    if name == "NoExist" {
-                        return;
-                    }
-                    window::hide_main_window(app);
-                    let window = window::show_preview_window(app);
-                    // notify preview window payload
-                    tauri::async_runtime::spawn(async move {
-                        sleep(Duration::from_millis(500));
-                        window.emit("image-prepared", name).unwrap();
-                    });
-                }
-                Err(_) => return
-            }
+            let result = tauri::async_runtime::block_on(platform::capture_screen(app, "images".to_string()));
+            handle_capture_result(app, result);
         }
         MenuID::CAPTURE_SELECT => {
             info!("Capture Select");
-            let filename = tauri::async_runtime::block_on(platform::capture_select(
-                &app,
-                "images".to_string(),
-            ));
-            match filename {
-                Ok(name) => {
-                    if name == "NoExist" {
-                        return;
-                    }
-                    window::hide_main_window(app);
-                    let window = window::show_preview_window(app);
-                    tauri::async_runtime::spawn(async move {
-                        sleep(Duration::from_millis(500));
-                        window.emit("image-prepared", name).unwrap();
-                    });
-                }
-                Err(_) => return
-            }   
+            let result = tauri::async_runtime::block_on(platform::capture_select(app, "images".to_string()));
+            handle_capture_result(app, result);
         }
         MenuID::CAPTURE_WINDOW => {
             info!("Capture Window");
-            let filename = tauri::async_runtime::block_on(platform::capture_window(
-                &app,
-                "images".to_string(),
-            ));
-            match filename {
-                Ok(name) => {
-                    if name == "NoExist" {
-                        return;
-                    }
-                    window::hide_main_window(app);
-                    let window = window::show_preview_window(app);
-                    tauri::async_runtime::spawn(async move {
-                        sleep(Duration::from_millis(500));
-                        window.emit("image-prepared", name).unwrap();
-                    });
-                }
-                Err(_) => return
-            }
+            let result = tauri::async_runtime::block_on(platform::capture_window(app, "images".to_string()));
+            handle_capture_result(app, result);
         }
         MenuID::SHOW_MAIN_WINDOW => {
             info!("Show Home");
-            window::show_main_window(&app);
+            window::show_main_window(app);
         }
         MenuID::SHOW_SETTING_WINDOW => {
             info!("Setting Manager");
-            window::show_setting_window(&app);
+            window::show_setting_window(app);
         }
         MenuID::EXIT => {
             info!("Exit");

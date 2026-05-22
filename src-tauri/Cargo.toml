@@ -49,6 +49,8 @@ core-foundation = "0.10"
 libc = "0.2"
 base64 = "0.22"
 image_compressor = "1.5"
+regex-lite = "0.1"
+os_info = "3"
 
 [features]
 default = [ "custom-protocol" ]
