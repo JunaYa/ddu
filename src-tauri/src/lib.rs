@@ -108,6 +108,7 @@ pub fn run() {
             cmd::convert_to_gif,
             cmd::get_platform_capabilities,
             cmd::get_diagnostics_bundle,
+            global_shortcut::apply_shortcuts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

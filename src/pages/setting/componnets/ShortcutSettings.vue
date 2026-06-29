@@ -1,8 +1,23 @@
 <script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core'
 import { LazyStore } from '@tauri-apps/plugin-store'
 import { onMounted, ref } from 'vue'
 
 const store = new LazyStore('settings.json')
+
+const errors = ref<Record<string, string>>({})
+
+async function reapplyShortcuts(id: string) {
+  try {
+    // Rust re-registers from the store and rolls back to the previous working
+    // set if a combo is invalid or taken by the system.
+    await invoke('apply_shortcuts')
+    errors.value[id] = ''
+  }
+  catch (e) {
+    errors.value[id] = String(e)
+  }
+}
 
 interface ShortcutItem {
   id: string
@@ -61,6 +76,8 @@ async function onKeyUp(_e: KeyboardEvent) {
     sc.key = recordedKeys.value
     await store.set(sc.id, { value: recordedKeys.value })
     await store.save()
+    // Keep the attempted value in the field even on failure so the user can fix it.
+    await reapplyShortcuts(sc.id)
   }
 
   recording.value = null
@@ -71,6 +88,7 @@ async function resetShortcut(sc: ShortcutItem) {
   sc.key = sc.default
   await store.set(sc.id, { value: sc.default })
   await store.save()
+  await reapplyShortcuts(sc.id)
 }
 
 onMounted(loadShortcuts)
@@ -95,6 +113,7 @@ onMounted(loadShortcuts)
           ↺
         </button>
       </div>
+      <span v-if="errors[sc.id]" class="shortcut-error">{{ errors[sc.id] }}</span>
     </div>
   </div>
 </template>
@@ -102,9 +121,18 @@ onMounted(loadShortcuts)
 <style scoped>
 .shortcut-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   padding: 8px 0;
+}
+
+.shortcut-error {
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #e5484d;
+  text-align: right;
 }
 
 .shortcut-label {
