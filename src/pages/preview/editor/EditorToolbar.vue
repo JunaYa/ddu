@@ -27,8 +27,8 @@ const tools: { id: ToolType; label: string; icon: string }[] = [
   { id: 'highlight', label: 'Highlight', icon: '▬' },
   { id: 'text', label: 'Text', icon: 'T' },
   { id: 'step', label: 'Step', icon: '#' },
-  { id: 'blur', label: 'Blur', icon: '▤' },
-  { id: 'pixelate', label: 'Pixel', icon: '▦' },
+  { id: 'blur', label: 'Blur (soft — not for secrets)', icon: '▤' },
+  { id: 'pixelate', label: 'Pixelate (irreversible)', icon: '▦' },
 ]
 
 const colors = ['#ff0000', '#ff6600', '#ffcc00', '#00cc00', '#0066ff', '#9933ff', '#000000', '#ffffff']
