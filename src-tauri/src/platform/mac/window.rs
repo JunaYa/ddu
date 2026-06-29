@@ -7,6 +7,9 @@ use tauri_plugin_positioner::{Position, WindowExt};
 pub fn show_preview_window(window: &WebviewWindow) {
     let _ = window.show();
     let _ = window.unminimize();
+    // Keep the floating preview out of the app switcher / Mission Control so it
+    // behaves like an overlay rather than a normal window.
+    let _ = window.set_skip_taskbar(true);
     window::bottom_right_position(window);
     let _ = window.set_focus();
     let _ = window.set_always_on_top(true);
@@ -38,7 +41,9 @@ pub fn update_preview_window(window: &WebviewWindow) {
 }
 
 pub fn hide_preview_window(window: &WebviewWindow) {
-    let _ = window.minimize();
+    // Use hide() rather than minimize(): a minimized floating preview lingers in
+    // the Dock / Mission Control, whereas hide() removes it cleanly (R9, AE7).
+    let _ = window.hide();
 }
 
 pub fn show_main_window(window: &WebviewWindow) {
