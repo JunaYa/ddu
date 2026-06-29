@@ -1,5 +1,8 @@
 use std::fs;
+use std::time::{Duration, SystemTime};
+
 use serde::{Deserialize, Serialize};
+use tauri_plugin_store::StoreExt;
 use tracing::info;
 
 use crate::common::get_images_dir;
@@ -85,6 +88,74 @@ pub async fn list_history_items(
 
     info!("Listed {} history items", items.len());
     Ok(items)
+}
+
+/// Delete captures older than the configured retention period.
+///
+/// Safety gates (the history was an inert setting for a long time, so users have
+/// accumulated files under zero enforcement):
+/// - Runs only when the user explicitly opted in (`history_cleanup_enabled`).
+/// - `history_retention_days` of `-1`, `0`, negative, or missing => no deletion.
+/// - Only files matching app-generated names (`screenshot_*` / `*_annotated.*`)
+///   inside the controlled directory are eligible, so a user's own images in a
+///   shared save folder are never collateral.
+pub fn prune_history(app: &tauri::AppHandle) {
+    let Some(store) = app.get_store("settings.json") else { return };
+
+    let opted_in = store
+        .get("history_cleanup_enabled")
+        .and_then(|v| v.as_object().and_then(|o| o.get("value")).and_then(|x| x.as_bool()))
+        .unwrap_or(false);
+    if !opted_in {
+        return;
+    }
+
+    let days = store
+        .get("history_retention_days")
+        .and_then(|v| v.as_object().and_then(|o| o.get("value")).and_then(|x| x.as_i64()))
+        .unwrap_or(-1);
+    if days <= 0 {
+        // -1 = keep forever; 0 / negative = invalid => never delete.
+        return;
+    }
+
+    let Ok(images_dir) = get_images_dir(app, "images".to_string()) else { return };
+    let Some(cutoff) = SystemTime::now().checked_sub(Duration::from_secs(days as u64 * 86_400))
+    else {
+        return;
+    };
+    let Ok(entries) = fs::read_dir(&images_dir) else { return };
+
+    let mut removed = 0u32;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let ext_ok = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| matches!(e.to_lowercase().as_str(), "png" | "jpg" | "jpeg" | "webp"))
+            .unwrap_or(false);
+        let name_ok = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .map(|n| n.starts_with("screenshot_") || n.contains("_annotated"))
+            .unwrap_or(false);
+        if !ext_ok || !name_ok {
+            continue;
+        }
+        let Ok(modified) = fs::metadata(&path).and_then(|m| m.modified()) else { continue };
+        if modified < cutoff
+            && crate::common::ensure_within_images_dir(app, &path).is_ok()
+            && fs::remove_file(&path).is_ok()
+        {
+            removed += 1;
+        }
+    }
+    if removed > 0 {
+        info!("Retention pruning removed {} old captures", removed);
+    }
 }
 
 #[tauri::command]
