@@ -7,6 +7,8 @@ use core_foundation::{base::TCFType, boolean::CFBoolean, string::CFString};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
+use tauri_plugin_store::StoreExt;
+
 use crate::common::get_images_dir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,6 +41,39 @@ fn build_capture_result(output_path: &Path, mode: &str) -> Result<CaptureResult,
     })
 }
 
+struct CaptureSettings {
+    delay: u32,
+    include_cursor: bool,
+    include_window_shadow: bool,
+}
+
+/// Read the user's capture preferences from the store (shape `{ "value": ... }`).
+/// Defaults are conservative: no delay, no cursor, keep the window shadow — so an
+/// untouched install behaves exactly as before.
+fn read_capture_settings(app: &tauri::AppHandle) -> CaptureSettings {
+    let store = app.get_store("settings.json");
+    let num = |key: &str, default: u32| -> u32 {
+        store
+            .as_ref()
+            .and_then(|s| s.get(key))
+            .and_then(|v| v.as_object().and_then(|o| o.get("value")).and_then(|x| x.as_u64()))
+            .map(|n| n as u32)
+            .unwrap_or(default)
+    };
+    let flag = |key: &str, default: bool| -> bool {
+        store
+            .as_ref()
+            .and_then(|s| s.get(key))
+            .and_then(|v| v.as_object().and_then(|o| o.get("value")).and_then(|x| x.as_bool()))
+            .unwrap_or(default)
+    };
+    CaptureSettings {
+        delay: num("capture_delay", 0),
+        include_cursor: flag("include_cursor", false),
+        include_window_shadow: flag("include_window_shadow", true),
+    }
+}
+
 pub async fn capture_screen(app_handle: &tauri::AppHandle, path: String) -> Result<CaptureResult, String> {
     let start = Instant::now();
     let images_dir = get_images_dir(app_handle, path)?;
@@ -47,9 +82,19 @@ pub async fn capture_screen(app_handle: &tauri::AppHandle, path: String) -> Resu
     let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
     let output_path = images_dir.join(&filename);
 
+    let settings = read_capture_settings(app_handle);
+    let out = output_path.to_str().ok_or("invalid output path")?;
+    let mut args: Vec<String> = vec!["-x".into()];
+    if settings.include_cursor {
+        args.push("-C".into()); // full-screen is non-interactive, so -C is honored
+    }
+    if settings.delay > 0 {
+        args.push("-T".into());
+        args.push(settings.delay.to_string());
+    }
+    args.push(out.to_string());
     Command::new("screencapture")
-        .arg("-x")
-        .arg(output_path.to_str().unwrap())
+        .args(&args)
         .output()
         .map_err(|e| e.to_string())?;
 
@@ -64,10 +109,18 @@ pub async fn capture_select(app_handle: &tauri::AppHandle, path: String) -> Resu
     let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
     let output_path = images_dir.join(&filename);
 
+    let settings = read_capture_settings(app_handle);
+    let out = output_path.to_str().ok_or("invalid output path")?;
+    // Region capture is interactive (-i); -C (cursor) has no effect here, so only
+    // the delay preference applies.
+    let mut args: Vec<String> = vec!["-i".into(), "-x".into()];
+    if settings.delay > 0 {
+        args.push("-T".into());
+        args.push(settings.delay.to_string());
+    }
+    args.push(out.to_string());
     Command::new("screencapture")
-        .arg("-i")
-        .arg("-x")
-        .arg(output_path.to_str().unwrap())
+        .args(&args)
         .output()
         .map_err(|e| e.to_string())?;
 
@@ -93,8 +146,19 @@ pub async fn capture_window(app_handle: &tauri::AppHandle, path: String) -> Resu
 
     thread::sleep(Duration::from_secs(1));
 
+    let settings = read_capture_settings(app_handle);
+    let out = output_path.to_str().ok_or("invalid output path")?;
+    let mut args: Vec<String> = vec!["-iw".into(), "-t".into(), "png".into()];
+    if !settings.include_window_shadow {
+        args.push("-o".into()); // -o excludes the window shadow
+    }
+    if settings.delay > 0 {
+        args.push("-T".into());
+        args.push(settings.delay.to_string());
+    }
+    args.push(out.to_string());
     Command::new("screencapture")
-        .args(["-iw", "-t", "png", "-C", "-o", "-T", "0", output_path.to_str().unwrap()])
+        .args(&args)
         .output()
         .map_err(|e| e.to_string())?;
 
@@ -110,8 +174,9 @@ pub async fn capture_delayed(app_handle: &tauri::AppHandle, path: String, delay_
     let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
     let output_path = images_dir.join(&filename);
 
+    let out = output_path.to_str().ok_or("invalid output path")?;
     Command::new("screencapture")
-        .args(["-i", "-x", "-T", &delay_secs.to_string(), output_path.to_str().unwrap()])
+        .args(["-i", "-x", "-T", &delay_secs.to_string(), out])
         .output()
         .map_err(|e| e.to_string())?;
 
@@ -127,8 +192,19 @@ pub async fn capture_current_screen(app_handle: &tauri::AppHandle, path: String)
     let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
     let output_path = images_dir.join(&filename);
 
+    let settings = read_capture_settings(app_handle);
+    let out = output_path.to_str().ok_or("invalid output path")?;
+    let mut args: Vec<String> = vec!["-x".into(), "-m".into()];
+    if settings.include_cursor {
+        args.push("-C".into()); // -m single-display is non-interactive, so -C is honored
+    }
+    if settings.delay > 0 {
+        args.push("-T".into());
+        args.push(settings.delay.to_string());
+    }
+    args.push(out.to_string());
     Command::new("screencapture")
-        .args(["-x", "-m", output_path.to_str().unwrap()])
+        .args(&args)
         .output()
         .map_err(|e| e.to_string())?;
 
