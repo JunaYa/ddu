@@ -74,7 +74,3 @@ pub fn show_startup_window(window: &WebviewWindow) {
     let _ = window.set_focus();
     let _ = window.unminimize();
 }
-
-pub fn hide_startup_window(window: &WebviewWindow) {
-    let _ = window.minimize();
-}
