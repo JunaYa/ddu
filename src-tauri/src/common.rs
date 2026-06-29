@@ -124,6 +124,28 @@ pub async fn copy_picture_to_clipboard(
     Ok(())
 }
 
+/// Write already-encoded image bytes (e.g. a PNG exported from the editor
+/// canvas) straight to the clipboard, without ever touching disk. This avoids
+/// the leftover `*_annotated.png` temp files the previous copy path created.
+pub async fn copy_image_bytes_to_clipboard(
+    app_handle: tauri::AppHandle,
+    bytes: Vec<u8>,
+) -> Result<(), String> {
+    let img = image::load_from_memory(&bytes).map_err(|e| e.to_string())?;
+    let rgba = img.into_rgba8();
+    let width = rgba.width();
+    let height = rgba.height();
+    let rgba_data = rgba.into_raw();
+    let img = Image::new(&rgba_data, width, height);
+
+    app_handle
+        .clipboard()
+        .write_image(&img)
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 pub async fn get_image_base64_by_path(path: String) -> Result<String, String> {
     use base64::{engine::general_purpose, Engine as _};
     // Validate file exists

@@ -89,6 +89,7 @@ pub fn run() {
             cmd::open_screen_capture_preferences,
             cmd::check_accessibility_permissions,
             cmd::copy_image_to_clipboard,
+            cmd::copy_image_bytes,
             cmd::get_image_base64,
             cmd::list_history_items,
             cmd::delete_history_items,
