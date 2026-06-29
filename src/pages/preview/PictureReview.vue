@@ -2,17 +2,29 @@
 <script setup lang="ts">
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { exists } from '@tauri-apps/plugin-fs'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   imagePath: string
   width?: number
   height?: number
+  showBackground?: boolean
+  variant?: 'frame' | 'masonry'
 }>()
 
 const imageUrl = ref<string>('')
 const error = ref<string>('')
 const isLoading = ref(true)
+const isMasonry = computed(() => props.variant === 'masonry')
+const showFrameBackground = computed(() => props.showBackground !== false)
+const containerStyle = computed(() => {
+  if (isMasonry.value) return undefined
+
+  return {
+    width: props.width ? `${props.width}px` : 'auto',
+    height: props.height ? `${props.height}px` : 'auto',
+  }
+})
 
 async function loadImage() {
   try {
@@ -59,16 +71,24 @@ onMounted(loadImage)
     </div>
 
     <!-- Image display -->
-    <div v-else class="mac_os_bg relative h-48 w-58 flex flex-center overflow-hidden overflow-hidden rounded-md"
-      :style="{ width: width ? `${width}px` : 'auto', height: height ? `${height}px` : 'auto' }"
+    <div
+      v-else
+      class="picture-review relative flex flex-center overflow-hidden rounded-md"
+      :class="{
+        'mac_os_bg h-48 w-58': showFrameBackground,
+        'h-48 w-58': !showFrameBackground && !isMasonry,
+        'picture-review-masonry': isMasonry,
+      }"
+      :style="containerStyle"
     >
-      <div class="h-full w-full px-4 py-8">
+      <div class="picture-review-inner" :class="showFrameBackground ? 'h-full w-full px-4 py-8' : 'h-full w-full'">
         <img
           :src="imageUrl"
           :alt="imagePath"
           :width="width"
           :height="height"
-          class="h-full w-full rounded-md object-contain"
+          class="rounded-md object-contain"
+          :class="isMasonry ? 'h-auto w-full' : 'h-full w-full'"
         >
       </div>
     </div>
@@ -81,5 +101,17 @@ onMounted(loadImage)
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+.picture-review-masonry {
+  width: 100%;
+  height: auto;
+}
+
+.picture-review-masonry .picture-review-inner,
+.picture-review-masonry img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 </style>
