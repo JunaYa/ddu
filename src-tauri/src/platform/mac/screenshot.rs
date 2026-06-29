@@ -32,7 +32,10 @@ fn build_capture_result(output_path: &Path, mode: &str) -> Result<CaptureResult,
         Err(_) => (0, 0),
     };
     Ok(CaptureResult {
-        filename: output_path.file_name().unwrap().to_string_lossy().to_string(),
+        filename: output_path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default(),
         full_path: output_path.to_string_lossy().to_string(),
         width,
         height,
@@ -217,10 +220,9 @@ pub fn get_last_capture_path() -> Option<String> {
 }
 
 pub fn open_screen_capture_preferences() {
-    Command::new("open")
+    let _ = Command::new("open")
         .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
-        .spawn()
-        .expect("failed to open system preferences");
+        .spawn();
 }
 
 pub fn check_accessibility_permissions() -> bool {
