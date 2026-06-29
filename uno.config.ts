@@ -148,7 +148,7 @@ export default defineConfig({
       res += `\n${res.replace('{height:100vh;}', '{height:100vh;height:100dvh;}')}`
       return res
     }],
-    ['box-shadow-outline', { 'box-shadow': '0 0 0 1px var(--c-primary)' }],
-    ['box-shadow-primary', { 'box-shadow': '0 2px 12px var(--c-primary)' }],
+    ['box-shadow-outline', { 'box-shadow': 'var(--shadow-outline)' }],
+    ['box-shadow-primary', { 'box-shadow': 'var(--shadow-primary)' }],
   ],
 })
