@@ -60,6 +60,9 @@ pub fn run() {
                 window::show_startup_window(&app.handle());
             }
 
+            // Enforce history retention on launch (no-op unless the user opted in).
+            cmd::prune_history(app.handle());
+
             Ok(())
         })
         .menu(menu::get_app_menu)
