@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core'
-import { save } from '@tauri-apps/plugin-dialog'
 import { writeFile } from '@tauri-apps/plugin-fs'
 import { onMounted, onUnmounted, ref } from 'vue'
 import type { EditorStyle, ToolType } from './useEditor'
@@ -49,19 +48,15 @@ async function handleSave() {
   const dataUrl = exportImage('png')
   if (!dataUrl) return
 
-  const filePath = await save({
-    defaultPath: props.imagePath,
-    filters: [
-      { name: 'PNG', extensions: ['png'] },
-      { name: 'JPEG', extensions: ['jpg', 'jpeg'] },
-    ],
-  })
-  if (!filePath) return
-
+  // The native save dialog is opened server-side (save_annotated_image), so the
+  // destination path is resolved in Rust and never supplied by the renderer.
   const base64 = dataUrl.split(',')[1]
-  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
-  await writeFile(filePath, bytes)
-  emit('saved', filePath)
+  const defaultName = props.imagePath.split('/').pop() || 'screenshot.png'
+  const saved = await invoke<string | null>('save_annotated_image', {
+    base64,
+    defaultFileName: defaultName,
+  })
+  if (saved) emit('saved', saved)
 }
 
 async function handleCopy() {

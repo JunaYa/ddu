@@ -88,11 +88,19 @@ pub async fn list_history_items(
 }
 
 #[tauri::command]
-pub async fn delete_history_items(paths: Vec<String>) -> Result<u32, String> {
+pub async fn delete_history_items(
+    app_handle: tauri::AppHandle,
+    paths: Vec<String>,
+) -> Result<u32, String> {
     let mut deleted = 0u32;
     for path in &paths {
-        if fs::remove_file(path).is_ok() {
-            deleted += 1;
+        match crate::common::ensure_within_images_dir(&app_handle, std::path::Path::new(path)) {
+            Ok(guarded) => {
+                if fs::remove_file(&guarded).is_ok() {
+                    deleted += 1;
+                }
+            }
+            Err(e) => info!("Refusing to delete out-of-bounds path {}: {}", path, e),
         }
     }
     info!("Deleted {} history items", deleted);
@@ -100,8 +108,12 @@ pub async fn delete_history_items(paths: Vec<String>) -> Result<u32, String> {
 }
 
 #[tauri::command]
-pub async fn get_history_item_detail(path: String) -> Result<HistoryItem, String> {
-    let path_ref = std::path::Path::new(&path);
+pub async fn get_history_item_detail(
+    app_handle: tauri::AppHandle,
+    path: String,
+) -> Result<HistoryItem, String> {
+    let guarded = crate::common::ensure_within_images_dir(&app_handle, std::path::Path::new(&path))?;
+    let path_ref = guarded.as_path();
     if !path_ref.exists() {
         return Err("File not found".to_string());
     }
@@ -122,7 +134,7 @@ pub async fn get_history_item_detail(path: String) -> Result<HistoryItem, String
     Ok(HistoryItem {
         id: filename.clone(),
         filename,
-        full_path: path.clone(),
+        full_path: guarded.to_string_lossy().to_string(),
         width,
         height,
         file_size: metadata.len(),
