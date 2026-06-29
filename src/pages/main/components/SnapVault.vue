@@ -21,10 +21,13 @@ const displayMode = ref<'list' | 'grid'>('list')
 const isAscending = ref(false)
 
 const deleteLoading = ref(false)
+const combining = ref(false)
 
 const isCheckedAll = computed(() => list.value.length > 0 && list.value.every(item => item.checked))
 
 const hasChecked = computed(() => list.value.some(item => item.checked))
+
+const checkedCount = computed(() => list.value.filter(item => item.checked).length)
 
 async function loadData() {
   // Read the history through the backend so custom save paths work and the
@@ -77,6 +80,83 @@ async function handleDelete() {
 
 }
 
+function mimeFor(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase()
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg'
+  if (ext === 'webp') return 'image/webp'
+  return 'image/png'
+}
+
+function loadImageEl(path: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    invoke<string>('get_image_base64', { path })
+      .then((b64) => {
+        const img = new Image()
+        img.onload = () => resolve(img)
+        img.onerror = () => reject(new Error('image decode failed'))
+        img.src = `data:${mimeFor(path)};base64,${b64}`
+      })
+      .catch(reject)
+  })
+}
+
+// Compose the selected captures into one image and open it in the editor.
+// Vertical: images stacked top-to-bottom, left-aligned, canvas width = widest.
+// Horizontal: images left-to-right, top-aligned, canvas height = tallest.
+// Mismatched sizes get white fill; oversized composites are downscaled.
+async function handleCombine(layout: 'horizontal' | 'vertical') {
+  const checked = list.value.filter(item => item.checked)
+  if (checked.length < 2 || combining.value) return
+  combining.value = true
+  try {
+    const imgs = await Promise.all(checked.map(item => loadImageEl(item.image)))
+
+    let canvasW: number
+    let canvasH: number
+    if (layout === 'vertical') {
+      canvasW = Math.max(...imgs.map(im => im.naturalWidth))
+      canvasH = imgs.reduce((sum, im) => sum + im.naturalHeight, 0)
+    }
+    else {
+      canvasW = imgs.reduce((sum, im) => sum + im.naturalWidth, 0)
+      canvasH = Math.max(...imgs.map(im => im.naturalHeight))
+    }
+
+    const MAX = 8000
+    const scale = Math.min(1, MAX / Math.max(canvasW, canvasH))
+    const cw = Math.max(1, Math.round(canvasW * scale))
+    const ch = Math.max(1, Math.round(canvasH * scale))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = cw
+    canvas.height = ch
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, cw, ch)
+
+    let offset = 0
+    for (const im of imgs) {
+      const w = im.naturalWidth * scale
+      const h = im.naturalHeight * scale
+      if (layout === 'vertical') {
+        ctx.drawImage(im, 0, offset, w, h)
+        offset += h
+      }
+      else {
+        ctx.drawImage(im, offset, 0, w, h)
+        offset += w
+      }
+    }
+
+    const base64 = canvas.toDataURL('image/png').split(',')[1]
+    await invoke('open_combined_image', { base64 })
+  }
+  finally {
+    combining.value = false
+  }
+}
+
 onMounted(async () => {
   loadData()
 })
@@ -115,6 +195,11 @@ onMounted(async () => {
         <i class="h-6 w-6 cursor-pointer">
           <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M12 12h2v12h-2z" fill="currentColor" /><path d="M18 12h2v12h-2z" fill="currentColor" /><path d="M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z" fill="#232323" /><path d="M12 2h8v2h-8z" fill="#232323" /></svg>
         </i>
+      </div>
+      <div v-if="checkedCount >= 2" class="flex flex-row items-center justify-center gap-2" :class="{ 'opacity-50 pointer-events-none': combining }">
+        <span class="text-sm">拼合</span>
+        <button class="rounded-md border border-gray-300 px-3 py-1 text-sm cursor-pointer hover:border-primary" @click="handleCombine('vertical')">竖排</button>
+        <button class="rounded-md border border-gray-300 px-3 py-1 text-sm cursor-pointer hover:border-primary" @click="handleCombine('horizontal')">横排</button>
       </div>
     </div>
     <div v-if="list.length > 0" class="flex flex-row items-center justify-center">
