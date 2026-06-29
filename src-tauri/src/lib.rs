@@ -94,6 +94,7 @@ pub fn run() {
             cmd::copy_image_to_clipboard,
             cmd::copy_image_bytes,
             cmd::get_image_base64,
+            cmd::open_combined_image,
             cmd::list_history_items,
             cmd::delete_history_items,
             cmd::get_history_item_detail,
