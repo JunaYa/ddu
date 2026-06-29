@@ -5,6 +5,5 @@ import '~/styles/vars.css'
 import '~/styles/global.css'
 // macos remove scrollbar
 // import '~/styles/scrollbars.css'
-import 'virtual:uno.css'
 
 createApp(App).mount('#app')

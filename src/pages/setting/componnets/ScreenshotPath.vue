@@ -20,7 +20,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="rounded-lg bg-card p-4">
+  <div class="liquid-glass liquid-glass-panel p-4">
     <div class="flex items-center justify-between">
       <span class="text-secondary">截图保存路径</span>
       <DirectorySelector :value="screenshotPath" @update:value="updateScreenshotPath" />

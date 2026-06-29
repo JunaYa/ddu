@@ -14,6 +14,15 @@
   --c-bg-code: #00000006;
   --c-bg-selection: #8885;
   --c-bg-dm: #f1e8e6;
+  --c-bg-shell: linear-gradient(145deg, rgba(255, 255, 255, 0.48), rgba(232, 238, 255, 0.4) 48%, rgba(255, 244, 229, 0.36));
+  --c-glass-surface: rgba(255, 255, 255, 0.58);
+  --c-glass-surface-strong: rgba(255, 255, 255, 0.72);
+  --c-glass-surface-hover: rgba(255, 255, 255, 0.82);
+  --c-glass-border: rgba(255, 255, 255, 0.62);
+  --c-glass-border-strong: rgba(255, 255, 255, 0.78);
+  --c-glass-highlight: rgba(255, 255, 255, 0.78);
+  --c-glass-shadow: rgba(45, 35, 20, 0.14);
+  --c-glass-control: rgba(255, 255, 255, 0.44);
 
   --c-text-base: #232323;
   --c-text-code: #63470c;
@@ -47,6 +56,15 @@
   --c-bg-card: #ffffff06;
   --c-bg-code: #ffffff06;
   --c-bg-dm: #0a2f35;
+  --c-bg-shell: linear-gradient(145deg, rgba(9, 12, 18, 0.74), rgba(25, 31, 42, 0.6) 50%, rgba(52, 38, 25, 0.42));
+  --c-glass-surface: rgba(24, 26, 32, 0.58);
+  --c-glass-surface-strong: rgba(31, 34, 42, 0.74);
+  --c-glass-surface-hover: rgba(42, 45, 54, 0.82);
+  --c-glass-border: rgba(255, 255, 255, 0.12);
+  --c-glass-border-strong: rgba(255, 255, 255, 0.2);
+  --c-glass-highlight: rgba(255, 255, 255, 0.16);
+  --c-glass-shadow: rgba(0, 0, 0, 0.34);
+  --c-glass-control: rgba(255, 255, 255, 0.08);
 
   --c-text-base: #f3f3f3;
   --c-text-code: #ecd88e;

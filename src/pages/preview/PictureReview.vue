@@ -79,7 +79,7 @@ onMounted(loadImage)
 
 <style scoped>
 .mac_os_bg {
-  background-image: url(./mac_os_bg.jpg);
+  background-image: url('/mac_os_bg.jpg');
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;

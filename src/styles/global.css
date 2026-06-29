@@ -3,14 +3,7 @@ html {
   width: 100%;
   width: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
-
-@font-face {
-  font-display: swap;
-  font-family: 'Homemade Apple';
-  font-style: normal;
-  font-weight: 400;
-  src: url(/fonts/homemade-apple-v18.ttf) format('truetype');
+  background: transparent;
 }
 
 ::-moz-selection {
@@ -24,6 +17,7 @@ html {
 /* Force vertical scrollbar to be always visible to avoid layout shift while loading the content */
 body {
   -webkit-tap-highlight-color: transparent;
+  background: transparent;
 }
 
 html,
@@ -39,7 +33,110 @@ html.dark {
 }
 
 html {
-  --at-apply: bg-base text-base;
+  --at-apply: text-base;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: var(--c-bg-shell);
+}
+
+.liquid-glass {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--c-glass-border);
+  background: var(--c-glass-surface);
+  box-shadow:
+    0 16px 40px var(--c-glass-shadow),
+    inset 0 1px 0 var(--c-glass-highlight);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8) contrast(1.02);
+  backdrop-filter: blur(28px) saturate(1.8) contrast(1.02);
+}
+
+.liquid-glass::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  background:
+    linear-gradient(135deg, var(--c-glass-highlight), transparent 38%),
+    linear-gradient(315deg, rgba(var(--rgb-primary), 0.14), transparent 42%);
+  opacity: 0.78;
+}
+
+.liquid-glass > * {
+  position: relative;
+  z-index: 1;
+}
+
+.liquid-glass-panel {
+  border-radius: 8px;
+}
+
+.liquid-glass-toolbar {
+  border-radius: 8px;
+  background: var(--c-glass-surface-strong);
+}
+
+.liquid-glass-control {
+  border: 1px solid var(--c-glass-border);
+  background: var(--c-glass-control);
+  box-shadow: inset 0 1px 0 var(--c-glass-highlight);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.liquid-glass-control:hover {
+  border-color: var(--c-glass-border-strong);
+  background: var(--c-glass-surface-hover);
+  box-shadow:
+    0 8px 18px var(--c-glass-shadow),
+    inset 0 1px 0 var(--c-glass-highlight);
+}
+
+.liquid-glass-control:active {
+  transform: scale(0.98);
+}
+
+.liquid-glass-control.btn-solid {
+  border-color: rgba(var(--rgb-primary), 0.42);
+  background: rgba(var(--rgb-primary), 0.78);
+  color: #fff;
+}
+
+.liquid-glass-control.btn-solid:hover {
+  border-color: rgba(var(--rgb-primary), 0.62);
+  background: rgba(var(--rgb-primary), 0.88);
+}
+
+.liquid-glass-control.btn-action-icon,
+.liquid-glass-control.btn-icon {
+  background: var(--c-glass-control);
+}
+
+.liquid-glass-control.input-base,
+.liquid-glass-control.select-settings {
+  border-color: var(--c-glass-border);
+  background: var(--c-glass-control);
+  color: var(--c-text-base);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-shell {
+    background: var(--c-bg-base);
+  }
+
+  .liquid-glass,
+  .liquid-glass-control {
+    background: var(--c-bg-base);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 html:not(.enable-pinch-to-zoom) body {
