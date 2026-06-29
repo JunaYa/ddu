@@ -94,6 +94,7 @@ pub fn run() {
             cmd::delete_history_items,
             cmd::get_history_item_detail,
             cmd::export_image,
+            cmd::save_annotated_image,
             cmd::get_image_info,
             cmd::perform_ocr,
             cmd::detect_sensitive_info,

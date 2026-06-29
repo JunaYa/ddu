@@ -1,7 +1,6 @@
 // ImageViewer.vue
 <script setup lang="ts">
-import { convertFileSrc } from '@tauri-apps/api/core'
-import { exists } from '@tauri-apps/plugin-fs'
+import { invoke } from '@tauri-apps/api/core'
 import { onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{
@@ -14,19 +13,22 @@ const imageUrl = ref<string>('')
 const error = ref<string>('')
 const isLoading = ref(true)
 
+function mimeFor(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase()
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg'
+  if (ext === 'webp') return 'image/webp'
+  return 'image/png'
+}
+
 async function loadImage() {
   try {
     isLoading.value = true
     error.value = ''
 
-    // Check if file exists
-    const fileExists = await exists(props.imagePath)
-    if (!fileExists) {
-      error.value = 'Image file not found'
-      return
-    }
-
-    imageUrl.value = convertFileSrc(props.imagePath)
+    // Read through the backend so custom save paths (outside $APPDATA) work and
+    // the fs/asset scopes can stay tightened. The command also guards the path.
+    const b64 = await invoke<string>('get_image_base64', { path: props.imagePath })
+    imageUrl.value = `data:${mimeFor(props.imagePath)};base64,${b64}`
   }
   catch (err) {
     error.value = `Failed to load image: ${err}`

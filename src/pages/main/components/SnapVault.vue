@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { readDir, remove } from '@tauri-apps/plugin-fs'
-import { LazyStore } from '@tauri-apps/plugin-store'
+import { invoke } from '@tauri-apps/api/core'
 import { confirm } from '@tauri-apps/plugin-dialog'
 import { computed, onMounted, ref, watch } from 'vue'
-import { FileSizeFormatter } from '~/utils/file'
 import Checkbox from '~/components/Checkbox.vue'
 import SnapVaultItem from './SnapVaultItem.vue'
 import Empty from './Empty.vue'
 import SnapVaultItemList from './SnapVaultItemList.vue'
 
-const store = new LazyStore('settings.json')
+interface HistoryItem {
+  id: string
+  filename: string
+  full_path: string
+  captured_at: string
+}
 
 const list = ref<{ id: string, image: string, checked: boolean, datetime: Date }[]>([])
 
@@ -24,15 +27,16 @@ const isCheckedAll = computed(() => list.value.length > 0 && list.value.every(it
 const hasChecked = computed(() => list.value.some(item => item.checked))
 
 async function loadData() {
-  const val = await store.get<{ value: string }>('screenshot_path')
+  // Read the history through the backend so custom save paths work and the
+  // fs scope can stay tightened. The command lists/filters image files in the
+  // controlled directory and returns metadata.
+  const items = await invoke<HistoryItem[]>('list_history_items', { path: 'images' })
 
-  const entries = await readDir(val?.value ? `${val?.value}/images` : '')
-  
-  list.value = entries.filter(entry => entry.isFile && FileSizeFormatter.isPictureFile(entry.name)).map(entry => ({
-    id: entry.name,
-    image: `${val?.value}/images/${entry.name}`,
+  list.value = items.map(item => ({
+    id: item.id,
+    image: item.full_path,
     checked: false,
-    datetime: new Date(parseInt(entry.name.replace(/^screenshot_|_|\.png$/g, ''))),
+    datetime: item.captured_at ? new Date(item.captured_at) : new Date(0),
   }))
   list.value.sort((a, b) => {
     return isAscending.value ? a.datetime.getTime() - b.datetime.getTime() : b.datetime.getTime() - a.datetime.getTime()
@@ -66,9 +70,7 @@ async function handleDelete() {
     { title: '确认删除', kind: 'warning' },
   )
   if (confirmation) {
-    for (const item of newList) {
-      await remove(item.image)
-    }
+    await invoke('delete_history_items', { paths: newList.map(item => item.image) })
     await loadData()
   }
   deleteLoading.value = false

@@ -53,6 +53,47 @@ pub fn get_images_dir(app_handle: &tauri::AppHandle, path: String) -> Result<Pat
     Ok(images_dir)
 }
 
+/// Resolve the controlled screenshot directory (`<screenshot_path>/images`),
+/// canonicalized so symlinks and `..` segments are collapsed.
+fn controlled_images_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let dir = get_images_dir(app_handle, "images".to_string())?;
+    std::fs::canonicalize(&dir).map_err(|e| format!("cannot resolve images dir: {e}"))
+}
+
+/// Ensure `candidate` resolves to a path inside the controlled screenshot
+/// directory and return the canonicalized path.
+///
+/// Uses component-wise `Path::starts_with` (not a string prefix, so a sibling
+/// such as `.../images-evil` cannot pass) and fails closed when a path cannot
+/// be canonicalized. For a not-yet-existing target the parent directory is
+/// canonicalized and the file name re-joined, so callers can validate a write
+/// destination before it exists.
+pub fn ensure_within_images_dir(
+    app_handle: &tauri::AppHandle,
+    candidate: &Path,
+) -> Result<PathBuf, String> {
+    let base = controlled_images_dir(app_handle)?;
+    let resolved = match std::fs::canonicalize(candidate) {
+        Ok(p) => p,
+        Err(_) => {
+            let parent = candidate
+                .parent()
+                .ok_or_else(|| "invalid path: no parent".to_string())?;
+            let file = candidate
+                .file_name()
+                .ok_or_else(|| "invalid path: no file name".to_string())?;
+            let parent = std::fs::canonicalize(parent)
+                .map_err(|e| format!("path is outside the controlled directory: {e}"))?;
+            parent.join(file)
+        }
+    };
+    if resolved.starts_with(&base) {
+        Ok(resolved)
+    } else {
+        Err("path is outside the controlled screenshot directory".to_string())
+    }
+}
+
 pub async fn copy_picture_to_clipboard(
     app_handle: tauri::AppHandle,
     path: String,
@@ -84,24 +125,18 @@ pub async fn copy_picture_to_clipboard(
 }
 
 pub async fn get_image_base64_by_path(path: String) -> Result<String, String> {
-    use base64::{
-        alphabet,
-        engine::{self, general_purpose},
-        Engine as _,
-    };
+    use base64::{engine::general_purpose, Engine as _};
     // Validate file exists
     let path = Path::new(&path);
     if !path.exists() {
         return Err("Image file does not exist".to_string());
     }
 
-    let img = ImageReader::open(&path)
-        .map_err(|e| e.to_string())?
-        .decode()
-        .map_err(|e| e.to_string())?;
-
-    // Convert to base64 string
-    let b64 = general_purpose::STANDARD.encode(img.as_bytes());
+    // Read the raw, already-encoded image file bytes (PNG/JPEG/WebP) and base64
+    // them directly. Encoding `decode().as_bytes()` would emit raw pixel data,
+    // which is not a valid image payload for an <img> data URL.
+    let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
+    let b64 = general_purpose::STANDARD.encode(bytes);
 
     Ok(b64)
 }
