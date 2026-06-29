@@ -341,11 +341,73 @@ export function useEditor() {
     saveState()
   }
 
+  // Replace the drawn rect with an opaque patch whose pixels are actually
+  // destroyed, so the redaction survives export/copy and cannot be recovered
+  // (the previous implementation just laid a translucent grey rect over the
+  // original, which bled through and was reversible). Pixelate is the
+  // irreversible guarantee; blur is best-effort (a low-pass filter is partly
+  // recoverable — the toolbar labels it accordingly).
   function applyPrivacyEffect(rect: Rect, type: 'blur' | 'pixelate') {
-    if (!canvas.value) return
-    const fillColor = type === 'blur' ? 'rgba(128,128,128,0.7)' : 'rgba(100,100,100,0.8)'
-    rect.set({ fill: fillColor, stroke: 'transparent', strokeWidth: 0 })
-    canvas.value.renderAll()
+    const c = canvas.value
+    if (!c || !bgImage) return
+    const bg = bgImage
+    const el = bg.getElement() as CanvasImageSource
+    const scaleX = bg.scaleX || 1
+    const scaleY = bg.scaleY || 1
+    const natW = bg.width || 0
+    const natH = bg.height || 0
+
+    // Map the scene-space rect to a pixel region of the ORIGINAL image. Floor
+    // the origin and ceil the size to over-cover, so no 1px sliver of the
+    // original survives along the patch border.
+    let sx = Math.floor(((rect.left ?? 0) - (bg.left ?? 0)) / scaleX)
+    let sy = Math.floor(((rect.top ?? 0) - (bg.top ?? 0)) / scaleY)
+    let sw = Math.ceil((rect.width ?? 0) / scaleX)
+    let sh = Math.ceil((rect.height ?? 0) / scaleY)
+    sx = Math.max(0, Math.min(sx, natW))
+    sy = Math.max(0, Math.min(sy, natH))
+    sw = Math.max(1, Math.min(sw, natW - sx))
+    sh = Math.max(1, Math.min(sh, natH - sy))
+
+    const off = document.createElement('canvas')
+    off.width = sw
+    off.height = sh
+    const ctx = off.getContext('2d')
+    if (!ctx) return
+
+    if (type === 'pixelate') {
+      // Downsample to a tiny canvas then scale back up with smoothing off — a
+      // real mosaic that discards the original detail.
+      const factor = 0.08
+      const small = document.createElement('canvas')
+      small.width = Math.max(1, Math.round(sw * factor))
+      small.height = Math.max(1, Math.round(sh * factor))
+      const sctx = small.getContext('2d')
+      if (!sctx) return
+      sctx.drawImage(el, sx, sy, sw, sh, 0, 0, small.width, small.height)
+      ctx.imageSmoothingEnabled = false
+      ctx.drawImage(small, 0, 0, small.width, small.height, 0, 0, sw, sh)
+    }
+    else {
+      const radius = Math.max(4, Math.round(Math.min(sw, sh) / 12))
+      ctx.filter = `blur(${radius}px)`
+      ctx.drawImage(el, sx, sy, sw, sh, 0, 0, sw, sh)
+      ctx.filter = 'none'
+    }
+
+    // Place the processed patch exactly over the sampled original region.
+    const patch = new FabricImage(off, {
+      left: (bg.left ?? 0) + sx * scaleX,
+      top: (bg.top ?? 0) + sy * scaleY,
+      scaleX,
+      scaleY,
+      selectable: true,
+      evented: true,
+    })
+    c.remove(rect)
+    c.add(patch)
+    c.setActiveObject(patch)
+    c.renderAll()
   }
 
   function deleteSelected() {
