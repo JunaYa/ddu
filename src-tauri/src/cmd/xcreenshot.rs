@@ -9,7 +9,7 @@ use crate::common::get_images_dir;
 
 #[tauri::command]
 pub async fn xcap_window(app_handle: tauri::AppHandle, path: String) -> Result<String, String> {
-    let images_dir = get_images_dir(&app_handle, path).unwrap();
+    let images_dir = get_images_dir(&app_handle, path)?;
 
     let filename = window_capture(images_dir)?;
 
@@ -18,7 +18,7 @@ pub async fn xcap_window(app_handle: tauri::AppHandle, path: String) -> Result<S
 
 #[tauri::command]
 pub async fn xcap_monitor(app_handle: tauri::AppHandle, path: String) -> Result<String, String> {
-    let images_dir = get_images_dir(&app_handle, path).unwrap();
+    let images_dir = get_images_dir(&app_handle, path)?;
 
     let filename = monitor_capture(images_dir)?;
 
@@ -63,9 +63,9 @@ fn window_capture(path: PathBuf) -> Result<String, String> {
 
         let output_path = path.join(&filename);
 
-        info!("保存图片: {}", &output_path.to_str().unwrap());
+        info!("保存图片: {}", output_path.display());
 
-        image.save(output_path).unwrap();
+        image.save(&output_path).map_err(|e| e.to_string())?;
 
         i += 1;
     }
@@ -93,7 +93,7 @@ fn monitor_capture(path: PathBuf) -> Result<String, String> {
 
         let output_path = path.join(&filename);
 
-        image.save(output_path.to_str().unwrap()).unwrap();
+        image.save(&output_path).map_err(|e| e.to_string())?;
     }
 
     info!("运行耗时: {:?}", start.elapsed());
