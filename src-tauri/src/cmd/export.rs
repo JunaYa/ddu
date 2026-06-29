@@ -6,12 +6,6 @@ use serde::{Deserialize, Serialize};
 use tauri_plugin_dialog::DialogExt;
 use tracing::info;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ExportOptions {
-    pub format: String,
-    pub quality: u8,
-}
-
 #[tauri::command]
 pub async fn export_image(
     app_handle: tauri::AppHandle,

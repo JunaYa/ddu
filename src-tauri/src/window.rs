@@ -69,6 +69,45 @@ pub fn bottom_right_position(window: &WebviewWindow) {
     }
 }
 
+#[cfg(target_os = "macos")]
+fn set_macos_window_background(window: &WebviewWindow, alpha: f64) {
+    use objc::runtime::{Class, Object, Sel};
+    use objc::Message;
+
+    unsafe {
+        let ns_window = window.ns_window().unwrap() as *mut Object;
+        let ns_color = Class::get("NSColor").expect("NSColor class not found");
+        let color: *mut Object = ns_color
+            .send_message(
+                Sel::register("colorWithRed:green:blue:alpha:"),
+                (33.0_f64 / 255.0, 54.0_f64 / 255.0, 201.0_f64 / 255.0, alpha),
+            )
+            .expect("failed to create NSColor");
+        let _: () = (&*ns_window)
+            .send_message(Sel::register("setBackgroundColor:"), (color,))
+            .expect("failed to set NSWindow background color");
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn move_macos_window_to_active_space(window: &WebviewWindow) {
+    use objc::runtime::{Object, Sel};
+    use objc::Message;
+
+    type NSUInteger = libc::c_ulong;
+    const NS_WINDOW_COLLECTION_BEHAVIOR_MOVE_TO_ACTIVE_SPACE: NSUInteger = 1 << 1;
+
+    unsafe {
+        let ns_window = window.ns_window().unwrap() as *mut Object;
+        let _: () = (&*ns_window)
+            .send_message(
+                Sel::register("setCollectionBehavior:"),
+                (NS_WINDOW_COLLECTION_BEHAVIOR_MOVE_TO_ACTIVE_SPACE,),
+            )
+            .expect("failed to set NSWindow collection behavior");
+    }
+}
+
 pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
         window
@@ -83,25 +122,10 @@ pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
 
         let window = win_builder.build().unwrap();
 
-        // set background color only when building for macOS
         #[cfg(target_os = "macos")]
-        {
-            use cocoa::appkit::{NSColor, NSWindow};
-            use cocoa::base::{id, nil};
+        set_macos_window_background(&window, 0.1);
 
-            let ns_window = window.ns_window().unwrap() as id;
-            unsafe {
-                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
-                    nil,
-                    33.0 / 255.0,
-                    54.0 / 255.0,
-                    201.0 / 255.0,
-                    0.1,
-                );
-                ns_window.setBackgroundColor_(bg_color);
-            }
-            window
-        }
+        window
     }
 }
 
@@ -121,25 +145,10 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
 
         let window = win_builder.build().unwrap();
 
-        // set background color only when building for macOS
         #[cfg(target_os = "macos")]
-        {
-            use cocoa::appkit::{NSColor, NSWindow};
-            use cocoa::base::{id, nil};
+        set_macos_window_background(&window, 0.1);
 
-            let ns_window = window.ns_window().unwrap() as id;
-            unsafe {
-                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
-                    nil,
-                    33.0 / 255.0,
-                    54.0 / 255.0,
-                    201.0 / 255.0,
-                    0.1,
-                );
-                ns_window.setBackgroundColor_(bg_color);
-            }
-            window
-        }
+        window
     }
 }
 
@@ -159,25 +168,11 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
                 .inner_size(140.0, 140.0);
 
         let window = window.build().expect("Unable to build startup window");
+
         #[cfg(target_os = "macos")]
         {
-            use cocoa::appkit::{NSColor, NSWindow};
-            use cocoa::base::{id, nil};
-
-            let ns_window = window.ns_window().unwrap() as id;
-            unsafe {
-                // macOS: Handle multiple spaces correctly
-                ns_window.setCollectionBehavior_(cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorMoveToActiveSpace);
-
-                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
-                    nil,
-                    33.0 / 255.0,
-                    54.0 / 255.0,
-                    201.0 / 255.0,
-                    0.0,
-                );
-                ns_window.setBackgroundColor_(bg_color);
-            }
+            move_macos_window_to_active_space(&window);
+            set_macos_window_background(&window, 0.0);
         }
 
         window
@@ -201,25 +196,10 @@ pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
 
         let window = win_builder.build().unwrap();
 
-        // set background color only when building for macOS
         #[cfg(target_os = "macos")]
-        {
-            use cocoa::appkit::{NSColor, NSWindow};
-            use cocoa::base::{id, nil};
+        set_macos_window_background(&window, 0.1);
 
-            let ns_window = window.ns_window().unwrap() as id;
-            unsafe {
-                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
-                    nil,
-                    33.0 / 255.0,
-                    54.0 / 255.0,
-                    201.0 / 255.0,
-                    0.1,
-                );
-                ns_window.setBackgroundColor_(bg_color);
-            }
-            window
-        }
+        window
     }
 }
 
@@ -272,12 +252,4 @@ pub fn hide_setting_window(app: &AppHandle) {
 pub fn show_startup_window(app: &AppHandle) {
     let window = get_startup_window(app);
     platform::show_startup_window(&window);
-}
-
-pub fn hide_startup_window(app: &AppHandle) {
-    if let Some(startup_window) = app.get_webview_window(STARTUP_WINDOW) {
-        if startup_window.is_visible().unwrap_or_default() {
-            platform::hide_startup_window(&startup_window);
-        }
-    }
 }
