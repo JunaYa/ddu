@@ -24,7 +24,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex justify-between bg-card p4">
+  <div class="liquid-glass liquid-glass-panel flex justify-between p4">
     <div>
       <span class="text-secondary">开机自动启动</span>
     </div>

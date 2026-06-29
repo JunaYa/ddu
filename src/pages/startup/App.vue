@@ -23,7 +23,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="startup p-8">
+  <div class="startup app-shell p-8">
     <div class="mb-4 flex items-center justify-center">
       <img :src="logo" alt="logo" class="logo relative h-18 w-18">
     </div>

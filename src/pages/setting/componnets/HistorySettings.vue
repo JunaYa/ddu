@@ -57,7 +57,7 @@ onMounted(loadSettings)
 </script>
 
 <template>
-  <div>
+  <div class="liquid-glass liquid-glass-panel p-4">
     <div class="mb-3 text-base font-bold">
       History
     </div>
@@ -65,7 +65,7 @@ onMounted(loadSettings)
     <div class="setting-row">
       <span class="setting-label">Retention Period</span>
       <select
-        class="select-settings w-36"
+        class="liquid-glass-control select-settings w-36"
         :value="retentionDays"
         @change="saveRetention(Number(($event.target as HTMLSelectElement).value))"
       >
@@ -86,7 +86,7 @@ onMounted(loadSettings)
 
     <div class="setting-row">
       <span class="setting-label">Clear All History</span>
-      <button class="danger-btn" @click="clearHistory">
+      <button class="liquid-glass-control danger-btn" @click="clearHistory">
         Clear
       </button>
     </div>
@@ -110,7 +110,7 @@ onMounted(loadSettings)
   padding: 4px 16px;
   border: 1px solid rgba(239, 68, 68, 0.5);
   border-radius: 6px;
-  background: transparent;
+  background: rgba(239, 68, 68, 0.08);
   color: #ef4444;
   font-size: 13px;
   cursor: pointer;

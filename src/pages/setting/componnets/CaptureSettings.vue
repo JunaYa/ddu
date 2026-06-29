@@ -53,7 +53,7 @@ onMounted(loadSettings)
 </script>
 
 <template>
-  <div>
+  <div class="liquid-glass liquid-glass-panel p-4">
     <div class="mb-3 text-base font-bold">
       Capture
     </div>
@@ -64,7 +64,7 @@ onMounted(loadSettings)
         <button
           v-for="d in delayOptions"
           :key="d"
-          :class="['delay-btn', { active: defaultDelay === d }]"
+          :class="['liquid-glass-control delay-btn', { active: defaultDelay === d }]"
           @click="saveDelay(d)"
         >
           {{ d === 0 ? 'None' : `${d}s` }}
@@ -86,7 +86,7 @@ onMounted(loadSettings)
       <span class="setting-label">File Naming</span>
       <input
         v-model="namingTemplate"
-        class="input-base w-48 text-sm"
+        class="liquid-glass-control input-base w-48 text-sm"
         placeholder="{date}_{time}_{mode}"
         @blur="saveTemplate"
       >
@@ -109,9 +109,9 @@ onMounted(loadSettings)
 
 .delay-btn {
   padding: 4px 12px;
-  border: 1px solid rgba(128, 128, 128, 0.3);
+  border: 1px solid var(--c-glass-border);
   border-radius: 6px;
-  background: transparent;
+  background: var(--c-glass-control);
   color: inherit;
   font-size: 13px;
   cursor: pointer;
@@ -119,12 +119,13 @@ onMounted(loadSettings)
 }
 
 .delay-btn:hover {
-  border-color: rgba(59, 130, 246, 0.5);
+  border-color: var(--c-glass-border-strong);
+  background: var(--c-glass-surface-hover);
 }
 
 .delay-btn.active {
-  background: rgba(59, 130, 246, 0.8);
-  border-color: rgba(59, 130, 246, 0.8);
+  background: rgba(var(--rgb-primary), 0.78);
+  border-color: rgba(var(--rgb-primary), 0.62);
   color: #fff;
 }
 </style>

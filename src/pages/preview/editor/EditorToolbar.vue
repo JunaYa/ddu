@@ -35,7 +35,7 @@ const colors = ['#ff0000', '#ff6600', '#ffcc00', '#00cc00', '#0066ff', '#9933ff'
 </script>
 
 <template>
-  <div class="editor-toolbar">
+  <div class="editor-toolbar liquid-glass">
     <div class="tool-group">
       <button
         v-for="tool in tools"
@@ -101,9 +101,9 @@ const colors = ['#ff0000', '#ff6600', '#ffcc00', '#00cc00', '#0066ff', '#9933ff'
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid var(--c-glass-border);
+  background: var(--c-glass-surface-strong);
   border-radius: 8px;
-  backdrop-filter: blur(10px);
   user-select: none;
 }
 
@@ -128,8 +128,8 @@ const colors = ['#ff0000', '#ff6600', '#ffcc00', '#00cc00', '#0066ff', '#9933ff'
   transition: all 0.15s;
 }
 
-.tool-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-.tool-btn.active { background: rgba(59, 130, 246, 0.8); color: #fff; }
+.tool-btn:hover { background: var(--c-glass-control); color: #fff; }
+.tool-btn.active { background: rgba(var(--rgb-primary), 0.78); color: #fff; }
 
 .color-btn {
   width: 20px;
@@ -174,6 +174,6 @@ const colors = ['#ff0000', '#ff6600', '#ffcc00', '#00cc00', '#0066ff', '#9933ff'
   font-size: 16px;
   cursor: pointer;
 }
-.action-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: #fff; }
+.action-btn:hover:not(:disabled) { background: var(--c-glass-control); color: #fff; }
 .action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 </style>

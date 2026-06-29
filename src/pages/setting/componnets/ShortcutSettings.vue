@@ -95,7 +95,7 @@ onMounted(loadShortcuts)
 </script>
 
 <template>
-  <div>
+  <div class="liquid-glass liquid-glass-panel p-4">
     <div class="mb-3 text-base font-bold">
       Shortcuts
     </div>
@@ -104,12 +104,12 @@ onMounted(loadShortcuts)
       <span class="shortcut-label">{{ sc.label }}</span>
       <div class="shortcut-controls">
         <button
-          :class="['shortcut-key', { recording: recording === sc.id }]"
+          :class="['liquid-glass-control shortcut-key', { recording: recording === sc.id }]"
           @click="startRecording(sc.id)"
         >
           {{ recording === sc.id ? (recordedKeys || 'Press keys...') : sc.key }}
         </button>
-        <button class="reset-btn" title="Reset to default" @click="resetShortcut(sc)">
+        <button class="liquid-glass-control reset-btn" title="Reset to default" @click="resetShortcut(sc)">
           ↺
         </button>
       </div>
@@ -148,9 +148,9 @@ onMounted(loadShortcuts)
 
 .shortcut-key {
   padding: 4px 16px;
-  border: 1px solid rgba(128, 128, 128, 0.3);
+  border: 1px solid var(--c-glass-border);
   border-radius: 6px;
-  background: rgba(128, 128, 128, 0.1);
+  background: var(--c-glass-control);
   color: inherit;
   font-size: 13px;
   font-family: monospace;
@@ -163,22 +163,22 @@ onMounted(loadShortcuts)
 .shortcut-key:hover { border-color: rgba(59, 130, 246, 0.5); }
 
 .shortcut-key.recording {
-  border-color: rgba(59, 130, 246, 0.8);
-  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(var(--rgb-primary), 0.62);
+  background: rgba(var(--rgb-primary), 0.16);
   animation: pulse 1s infinite;
 }
 
 .reset-btn {
   width: 28px;
   height: 28px;
-  border: none;
+  border: 1px solid var(--c-glass-border);
   border-radius: 6px;
-  background: transparent;
+  background: var(--c-glass-control);
   color: #999;
   font-size: 16px;
   cursor: pointer;
 }
-.reset-btn:hover { background: rgba(128, 128, 128, 0.2); color: inherit; }
+.reset-btn:hover { background: var(--c-glass-surface-hover); color: inherit; }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }

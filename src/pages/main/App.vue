@@ -5,7 +5,7 @@ import SnapVault from '~/pages/main/components/SnapVault.vue'
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="app-shell p-4">
     <SnapVault />
   </div>
 </template>

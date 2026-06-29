@@ -1,5 +1,7 @@
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
 use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
+#[cfg(target_os = "macos")]
+use tauri::window::{Effect, EffectState, EffectsBuilder};
 use tracing::info;
 
 use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW, STARTUP_WINDOW};
@@ -70,23 +72,12 @@ pub fn bottom_right_position(window: &WebviewWindow) {
 }
 
 #[cfg(target_os = "macos")]
-fn set_macos_window_background(window: &WebviewWindow, alpha: f64) {
-    use objc::runtime::{Class, Object, Sel};
-    use objc::Message;
-
-    unsafe {
-        let ns_window = window.ns_window().unwrap() as *mut Object;
-        let ns_color = Class::get("NSColor").expect("NSColor class not found");
-        let color: *mut Object = ns_color
-            .send_message(
-                Sel::register("colorWithRed:green:blue:alpha:"),
-                (33.0_f64 / 255.0, 54.0_f64 / 255.0, 201.0_f64 / 255.0, alpha),
-            )
-            .expect("failed to create NSColor");
-        let _: () = (&*ns_window)
-            .send_message(Sel::register("setBackgroundColor:"), (color,))
-            .expect("failed to set NSWindow background color");
-    }
+fn macos_glass_effect() -> tauri::utils::config::WindowEffectsConfig {
+    EffectsBuilder::new()
+        .effect(Effect::WindowBackground)
+        .state(EffectState::Active)
+        .radius(8.0)
+        .build()
 }
 
 #[cfg(target_os = "macos")]
@@ -120,12 +111,10 @@ pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
                 .skip_taskbar(true)
                 .inner_size(800.0, 600.0);
 
-        let window = win_builder.build().unwrap();
-
         #[cfg(target_os = "macos")]
-        set_macos_window_background(&window, 0.1);
+        let win_builder = win_builder.effects(macos_glass_effect());
 
-        window
+        win_builder.build().unwrap()
     }
 }
 
@@ -139,16 +128,15 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
                 .minimizable(false)
                 .maximizable(false)
                 .resizable(true)
+                .transparent(true)
                 .skip_taskbar(true)
                 .fullscreen(false)
                 .inner_size(600.0, 620.0);
 
-        let window = win_builder.build().unwrap();
-
         #[cfg(target_os = "macos")]
-        set_macos_window_background(&window, 0.1);
+        let win_builder = win_builder.effects(macos_glass_effect());
 
-        window
+        win_builder.build().unwrap()
     }
 }
 
@@ -172,7 +160,6 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
         #[cfg(target_os = "macos")]
         {
             move_macos_window_to_active_space(&window);
-            set_macos_window_background(&window, 0.0);
         }
 
         window
@@ -194,12 +181,10 @@ pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
                 .resizable(false)
                 .inner_size(360.0, 280.0);
 
-        let window = win_builder.build().unwrap();
-
         #[cfg(target_os = "macos")]
-        set_macos_window_background(&window, 0.1);
+        let win_builder = win_builder.effects(macos_glass_effect());
 
-        window
+        win_builder.build().unwrap()
     }
 }
 

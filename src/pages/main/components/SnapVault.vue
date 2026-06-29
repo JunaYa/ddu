@@ -164,8 +164,8 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div class="flex flex-row justify-between">
-      <div class="mb-2 text-lg font-bold">
+    <div class="liquid-glass liquid-glass-toolbar flex flex-row justify-between px-3 py-2">
+      <div class="text-lg font-bold">
         SnapVault
       </div>
       <div class="flex flex-1 flex-row items-center justify-end gap-4">
@@ -186,20 +186,20 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <div class="flex flex-row items-center justify-start gap-4 my-4">
+    <div class="liquid-glass liquid-glass-toolbar my-4 flex flex-row items-center justify-start gap-4 px-3 py-2">
       <div class="flex flex-row items-center justify-center gap-2"> 
         <span>全部</span>
         <Checkbox :checked="isCheckedAll" :some-checked="hasChecked && !isCheckedAll" :disabled="list.length === 0" @change="onChangeAll" />
       </div>
-      <div v-if="hasChecked" class="flex flex-row items-center justify-center gap-2" @click="handleDelete">
+      <div v-if="hasChecked" class="liquid-glass-control h-8 w-8 flex cursor-pointer flex-row items-center justify-center gap-2 rounded-full" @click="handleDelete">
         <i class="h-6 w-6 cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M12 12h2v12h-2z" fill="currentColor" /><path d="M18 12h2v12h-2z" fill="currentColor" /><path d="M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z" fill="#232323" /><path d="M12 2h8v2h-8z" fill="#232323" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M12 12h2v12h-2z" fill="currentColor" /><path d="M18 12h2v12h-2z" fill="currentColor" /><path d="M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z" fill="currentColor" /><path d="M12 2h8v2h-8z" fill="currentColor" /></svg>
         </i>
       </div>
       <div v-if="checkedCount >= 2" class="flex flex-row items-center justify-center gap-2" :class="{ 'opacity-50 pointer-events-none': combining }">
         <span class="text-sm">拼合</span>
-        <button class="rounded-md border border-gray-300 px-3 py-1 text-sm cursor-pointer hover:border-primary" @click="handleCombine('vertical')">竖排</button>
-        <button class="rounded-md border border-gray-300 px-3 py-1 text-sm cursor-pointer hover:border-primary" @click="handleCombine('horizontal')">横排</button>
+        <button class="liquid-glass-control cursor-pointer rounded-md px-3 py-1 text-sm" @click="handleCombine('vertical')">竖排</button>
+        <button class="liquid-glass-control cursor-pointer rounded-md px-3 py-1 text-sm" @click="handleCombine('horizontal')">横排</button>
       </div>
     </div>
     <div v-if="list.length > 0" class="flex flex-row items-center justify-center">
