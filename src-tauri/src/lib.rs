@@ -27,15 +27,29 @@ pub fn run() {
 
             menu::create_tray(app)?;
 
-            let app_local_data = app
-                .path()
-                .app_local_data_dir()
-                .expect("could not resolve app local data path");
             let store = app.store("settings.json")?;
-            store.set(
-                "screenshot_path".to_string(),
-                json!({ "value": app_local_data.to_string_lossy() }),
-            );
+            // Only seed the default screenshot path when the user has not set
+            // one yet. Previously this ran unconditionally on every launch and
+            // clobbered any custom path the user configured in settings.
+            let has_custom_path = store
+                .get("screenshot_path")
+                .and_then(|v| {
+                    v.as_object()
+                        .and_then(|obj| obj.get("value"))
+                        .and_then(|value| value.as_str())
+                        .map(|s| !s.is_empty())
+                })
+                .unwrap_or(false);
+            if !has_custom_path {
+                let app_local_data = app
+                    .path()
+                    .app_local_data_dir()
+                    .expect("could not resolve app local data path");
+                store.set(
+                    "screenshot_path".to_string(),
+                    json!({ "value": app_local_data.to_string_lossy() }),
+                );
+            }
 
             // check if first run
             let value = store
