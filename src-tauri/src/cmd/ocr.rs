@@ -98,7 +98,8 @@ return resultText
 pub fn detect_sensitive_info(text: String) -> Vec<SensitiveFinding> {
     let mut findings = Vec::new();
 
-    let email_re = regex_lite::Regex::new(r#"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"#).unwrap();
+    let email_re = regex_lite::Regex::new(r#"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"#)
+        .expect("static email regex is valid");
     for m in email_re.find_iter(&text) {
         findings.push(SensitiveFinding {
             finding_type: "email".to_string(),
@@ -108,7 +109,8 @@ pub fn detect_sensitive_info(text: String) -> Vec<SensitiveFinding> {
         });
     }
 
-    let phone_re = regex_lite::Regex::new(r#"\b(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"#).unwrap();
+    let phone_re = regex_lite::Regex::new(r#"\b(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"#)
+        .expect("static phone regex is valid");
     for m in phone_re.find_iter(&text) {
         findings.push(SensitiveFinding {
             finding_type: "phone".to_string(),
@@ -118,7 +120,8 @@ pub fn detect_sensitive_info(text: String) -> Vec<SensitiveFinding> {
         });
     }
 
-    let api_key_re = regex_lite::Regex::new(r#"(?i)(api[_-]?key|secret|token|password)\s*[:=]\s*['"]?[\w\-./+]{16,}"#).unwrap();
+    let api_key_re = regex_lite::Regex::new(r#"(?i)(api[_-]?key|secret|token|password)\s*[:=]\s*['"]?[\w\-./+]{16,}"#)
+        .expect("static api-key regex is valid");
     for m in api_key_re.find_iter(&text) {
         findings.push(SensitiveFinding {
             finding_type: "apiKey".to_string(),
@@ -128,7 +131,8 @@ pub fn detect_sensitive_info(text: String) -> Vec<SensitiveFinding> {
         });
     }
 
-    let jwt_re = regex_lite::Regex::new(r#"eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}"#).unwrap();
+    let jwt_re = regex_lite::Regex::new(r#"eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}"#)
+        .expect("static jwt regex is valid");
     for m in jwt_re.find_iter(&text) {
         findings.push(SensitiveFinding {
             finding_type: "jwt".to_string(),
@@ -138,7 +142,8 @@ pub fn detect_sensitive_info(text: String) -> Vec<SensitiveFinding> {
         });
     }
 
-    let ip_re = regex_lite::Regex::new(r#"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"#).unwrap();
+    let ip_re = regex_lite::Regex::new(r#"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"#)
+        .expect("static ip regex is valid");
     for m in ip_re.find_iter(&text) {
         findings.push(SensitiveFinding {
             finding_type: "ipAddress".to_string(),

@@ -7,7 +7,7 @@ import ShortcutSettings from './componnets/ShortcutSettings.vue'
 </script>
 
 <template>
-  <div class="setting p-4 overflow-y-auto max-h-100vh">
+  <div class="setting app-shell max-h-100vh overflow-y-auto p-4">
     <AutoStart />
     <div class="my-4 h-.5px w-full bg-border" />
     <ScreenshotPath />

@@ -3,11 +3,12 @@ import { invoke } from '@tauri-apps/api/core'
 import { confirm } from '@tauri-apps/plugin-dialog'
 import { LazyStore } from '@tauri-apps/plugin-store'
 import { onMounted, ref } from 'vue'
+import Toggle from '~/components/Toggle.vue'
 
 const store = new LazyStore('settings.json')
 
 const retentionDays = ref(30)
-const maxSizeMb = ref(2048)
+const cleanupEnabled = ref(false)
 
 const retentionOptions = [
   { label: '7 days', value: 7 },
@@ -20,13 +21,21 @@ async function loadSettings() {
   const days = await store.get<{ value: number }>('history_retention_days')
   if (days?.value !== undefined) retentionDays.value = days.value
 
-  const size = await store.get<{ value: number }>('history_max_size_mb')
-  if (size?.value !== undefined) maxSizeMb.value = size.value
+  const enabled = await store.get<{ value: boolean }>('history_cleanup_enabled')
+  if (enabled?.value !== undefined) cleanupEnabled.value = enabled.value
 }
 
 async function saveRetention(val: number) {
   retentionDays.value = val
   await store.set('history_retention_days', { value: val })
+  await store.save()
+}
+
+// Opt-in gate for retention auto-deletion. Default off — the backend never
+// prunes until the user explicitly enables this.
+async function saveCleanupEnabled(val: boolean) {
+  cleanupEnabled.value = val
+  await store.set('history_cleanup_enabled', { value: val })
   await store.save()
 }
 
@@ -48,7 +57,7 @@ onMounted(loadSettings)
 </script>
 
 <template>
-  <div>
+  <div class="liquid-glass liquid-glass-panel p-4">
     <div class="mb-3 text-base font-bold">
       History
     </div>
@@ -56,7 +65,7 @@ onMounted(loadSettings)
     <div class="setting-row">
       <span class="setting-label">Retention Period</span>
       <select
-        class="select-settings w-36"
+        class="liquid-glass-control select-settings w-36"
         :value="retentionDays"
         @change="saveRetention(Number(($event.target as HTMLSelectElement).value))"
       >
@@ -67,19 +76,17 @@ onMounted(loadSettings)
     </div>
 
     <div class="setting-row">
-      <span class="setting-label">Max Storage (MB)</span>
-      <input
-        v-model.number="maxSizeMb"
-        type="number"
-        class="input-base w-24 text-sm"
-        min="100"
-        max="10240"
-      >
+      <span class="setting-label">Auto-delete captures older than retention</span>
+      <Toggle
+        :key="`cleanup-${cleanupEnabled}`"
+        :value="cleanupEnabled"
+        @change="saveCleanupEnabled(!cleanupEnabled)"
+      />
     </div>
 
     <div class="setting-row">
       <span class="setting-label">Clear All History</span>
-      <button class="danger-btn" @click="clearHistory">
+      <button class="liquid-glass-control danger-btn" @click="clearHistory">
         Clear
       </button>
     </div>
@@ -103,7 +110,7 @@ onMounted(loadSettings)
   padding: 4px 16px;
   border: 1px solid rgba(239, 68, 68, 0.5);
   border-radius: 6px;
-  background: transparent;
+  background: rgba(239, 68, 68, 0.08);
   color: #ef4444;
   font-size: 13px;
   cursor: pointer;

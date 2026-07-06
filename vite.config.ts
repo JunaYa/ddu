@@ -5,11 +5,33 @@ import { defineConfig } from 'vite'
 
 const host = process.env.TAURI_DEV_HOST
 
+function injectUnoDevStyles() {
+  return {
+    name: 'ddu:inject-uno-dev-styles',
+    apply: 'serve' as const,
+    transformIndexHtml() {
+      return [
+        {
+          tag: 'script',
+          attrs: {
+            type: 'module',
+            src: '/__uno.css',
+          },
+          injectTo: 'head' as const,
+        },
+      ]
+    },
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
   plugins: [
+    injectUnoDevStyles(),
     vue(),
-    UnoCSS(),
+    UnoCSS({
+      mode: 'dist-chunk',
+    }),
   ],
 
   resolve: {
@@ -45,6 +67,16 @@ export default defineConfig(async () => ({
         setting: path.resolve(__dirname, './setting.html'),
         preview: path.resolve(__dirname, './preview.html'),
         startup: path.resolve(__dirname, './startup.html'),
+      },
+      onwarn(warning, warn) {
+        if (
+          warning.code === 'INVALID_ANNOTATION'
+          && warning.id?.includes('/node_modules/')
+        ) {
+          return
+        }
+
+        warn(warning)
       },
     },
   },

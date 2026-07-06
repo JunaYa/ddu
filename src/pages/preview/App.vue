@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { readFile } from '@tauri-apps/plugin-fs'
 import { LazyStore } from '@tauri-apps/plugin-store'
 import { useElementHover } from '@vueuse/core'
 import { onMounted, ref } from 'vue'
@@ -36,8 +35,11 @@ function dragStart() {
 
 async function onEdit() {
   await invoke('update_preview_window')
-  const content = await readFile(imagePath.value)
-  const blob = new Blob([content], { type: 'image/png' })
+  // Load the bitmap through the backend (path-guarded, works for custom save
+  // paths) rather than plugin-fs readFile, then build a blob URL for the editor.
+  const b64 = await invoke<string>('get_image_base64', { path: imagePath.value })
+  const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0))
+  const blob = new Blob([bytes], { type: 'image/png' })
   imageSrc.value = URL.createObjectURL(blob)
   isEdit.value = true
 }

@@ -35,7 +35,7 @@ async function handleDelete(path: string) {
 </script>
 
 <template>
-  <div ref="snapHoverableElement" class="snap-vault-masonry-item relative rounded-md bg-card p-2">
+  <div ref="snapHoverableElement" class="snap-vault-masonry-item liquid-glass liquid-glass-panel relative p-2">
     <PictureReview :image-path="item.image" :show-background="false" variant="masonry" />
     <div v-if="isHovered" class="absolute right-3 top-3 z-11 flex flex-row gap-2">
       <Button class-name="btn-action-icon" anim @click="() => handleDelete(item.image)">

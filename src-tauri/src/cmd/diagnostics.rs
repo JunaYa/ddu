@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlatformCapability {

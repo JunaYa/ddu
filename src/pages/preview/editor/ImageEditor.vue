@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core'
-import { save } from '@tauri-apps/plugin-dialog'
-import { writeFile } from '@tauri-apps/plugin-fs'
 import { onMounted, onUnmounted, ref } from 'vue'
 import type { EditorStyle, ToolType } from './useEditor'
 import { useEditor } from './useEditor'
@@ -19,6 +17,14 @@ const emit = defineEmits<{
 
 const canvasRef = ref<HTMLCanvasElement>()
 const containerRef = ref<HTMLDivElement>()
+
+const toast = ref<{ message: string, type: 'success' | 'error' } | null>(null)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+function showToast(message: string, type: 'success' | 'error') {
+  toast.value = { message, type }
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.value = null }, 2000)
+}
 
 const {
   currentTool,
@@ -49,30 +55,30 @@ async function handleSave() {
   const dataUrl = exportImage('png')
   if (!dataUrl) return
 
-  const filePath = await save({
-    defaultPath: props.imagePath,
-    filters: [
-      { name: 'PNG', extensions: ['png'] },
-      { name: 'JPEG', extensions: ['jpg', 'jpeg'] },
-    ],
-  })
-  if (!filePath) return
-
+  // The native save dialog is opened server-side (save_annotated_image), so the
+  // destination path is resolved in Rust and never supplied by the renderer.
   const base64 = dataUrl.split(',')[1]
-  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
-  await writeFile(filePath, bytes)
-  emit('saved', filePath)
+  const defaultName = props.imagePath.split('/').pop() || 'screenshot.png'
+  const saved = await invoke<string | null>('save_annotated_image', {
+    base64,
+    defaultFileName: defaultName,
+  })
+  if (saved) emit('saved', saved)
 }
 
 async function handleCopy() {
   const dataUrl = exportImage('png')
   if (!dataUrl) return
 
+  // Send the bytes straight to the clipboard — no temp file on disk (R4).
   const base64 = dataUrl.split(',')[1]
-  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
-  const tempPath = props.imagePath.replace(/\.[^.]+$/, '_annotated.png')
-  await writeFile(tempPath, bytes)
-  await invoke('copy_image_to_clipboard', { path: tempPath })
+  try {
+    await invoke('copy_image_bytes', { base64 })
+    showToast('已复制到剪贴板', 'success')
+  }
+  catch (e) {
+    showToast(`复制失败: ${e}`, 'error')
+  }
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -104,6 +110,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
+  if (toastTimer) clearTimeout(toastTimer)
   destroy()
 })
 </script>
@@ -137,6 +144,9 @@ onUnmounted(() => {
     </div>
     <div class="editor-canvas-container">
       <canvas ref="canvasRef" />
+    </div>
+    <div v-if="toast" class="editor-toast" :class="toast.type">
+      {{ toast.message }}
     </div>
   </div>
 </template>
@@ -194,4 +204,19 @@ onUnmounted(() => {
   overflow: hidden;
   padding: 12px;
 }
+
+.editor-toast {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+.editor-toast.success { background: #16a34a; }
+.editor-toast.error { background: #dc2626; }
 </style>

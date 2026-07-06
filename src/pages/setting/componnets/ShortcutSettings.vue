@@ -1,8 +1,23 @@
 <script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core'
 import { LazyStore } from '@tauri-apps/plugin-store'
 import { onMounted, ref } from 'vue'
 
 const store = new LazyStore('settings.json')
+
+const errors = ref<Record<string, string>>({})
+
+async function reapplyShortcuts(id: string) {
+  try {
+    // Rust re-registers from the store and rolls back to the previous working
+    // set if a combo is invalid or taken by the system.
+    await invoke('apply_shortcuts')
+    errors.value[id] = ''
+  }
+  catch (e) {
+    errors.value[id] = String(e)
+  }
+}
 
 interface ShortcutItem {
   id: string
@@ -61,6 +76,8 @@ async function onKeyUp(_e: KeyboardEvent) {
     sc.key = recordedKeys.value
     await store.set(sc.id, { value: recordedKeys.value })
     await store.save()
+    // Keep the attempted value in the field even on failure so the user can fix it.
+    await reapplyShortcuts(sc.id)
   }
 
   recording.value = null
@@ -71,13 +88,14 @@ async function resetShortcut(sc: ShortcutItem) {
   sc.key = sc.default
   await store.set(sc.id, { value: sc.default })
   await store.save()
+  await reapplyShortcuts(sc.id)
 }
 
 onMounted(loadShortcuts)
 </script>
 
 <template>
-  <div>
+  <div class="liquid-glass liquid-glass-panel p-4">
     <div class="mb-3 text-base font-bold">
       Shortcuts
     </div>
@@ -86,15 +104,16 @@ onMounted(loadShortcuts)
       <span class="shortcut-label">{{ sc.label }}</span>
       <div class="shortcut-controls">
         <button
-          :class="['shortcut-key', { recording: recording === sc.id }]"
+          :class="['liquid-glass-control shortcut-key', { recording: recording === sc.id }]"
           @click="startRecording(sc.id)"
         >
           {{ recording === sc.id ? (recordedKeys || 'Press keys...') : sc.key }}
         </button>
-        <button class="reset-btn" title="Reset to default" @click="resetShortcut(sc)">
+        <button class="liquid-glass-control reset-btn" title="Reset to default" @click="resetShortcut(sc)">
           ↺
         </button>
       </div>
+      <span v-if="errors[sc.id]" class="shortcut-error">{{ errors[sc.id] }}</span>
     </div>
   </div>
 </template>
@@ -102,9 +121,18 @@ onMounted(loadShortcuts)
 <style scoped>
 .shortcut-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   padding: 8px 0;
+}
+
+.shortcut-error {
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #e5484d;
+  text-align: right;
 }
 
 .shortcut-label {
@@ -120,9 +148,9 @@ onMounted(loadShortcuts)
 
 .shortcut-key {
   padding: 4px 16px;
-  border: 1px solid rgba(128, 128, 128, 0.3);
+  border: 1px solid var(--c-glass-border);
   border-radius: 6px;
-  background: rgba(128, 128, 128, 0.1);
+  background: var(--c-glass-control);
   color: inherit;
   font-size: 13px;
   font-family: monospace;
@@ -135,22 +163,22 @@ onMounted(loadShortcuts)
 .shortcut-key:hover { border-color: rgba(59, 130, 246, 0.5); }
 
 .shortcut-key.recording {
-  border-color: rgba(59, 130, 246, 0.8);
-  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(var(--rgb-primary), 0.62);
+  background: rgba(var(--rgb-primary), 0.16);
   animation: pulse 1s infinite;
 }
 
 .reset-btn {
   width: 28px;
   height: 28px;
-  border: none;
+  border: 1px solid var(--c-glass-border);
   border-radius: 6px;
-  background: transparent;
+  background: var(--c-glass-control);
   color: #999;
   font-size: 16px;
   cursor: pointer;
 }
-.reset-btn:hover { background: rgba(128, 128, 128, 0.2); color: inherit; }
+.reset-btn:hover { background: var(--c-glass-surface-hover); color: inherit; }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }

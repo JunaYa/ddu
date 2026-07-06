@@ -1,5 +1,7 @@
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
 use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
+#[cfg(target_os = "macos")]
+use tauri::window::{Effect, EffectState, EffectsBuilder};
 use tracing::info;
 
 use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW, STARTUP_WINDOW};
@@ -69,6 +71,34 @@ pub fn bottom_right_position(window: &WebviewWindow) {
     }
 }
 
+#[cfg(target_os = "macos")]
+fn macos_glass_effect() -> tauri::utils::config::WindowEffectsConfig {
+    EffectsBuilder::new()
+        .effect(Effect::WindowBackground)
+        .state(EffectState::Active)
+        .radius(8.0)
+        .build()
+}
+
+#[cfg(target_os = "macos")]
+fn move_macos_window_to_active_space(window: &WebviewWindow) {
+    use objc::runtime::{Object, Sel};
+    use objc::Message;
+
+    type NSUInteger = libc::c_ulong;
+    const NS_WINDOW_COLLECTION_BEHAVIOR_MOVE_TO_ACTIVE_SPACE: NSUInteger = 1 << 1;
+
+    unsafe {
+        let ns_window = window.ns_window().unwrap() as *mut Object;
+        let _: () = (&*ns_window)
+            .send_message(
+                Sel::register("setCollectionBehavior:"),
+                (NS_WINDOW_COLLECTION_BEHAVIOR_MOVE_TO_ACTIVE_SPACE,),
+            )
+            .expect("failed to set NSWindow collection behavior");
+    }
+}
+
 pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
         window
@@ -81,27 +111,10 @@ pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
                 .skip_taskbar(true)
                 .inner_size(800.0, 600.0);
 
-        let window = win_builder.build().unwrap();
-
-        // set background color only when building for macOS
         #[cfg(target_os = "macos")]
-        {
-            use cocoa::appkit::{NSColor, NSWindow};
-            use cocoa::base::{id, nil};
+        let win_builder = win_builder.effects(macos_glass_effect());
 
-            let ns_window = window.ns_window().unwrap() as id;
-            unsafe {
-                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
-                    nil,
-                    33.0 / 255.0,
-                    54.0 / 255.0,
-                    201.0 / 255.0,
-                    0.1,
-                );
-                ns_window.setBackgroundColor_(bg_color);
-            }
-            window
-        }
+        win_builder.build().unwrap()
     }
 }
 
@@ -115,31 +128,15 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
                 .minimizable(false)
                 .maximizable(false)
                 .resizable(true)
+                .transparent(true)
                 .skip_taskbar(true)
                 .fullscreen(false)
                 .inner_size(600.0, 620.0);
 
-        let window = win_builder.build().unwrap();
-
-        // set background color only when building for macOS
         #[cfg(target_os = "macos")]
-        {
-            use cocoa::appkit::{NSColor, NSWindow};
-            use cocoa::base::{id, nil};
+        let win_builder = win_builder.effects(macos_glass_effect());
 
-            let ns_window = window.ns_window().unwrap() as id;
-            unsafe {
-                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
-                    nil,
-                    33.0 / 255.0,
-                    54.0 / 255.0,
-                    201.0 / 255.0,
-                    0.1,
-                );
-                ns_window.setBackgroundColor_(bg_color);
-            }
-            window
-        }
+        win_builder.build().unwrap()
     }
 }
 
@@ -159,25 +156,10 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
                 .inner_size(140.0, 140.0);
 
         let window = window.build().expect("Unable to build startup window");
+
         #[cfg(target_os = "macos")]
         {
-            use cocoa::appkit::{NSColor, NSWindow};
-            use cocoa::base::{id, nil};
-
-            let ns_window = window.ns_window().unwrap() as id;
-            unsafe {
-                // macOS: Handle multiple spaces correctly
-                ns_window.setCollectionBehavior_(cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorMoveToActiveSpace);
-
-                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
-                    nil,
-                    33.0 / 255.0,
-                    54.0 / 255.0,
-                    201.0 / 255.0,
-                    0.0,
-                );
-                ns_window.setBackgroundColor_(bg_color);
-            }
+            move_macos_window_to_active_space(&window);
         }
 
         window
@@ -199,27 +181,10 @@ pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
                 .resizable(false)
                 .inner_size(360.0, 280.0);
 
-        let window = win_builder.build().unwrap();
-
-        // set background color only when building for macOS
         #[cfg(target_os = "macos")]
-        {
-            use cocoa::appkit::{NSColor, NSWindow};
-            use cocoa::base::{id, nil};
+        let win_builder = win_builder.effects(macos_glass_effect());
 
-            let ns_window = window.ns_window().unwrap() as id;
-            unsafe {
-                let bg_color = NSColor::colorWithRed_green_blue_alpha_(
-                    nil,
-                    33.0 / 255.0,
-                    54.0 / 255.0,
-                    201.0 / 255.0,
-                    0.1,
-                );
-                ns_window.setBackgroundColor_(bg_color);
-            }
-            window
-        }
+        win_builder.build().unwrap()
     }
 }
 
@@ -272,12 +237,4 @@ pub fn hide_setting_window(app: &AppHandle) {
 pub fn show_startup_window(app: &AppHandle) {
     let window = get_startup_window(app);
     platform::show_startup_window(&window);
-}
-
-pub fn hide_startup_window(app: &AppHandle) {
-    if let Some(startup_window) = app.get_webview_window(STARTUP_WINDOW) {
-        if startup_window.is_visible().unwrap_or_default() {
-            platform::hide_startup_window(&startup_window);
-        }
-    }
 }

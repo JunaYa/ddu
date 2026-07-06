@@ -22,7 +22,7 @@ function onClick() {
 </script>
 
 <template>
-  <button :class="`${animate ? 'animate' : ''} ${props.className}`" type="button" @animationend="animate = false" @click="onClick">
+  <button :class="`liquid-glass-control ${animate ? 'animate' : ''} ${props.className}`" type="button" @animationend="animate = false" @click="onClick">
     <slot />
   </button>
 </template>

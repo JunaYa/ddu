@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { readDir, remove } from '@tauri-apps/plugin-fs'
-import { LazyStore } from '@tauri-apps/plugin-store'
+import { invoke } from '@tauri-apps/api/core'
 import { confirm } from '@tauri-apps/plugin-dialog'
 import { computed, onMounted, ref, watch } from 'vue'
-import { FileSizeFormatter } from '~/utils/file'
 import Checkbox from '~/components/Checkbox.vue'
 import SnapVaultItem from './SnapVaultItem.vue'
 import Empty from './Empty.vue'
 import SnapVaultItemList from './SnapVaultItemList.vue'
 
-const store = new LazyStore('settings.json')
+interface HistoryItem {
+  id: string
+  filename: string
+  full_path: string
+  captured_at: string
+}
 
 const list = ref<{ id: string, image: string, checked: boolean, datetime: Date }[]>([])
 
@@ -18,21 +21,25 @@ const displayMode = ref<'list' | 'grid'>('grid')
 const isAscending = ref(false)
 
 const deleteLoading = ref(false)
+const combining = ref(false)
 
 const isCheckedAll = computed(() => list.value.length > 0 && list.value.every(item => item.checked))
 
 const hasChecked = computed(() => list.value.some(item => item.checked))
 
-async function loadData() {
-  const val = await store.get<{ value: string }>('screenshot_path')
+const checkedCount = computed(() => list.value.filter(item => item.checked).length)
 
-  const entries = await readDir(val?.value ? `${val?.value}/images` : '')
-  
-  list.value = entries.filter(entry => entry.isFile && FileSizeFormatter.isPictureFile(entry.name)).map(entry => ({
-    id: entry.name,
-    image: `${val?.value}/images/${entry.name}`,
+async function loadData() {
+  // Read the history through the backend so custom save paths work and the
+  // fs scope can stay tightened. The command lists/filters image files in the
+  // controlled directory and returns metadata.
+  const items = await invoke<HistoryItem[]>('list_history_items', { path: 'images' })
+
+  list.value = items.map(item => ({
+    id: item.id,
+    image: item.full_path,
     checked: false,
-    datetime: new Date(parseInt(entry.name.replace(/^screenshot_|_|\.png$/g, ''))),
+    datetime: item.captured_at ? new Date(item.captured_at) : new Date(0),
   }))
   list.value.sort((a, b) => {
     return isAscending.value ? a.datetime.getTime() - b.datetime.getTime() : b.datetime.getTime() - a.datetime.getTime()
@@ -66,13 +73,88 @@ async function handleDelete() {
     { title: '确认删除', kind: 'warning' },
   )
   if (confirmation) {
-    for (const item of newList) {
-      await remove(item.image)
-    }
+    await invoke('delete_history_items', { paths: newList.map(item => item.image) })
     await loadData()
   }
   deleteLoading.value = false
 
+}
+
+function mimeFor(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase()
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg'
+  if (ext === 'webp') return 'image/webp'
+  return 'image/png'
+}
+
+function loadImageEl(path: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    invoke<string>('get_image_base64', { path })
+      .then((b64) => {
+        const img = new Image()
+        img.onload = () => resolve(img)
+        img.onerror = () => reject(new Error('image decode failed'))
+        img.src = `data:${mimeFor(path)};base64,${b64}`
+      })
+      .catch(reject)
+  })
+}
+
+// Compose the selected captures into one image and open it in the editor.
+// Vertical: images stacked top-to-bottom, left-aligned, canvas width = widest.
+// Horizontal: images left-to-right, top-aligned, canvas height = tallest.
+// Mismatched sizes get white fill; oversized composites are downscaled.
+async function handleCombine(layout: 'horizontal' | 'vertical') {
+  const checked = list.value.filter(item => item.checked)
+  if (checked.length < 2 || combining.value) return
+  combining.value = true
+  try {
+    const imgs = await Promise.all(checked.map(item => loadImageEl(item.image)))
+
+    let canvasW: number
+    let canvasH: number
+    if (layout === 'vertical') {
+      canvasW = Math.max(...imgs.map(im => im.naturalWidth))
+      canvasH = imgs.reduce((sum, im) => sum + im.naturalHeight, 0)
+    }
+    else {
+      canvasW = imgs.reduce((sum, im) => sum + im.naturalWidth, 0)
+      canvasH = Math.max(...imgs.map(im => im.naturalHeight))
+    }
+
+    const MAX = 8000
+    const scale = Math.min(1, MAX / Math.max(canvasW, canvasH))
+    const cw = Math.max(1, Math.round(canvasW * scale))
+    const ch = Math.max(1, Math.round(canvasH * scale))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = cw
+    canvas.height = ch
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, cw, ch)
+
+    let offset = 0
+    for (const im of imgs) {
+      const w = im.naturalWidth * scale
+      const h = im.naturalHeight * scale
+      if (layout === 'vertical') {
+        ctx.drawImage(im, 0, offset, w, h)
+        offset += h
+      }
+      else {
+        ctx.drawImage(im, offset, 0, w, h)
+        offset += w
+      }
+    }
+
+    const base64 = canvas.toDataURL('image/png').split(',')[1]
+    await invoke('open_combined_image', { base64 })
+  }
+  finally {
+    combining.value = false
+  }
 }
 
 onMounted(async () => {
@@ -82,8 +164,8 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div class="flex flex-row justify-between">
-      <div class="mb-2 text-lg font-bold">
+    <div class="liquid-glass liquid-glass-toolbar flex flex-row justify-between px-3 py-2">
+      <div class="text-lg font-bold">
         SnapVault
       </div>
       <div class="flex flex-1 flex-row items-center justify-end gap-4">
@@ -104,15 +186,20 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <div class="flex flex-row items-center justify-start gap-4 my-4">
+    <div class="liquid-glass liquid-glass-toolbar my-4 flex flex-row items-center justify-start gap-4 px-3 py-2">
       <div class="flex flex-row items-center justify-center gap-2"> 
         <span>全部</span>
         <Checkbox :checked="isCheckedAll" :some-checked="hasChecked && !isCheckedAll" :disabled="list.length === 0" @change="onChangeAll" />
       </div>
-      <div v-if="hasChecked" class="flex flex-row items-center justify-center gap-2" @click="handleDelete">
+      <div v-if="hasChecked" class="liquid-glass-control h-8 w-8 flex cursor-pointer flex-row items-center justify-center gap-2 rounded-full" @click="handleDelete">
         <i class="h-6 w-6 cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M12 12h2v12h-2z" fill="currentColor" /><path d="M18 12h2v12h-2z" fill="currentColor" /><path d="M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z" fill="#232323" /><path d="M12 2h8v2h-8z" fill="#232323" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M12 12h2v12h-2z" fill="currentColor" /><path d="M18 12h2v12h-2z" fill="currentColor" /><path d="M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z" fill="currentColor" /><path d="M12 2h8v2h-8z" fill="currentColor" /></svg>
         </i>
+      </div>
+      <div v-if="checkedCount >= 2" class="flex flex-row items-center justify-center gap-2" :class="{ 'opacity-50 pointer-events-none': combining }">
+        <span class="text-sm">拼合</span>
+        <button class="liquid-glass-control cursor-pointer rounded-md px-3 py-1 text-sm" @click="handleCombine('vertical')">竖排</button>
+        <button class="liquid-glass-control cursor-pointer rounded-md px-3 py-1 text-sm" @click="handleCombine('horizontal')">横排</button>
       </div>
     </div>
     <div v-if="list.length > 0" class="flex flex-row items-center justify-center">
