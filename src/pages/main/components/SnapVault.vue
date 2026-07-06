@@ -16,7 +16,7 @@ interface HistoryItem {
 
 const list = ref<{ id: string, image: string, checked: boolean, datetime: Date }[]>([])
 
-const displayMode = ref<'list' | 'grid'>('list')
+const displayMode = ref<'list' | 'grid'>('grid')
 
 const isAscending = ref(false)
 
@@ -206,10 +206,30 @@ onMounted(async () => {
       <div v-if="displayMode === 'list'" class="grid grid-cols-1 gap-4">
         <SnapVaultItemList v-for="(item, index) in list" :key="item.id" :item="item" @remove="loadData" @change="(val: boolean) => onChange(index, val)" />
       </div>
-        <div v-else class="grid grid-cols-3 gap-4">
+        <div v-else class="snap-vault-masonry">
           <SnapVaultItem v-for="item in list" :key="item.id" :item="item" @change="loadData" />
       </div>
     </div>
     <Empty v-else />
   </div>
 </template>
+
+<style scoped>
+.snap-vault-masonry {
+  width: min(100%, 1040px);
+  column-count: 3;
+  column-gap: 1rem;
+}
+
+@media (max-width: 760px) {
+  .snap-vault-masonry {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .snap-vault-masonry {
+    column-count: 1;
+  }
+}
+</style>

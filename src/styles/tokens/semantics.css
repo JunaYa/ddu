@@ -1,0 +1,83 @@
+/* Semantics — stable variables consumed by UnoCSS shortcuts and components. */
+:root, :root::selection {
+  --c-primary: rgb(var(--rgb-primary));
+  --c-primary-active: var(--color-primary-active);
+  --c-primary-light: var(--color-primary-light);
+  --c-primary-fade: var(--color-primary-fade);
+  --c-dark-primary: rgb(var(--rgb-dark-primary));
+  --c-dark-primary-active: var(--color-dark-primary-active);
+  --c-dark-primary-light: var(--color-dark-primary-light);
+  --c-dark-primary-fade: var(--color-dark-primary-fade);
+
+  --c-border: #eee;
+  --c-border-dark: #dccfcf;
+  --c-border-code: #ddd;
+  --c-danger: var(--color-danger);
+  --c-danger-active: var(--color-danger-active);
+
+  --c-bg-base: rgb(var(--rgb-bg-base));
+  --c-bg-active: #f2f2f2;
+  --c-bg-card: #00000006;
+  --c-bg-code: #00000006;
+  --c-bg-selection: #8885;
+  --c-bg-dm: #f1e8e6;
+  --c-bg-shell: linear-gradient(145deg, rgba(255, 255, 255, 0.48), rgba(232, 238, 255, 0.4) 48%, rgba(255, 244, 229, 0.36));
+  --c-glass-surface: rgba(255, 255, 255, 0.58);
+  --c-glass-surface-strong: rgba(255, 255, 255, 0.72);
+  --c-glass-surface-hover: rgba(255, 255, 255, 0.82);
+  --c-glass-border: rgba(255, 255, 255, 0.62);
+  --c-glass-border-strong: rgba(255, 255, 255, 0.78);
+  --c-glass-highlight: rgba(255, 255, 255, 0.78);
+  --c-glass-shadow: rgba(45, 35, 20, 0.14);
+  --c-glass-control: rgba(255, 255, 255, 0.44);
+
+  --c-text-base: #232323;
+  --c-text-code: #63470c;
+  --c-text-secondary: #686868;
+  --c-text-secondary-light: #919191;
+
+  --c-bg-btn-disabled: #a1a1a1;
+  --c-text-btn-disabled: #fff;
+  --c-text-btn-disabled-deeper: #a1a1a1;
+
+  --c-success: var(--color-success);
+  --c-warning: var(--color-warning);
+  --c-error: var(--color-error);
+}
+
+.dark {
+  --c-primary: var(--c-dark-primary);
+  --c-primary-active: var(--c-dark-primary-active);
+  --c-primary-light: var(--c-dark-primary-light);
+  --c-primary-fade: var(--c-dark-primary-fade);
+  --c-danger: var(--color-dark-danger);
+  --c-danger-active: var(--color-dark-danger-active);
+
+  --c-border: #222;
+  --c-border-code: #333;
+  --c-border-dark: #545251;
+
+  --rgb-bg-base: 17, 17, 17;
+
+  --c-bg-active: #191919;
+  --c-bg-card: #ffffff06;
+  --c-bg-code: #ffffff06;
+  --c-bg-dm: #0a2f35;
+  --c-bg-shell: linear-gradient(145deg, rgba(9, 12, 18, 0.74), rgba(25, 31, 42, 0.6) 50%, rgba(52, 38, 25, 0.42));
+  --c-glass-surface: rgba(24, 26, 32, 0.58);
+  --c-glass-surface-strong: rgba(31, 34, 42, 0.74);
+  --c-glass-surface-hover: rgba(42, 45, 54, 0.82);
+  --c-glass-border: rgba(255, 255, 255, 0.12);
+  --c-glass-border-strong: rgba(255, 255, 255, 0.2);
+  --c-glass-highlight: rgba(255, 255, 255, 0.16);
+  --c-glass-shadow: rgba(0, 0, 0, 0.34);
+  --c-glass-control: rgba(255, 255, 255, 0.08);
+
+  --c-text-base: #f3f3f3;
+  --c-text-code: #ecd88e;
+  --c-text-secondary: #888;
+  --c-text-secondary-light: #686868;
+
+  --c-bg-btn-disabled: #2a2a2a;
+  --c-text-btn-disabled: #919191;
+}

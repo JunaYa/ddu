@@ -1,0 +1,24 @@
+/* Primitives — raw brand and scale values. */
+:root {
+  --theme-color-name: #cc7d24;
+
+  --rgb-primary: 204, 125, 36;
+  --rgb-dark-primary: 204, 125, 36;
+  --rgb-bg-base: 250, 250, 250;
+
+  --color-primary-active: #b16605;
+  --color-primary-light: #cc7d2480;
+  --color-primary-fade: #c7781f1a;
+  --color-dark-primary-active: #b66b0d;
+  --color-dark-primary-light: #d1822980;
+  --color-dark-primary-fade: #cc7d241a;
+
+  --color-danger: #FF3C1B;
+  --color-danger-active: #B50900;
+  --color-dark-danger: #FF2810;
+  --color-dark-danger-active: #E02F00;
+
+  --color-success: #67C23A;
+  --color-warning: #E6A23C;
+  --color-error: #F56C6C;
+}

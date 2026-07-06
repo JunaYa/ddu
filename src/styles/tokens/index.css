@@ -1,0 +1,7 @@
+/* Ddu design-token CSS entry.
+ * Mirrors the package-style layering used by larger monorepos:
+ * primitives feed semantics, then effects and radius expose shared UI values. */
+@import "./primitives.css";
+@import "./semantics.css";
+@import "./effects.css";
+@import "./radius.css";

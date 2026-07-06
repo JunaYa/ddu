@@ -37,7 +37,7 @@ async function handleDelete(path: string) {
     <div class="flex flex-row items-center justify-center w-8 h-8">
       <Checkbox :checked="item.checked" @change="() => emit('change', !item.checked)" />
     </div>
-    <PictureReview :image-path="item.image" :width="100" :height="60" />
+    <PictureReview :image-path="item.image" :width="100" :height="60" :show-background="false" />
     <FileInfo :path="item.image" class-name="ml-8 flex flex-1 flex-row items-center justify-between gap-2" />
     <div class="flex flex-row items-center justify-center gap-2">
       <Button class-name="btn-action-icon" anim @click="() => handleDelete(item.image)">
