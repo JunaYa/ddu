@@ -59,7 +59,7 @@ pub fn run() {
                 .unwrap_or_else(|| json!({ "value": false }));
             if value.is_null() {
                 store.set("first_run".to_string(), json!({ "value": true }));
-                window::show_startup_window(&app.handle());
+                window::show_startup_window(app.handle());
             }
 
             // Enforce history retention on launch (no-op unless the user opted in).

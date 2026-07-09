@@ -104,14 +104,14 @@ pub async fn copy_picture_to_clipboard(
         return Err("Image file does not exist".to_string());
     }
 
-    let img = ImageReader::open(&path)
+    let img = ImageReader::open(path)
         .map_err(|e| e.to_string())?
         .decode()
         .map_err(|e| e.to_string())?;
 
     let rgba = img.into_rgba8();
-    let width = rgba.width() as u32;
-    let height = rgba.height() as u32;
+    let width = rgba.width();
+    let height = rgba.height();
     let rgba_data = rgba.into_raw();
     let img = Image::new(&rgba_data, width, height);
 

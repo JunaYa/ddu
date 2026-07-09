@@ -27,10 +27,7 @@ fn build_capture_result(output_path: &Path, mode: &str) -> Result<CaptureResult,
     if !output_path.exists() {
         return Err("NoExist".to_string());
     }
-    let (width, height) = match image::image_dimensions(output_path) {
-        Ok(dims) => dims,
-        Err(_) => (0, 0),
-    };
+    let (width, height) = image::image_dimensions(output_path).unwrap_or_default();
     Ok(CaptureResult {
         filename: output_path
             .file_name()
