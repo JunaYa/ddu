@@ -218,7 +218,7 @@ onBeforeUnmount(() => {
     <div v-if="highlight && label" class="hud" :style="hudStyle">
       {{ label }}
     </div>
-    <button v-if="session && !session.axAvailable" class="ax-chip" @click.stop="openAxPrefs">
+    <button v-if="session && !session.axAvailable" class="ax-chip" @mousedown.stop @mouseup.stop @click.stop="openAxPrefs">
       开启辅助功能可识别页面模块
     </button>
   </div>
