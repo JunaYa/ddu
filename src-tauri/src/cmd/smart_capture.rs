@@ -74,28 +74,36 @@ pub async fn smart_capture_start(app: tauri::AppHandle, mode: String) -> Result<
 
 #[tauri::command]
 pub async fn smart_capture_get_session(app: tauri::AppHandle) -> Result<SessionDto, String> {
-    let state = app.state::<SmartCaptureState>();
-    let guard = state.0.lock().unwrap();
-    let session = guard.as_ref().ok_or("no active capture session")?;
+    // Copy the raw pixels out under the lock, then encode with the lock released
+    // so concurrent hit_test calls are never starved.
+    let (raw, width, height, mode, ax_available, monitor, scale_factor) = {
+        let state = app.state::<SmartCaptureState>();
+        let guard = state.0.lock().unwrap();
+        let session = guard.as_ref().ok_or("no active capture session")?;
+        (
+            session.snapshot.as_raw().to_vec(),
+            session.snapshot.width(),
+            session.snapshot.height(),
+            session.mode.clone(),
+            session.ax_available,
+            session.monitor_rect,
+            session.scale_factor,
+        )
+    };
 
     // Fast PNG encode: this is a one-time transfer for on-screen display; the
     // final image is cropped losslessly from the in-memory RGBA instead.
     let mut png = Vec::new();
     let encoder = PngEncoder::new_with_quality(&mut png, CompressionType::Fast, FilterType::NoFilter);
     encoder
-        .write_image(
-            session.snapshot.as_raw(),
-            session.snapshot.width(),
-            session.snapshot.height(),
-            image::ExtendedColorType::Rgba8,
-        )
+        .write_image(&raw, width, height, image::ExtendedColorType::Rgba8)
         .map_err(|e| e.to_string())?;
 
     Ok(SessionDto {
-        mode: session.mode.clone(),
-        ax_available: session.ax_available,
-        monitor: session.monitor_rect,
-        scale_factor: session.scale_factor,
+        mode,
+        ax_available,
+        monitor,
+        scale_factor,
         snapshot_data_url: format!("data:image/png;base64,{}", STANDARD.encode(&png)),
     })
 }
@@ -163,7 +171,8 @@ pub async fn smart_capture_finalize(
 
         let cropped = image::imageops::crop_imm(&session.snapshot, px, py, pw, ph).to_image();
         let images_dir = get_images_dir(&app, "images".to_string())?;
-        let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
+        let now = Local::now();
+        let filename = format!("screenshot_{}.png", now.format("%Y%m%d_%H%M%S"));
         let output_path = images_dir.join(&filename);
         cropped.save(&output_path).map_err(|e| e.to_string())?;
         platform::set_last_capture_path(output_path.to_string_lossy().to_string());
@@ -174,7 +183,7 @@ pub async fn smart_capture_finalize(
             width: pw,
             height: ph,
             mode: if session.mode == "window" { "activeWindow".into() } else { "region".into() },
-            captured_at: Local::now().to_rfc3339(),
+            captured_at: now.to_rfc3339(),
         })
     })();
 
