@@ -19,22 +19,14 @@ async function capture_screen() {
   await showPreviewWindow(`${val?.value}/` + `images/${result}`)
 }
 
-// capture select
+// capture select — smart snapping overlay (auto granularity)
 async function capture_select() {
-  const result = await invoke('capture_select', {
-    path: `images`,
-  })
-  const val = await store.get<{ value: string }>('screenshot_path')
-  await showPreviewWindow(`${val?.value}/` + `images/${result}`)
+  await invoke('smart_capture_start', { mode: 'auto' })
 }
 
-// capture window
+// capture window — same overlay, initial granularity locked to windows
 async function capture_window() {
-  const result = await invoke('capture_window', {
-    path: `images`,
-  })
-  const val = await store.get<{ value: string }>('screenshot_path')
-  await showPreviewWindow(`${val?.value}/` + `images/${result}`)
+  await invoke('smart_capture_start', { mode: 'window' })
 }
 
 // take_capture_screen
