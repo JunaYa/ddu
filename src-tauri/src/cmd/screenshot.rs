@@ -38,19 +38,6 @@ pub async fn capture_select(app_handle: tauri::AppHandle, path: String) -> Resul
 }
 
 #[tauri::command]
-pub async fn capture_window(app_handle: tauri::AppHandle, path: String) -> Result<CaptureResultDto, String> {
-    let result = platform::capture_window(&app_handle, path).await?;
-    Ok(CaptureResultDto {
-        filename: result.filename,
-        full_path: result.full_path,
-        width: result.width,
-        height: result.height,
-        mode: result.mode,
-        captured_at: result.captured_at,
-    })
-}
-
-#[tauri::command]
 pub async fn capture_delayed(app_handle: tauri::AppHandle, path: String, delay_secs: u32) -> Result<CaptureResultDto, String> {
     let result = platform::capture_delayed(&app_handle, path, delay_secs).await?;
     Ok(CaptureResultDto {

@@ -8,7 +8,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use tauri_plugin_store::StoreExt;
 use tracing::info;
 
-use crate::{platform, window};
+use crate::{cmd, platform, window};
 
 const DEFAULT_HOTKEY_FULLSCREEN: &str = "CmdOrCtrl+Shift+A";
 const DEFAULT_HOTKEY_REGION: &str = "CmdOrCtrl+Shift+S";
@@ -166,11 +166,18 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                 }
                 CaptureAction::Region => {
                     info!("Capture Select Pressed!");
-                    tauri::async_runtime::block_on(platform::capture_select(app, "images".to_string()))
+                    // Smart capture runs its own post-capture flow from finalize.
+                    if let Err(e) = tauri::async_runtime::block_on(cmd::start_smart_capture(app, "auto")) {
+                        info!("smart capture failed to start: {e}");
+                    }
+                    return;
                 }
                 CaptureAction::Window => {
                     info!("Capture Window Pressed!");
-                    tauri::async_runtime::block_on(platform::capture_window(app, "images".to_string()))
+                    if let Err(e) = tauri::async_runtime::block_on(cmd::start_smart_capture(app, "window")) {
+                        info!("smart capture failed to start: {e}");
+                    }
+                    return;
                 }
             };
             post_capture_flow(app, result);

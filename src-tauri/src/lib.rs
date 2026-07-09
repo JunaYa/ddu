@@ -89,7 +89,6 @@ pub fn run() {
             cmd::greet,
             cmd::capture_screen,
             cmd::capture_select,
-            cmd::capture_window,
             cmd::capture_delayed,
             cmd::capture_current_screen,
             cmd::get_last_capture_path,
