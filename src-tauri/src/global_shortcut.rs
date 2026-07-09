@@ -31,7 +31,10 @@ pub struct ShortcutRegistry {
     registered: Mutex<Vec<(String, CaptureAction)>>,
 }
 
-fn handle_capture_result(app: &AppHandle, result: Result<platform::CaptureResult, String>) {
+/// Shared post-capture UX: hide the main window, pop the preview floater and
+/// hand it the capture payload. Used by hotkeys, the tray menu and smart
+/// capture's finalize.
+pub fn post_capture_flow(app: &AppHandle, result: Result<platform::CaptureResult, String>) {
     if let Ok(capture) = result {
         window::hide_main_window(app);
         let window = window::show_preview_window(app);
@@ -170,7 +173,7 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                     tauri::async_runtime::block_on(platform::capture_window(app, "images".to_string()))
                 }
             };
-            handle_capture_result(app, result);
+            post_capture_flow(app, result);
         })
         .build()
 }

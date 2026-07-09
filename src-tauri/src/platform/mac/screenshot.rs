@@ -128,9 +128,7 @@ pub async fn capture_select(app_handle: &tauri::AppHandle, path: String) -> Resu
         .map_err(|e| e.to_string())?;
 
     let result = build_capture_result(&output_path, "region")?;
-    if let Ok(mut last) = LAST_REGION.lock() {
-        *last = Some(output_path.to_string_lossy().to_string());
-    }
+    set_last_capture_path(output_path.to_string_lossy().to_string());
     info!("capture_select took: {:?}", start.elapsed());
     Ok(result)
 }
@@ -217,6 +215,12 @@ pub async fn capture_current_screen(app_handle: &tauri::AppHandle, path: String)
 
 pub fn get_last_capture_path() -> Option<String> {
     LAST_REGION.lock().ok().and_then(|r| r.clone())
+}
+
+pub fn set_last_capture_path(path: String) {
+    if let Ok(mut last) = LAST_REGION.lock() {
+        *last = Some(path);
+    }
 }
 
 pub fn open_screen_capture_preferences() {

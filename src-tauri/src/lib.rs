@@ -16,6 +16,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_positioner::init())
+        .manage(smart_capture::SmartCaptureState::default())
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             #[cfg(desktop)]
@@ -103,6 +104,12 @@ pub fn run() {
             cmd::hide_setting_window,
             cmd::open_screen_capture_preferences,
             cmd::check_accessibility_permissions,
+            cmd::smart_capture_start,
+            cmd::smart_capture_get_session,
+            cmd::smart_capture_hit_test,
+            cmd::smart_capture_finalize,
+            cmd::smart_capture_cancel,
+            cmd::open_accessibility_preferences,
             cmd::copy_image_to_clipboard,
             cmd::copy_image_bytes,
             cmd::get_image_base64,
