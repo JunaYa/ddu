@@ -26,6 +26,7 @@ extern "C" {
     fn CGEventCreate(source: *const c_void) -> *const c_void;
     fn CGEventGetLocation(event: *const c_void) -> CGPoint;
     fn CGPreflightScreenCaptureAccess() -> bool;
+    fn CGRequestScreenCaptureAccess() -> bool;
 }
 
 /// Returns `true` when Screen Recording permission has been granted.
@@ -33,6 +34,15 @@ extern "C" {
 /// must check explicitly before freezing.
 pub fn has_screen_recording_permission() -> bool {
     unsafe { CGPreflightScreenCaptureAccess() }
+}
+
+/// Prompt for Screen Recording permission. Registers this process in the
+/// System Settings list and shows the system dialog (once per TCC reset);
+/// returns `true` if access is already/now granted. Note: after the user
+/// grants access, macOS requires the app to be relaunched before capture
+/// APIs observe the new permission.
+pub fn request_screen_recording_permission() -> bool {
+    unsafe { CGRequestScreenCaptureAccess() }
 }
 
 /// Global cursor position in logical points, top-left origin — the same space

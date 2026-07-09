@@ -45,8 +45,17 @@ pub async fn start_smart_capture(app: &tauri::AppHandle, mode: &str) -> Result<(
     // succeeds silently without it (returns blanked frames for other apps), so
     // the old error path after freeze_screen_at never fired in practice.
     if !platform::has_screen_recording_permission() {
-        platform::open_screen_capture_preferences();
-        return Err("screen recording permission not granted".into());
+        // Registers this process in the System Settings list and shows the
+        // system prompt (once per TCC reset). Returns true if access is
+        // already effective; after a fresh grant macOS requires a relaunch,
+        // so we still bail and guide the user to the settings pane.
+        if !platform::request_screen_recording_permission() {
+            platform::open_screen_capture_preferences();
+            return Err(
+                "screen recording permission not granted (grant it in System Settings, then relaunch the app)"
+                    .into(),
+            );
+        }
     }
 
     let (cursor_x, cursor_y) = platform::cursor_position_logical();
