@@ -1,8 +1,10 @@
 use std::ffi::c_void;
 
+use core_foundation::base::{CFRelease, TCFType, CFTypeRef};
+use core_foundation::string::{CFString, CFStringRef};
 use xcap::Monitor;
 
-use crate::smart_capture::{LogicalRect, WindowInfo};
+use crate::smart_capture::{ChainNode, LogicalRect, WindowInfo};
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -133,6 +135,116 @@ pub fn open_accessibility_preferences() {
         .spawn();
 }
 
+type AXUIElementRef = *const c_void;
+type AXError = i32;
+
+const K_AX_ERROR_SUCCESS: AXError = 0;
+const K_AX_VALUE_CGPOINT: u32 = 1;
+const K_AX_VALUE_CGSIZE: u32 = 2;
+
+#[link(name = "ApplicationServices", kind = "framework")]
+extern "C" {
+    fn AXUIElementCreateSystemWide() -> AXUIElementRef;
+    fn AXUIElementCopyElementAtPosition(
+        application: AXUIElementRef,
+        x: f32,
+        y: f32,
+        element: *mut AXUIElementRef,
+    ) -> AXError;
+    fn AXUIElementCopyAttributeValue(
+        element: AXUIElementRef,
+        attribute: CFStringRef,
+        value: *mut CFTypeRef,
+    ) -> AXError;
+    fn AXValueGetValue(value: CFTypeRef, the_type: u32, value_ptr: *mut c_void) -> bool;
+}
+
+/// Copy one AX attribute; caller must CFRelease the returned ref.
+fn copy_attr(element: AXUIElementRef, name: &str) -> Option<CFTypeRef> {
+    let attr = CFString::new(name);
+    let mut out: CFTypeRef = std::ptr::null();
+    let err = unsafe { AXUIElementCopyAttributeValue(element, attr.as_concrete_TypeRef(), &mut out) };
+    if err == K_AX_ERROR_SUCCESS && !out.is_null() {
+        Some(out)
+    } else {
+        None
+    }
+}
+
+fn element_rect(element: AXUIElementRef) -> Option<LogicalRect> {
+    let pos_ref = copy_attr(element, "AXPosition")?;
+    let mut point = CGPoint::default();
+    let ok_pos = unsafe { AXValueGetValue(pos_ref, K_AX_VALUE_CGPOINT, &mut point as *mut _ as *mut c_void) };
+    unsafe { CFRelease(pos_ref) };
+
+    let size_ref = copy_attr(element, "AXSize")?;
+    let mut size = CGSize::default();
+    let ok_size = unsafe { AXValueGetValue(size_ref, K_AX_VALUE_CGSIZE, &mut size as *mut _ as *mut c_void) };
+    unsafe { CFRelease(size_ref) };
+
+    if ok_pos && ok_size {
+        Some(LogicalRect { x: point.x, y: point.y, w: size.width, h: size.height })
+    } else {
+        None
+    }
+}
+
+fn element_string(element: AXUIElementRef, name: &str) -> String {
+    match copy_attr(element, name) {
+        Some(value) => {
+            // Takes ownership of the +1 ref (create rule), releases on drop.
+            let s = unsafe { CFString::wrap_under_create_rule(value as CFStringRef) };
+            s.to_string()
+        }
+        None => String::new(),
+    }
+}
+
+/// Walk the AX hierarchy upward from the element under (x, y), deepest first.
+/// Stops at the window level (the command layer appends the authoritative
+/// window rect from the frozen window list). Any failure → empty vec, which
+/// downgrades hit-testing to window-level: that is the designed fallback.
+pub fn ax_chain_at(x: f64, y: f64, max_depth: usize) -> Vec<ChainNode> {
+    let mut nodes = Vec::new();
+    unsafe {
+        let system_wide = AXUIElementCreateSystemWide();
+        if system_wide.is_null() {
+            return nodes;
+        }
+        let mut element: AXUIElementRef = std::ptr::null();
+        let err = AXUIElementCopyElementAtPosition(system_wide, x as f32, y as f32, &mut element);
+        CFRelease(system_wide as CFTypeRef);
+        if err != K_AX_ERROR_SUCCESS || element.is_null() {
+            return nodes;
+        }
+
+        // `element` carries a +1 ref; every loop iteration owns exactly one.
+        let mut current = element;
+        for _ in 0..max_depth {
+            let role = element_string(current, "AXRole");
+            if role == "AXApplication" {
+                break; // application node has no useful frame
+            }
+            if let Some(rect) = element_rect(current) {
+                let label = element_string(current, "AXTitle");
+                nodes.push(ChainNode { rect, role: role.clone(), label });
+            }
+            if role == "AXWindow" {
+                break; // window tail is appended from the frozen list instead
+            }
+            match copy_attr(current, "AXParent") {
+                Some(parent) => {
+                    CFRelease(current as CFTypeRef);
+                    current = parent as AXUIElementRef;
+                }
+                None => break,
+            }
+        }
+        CFRelease(current as CFTypeRef);
+    }
+    nodes
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -159,6 +271,24 @@ mod tests {
             println!("{:?} {} / {}", w.rect, w.app_name, w.title);
         }
         assert!(!wins.is_empty());
+    }
+
+    /// Requires Accessibility permission. Hovers the screen center.
+    #[test]
+    #[ignore]
+    fn mac_smart_ax_chain_smoke() {
+        if !crate::platform::check_accessibility_permissions() {
+            eprintln!("Accessibility not granted; ax_chain_at must return empty");
+            assert!(ax_chain_at(400.0, 400.0, 12).is_empty());
+            return;
+        }
+        let chain = ax_chain_at(400.0, 400.0, 12);
+        for n in &chain {
+            println!("{} '{}' {:?}", n.role, n.label, n.rect);
+        }
+        // With AX granted and anything at (400,400), the chain is non-empty
+        // and every node has a positive-size rect.
+        assert!(chain.iter().all(|n| n.rect.w > 0.0 && n.rect.h > 0.0));
     }
 
 }
