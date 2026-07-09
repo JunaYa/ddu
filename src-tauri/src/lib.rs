@@ -8,6 +8,7 @@ mod constants;
 mod global_shortcut;
 mod menu;
 mod platform;
+mod smart_capture;
 mod window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
