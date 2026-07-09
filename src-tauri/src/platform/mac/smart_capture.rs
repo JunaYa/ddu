@@ -6,6 +6,7 @@ use xcap::Monitor;
 
 use crate::smart_capture::{ChainNode, LogicalRect, WindowInfo};
 
+// CGFloat is f64 on all 64-bit macOS targets (x86_64 / aarch64); AXValueGetValue and CGEventGetLocation depend on this exact two-f64 repr(C) layout.
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
 pub(crate) struct CGPoint {
@@ -139,6 +140,7 @@ type AXUIElementRef = *const c_void;
 type AXError = i32;
 
 const K_AX_ERROR_SUCCESS: AXError = 0;
+// Values from <HIServices/AXValue.h>: kAXValueCGPointType = 1, kAXValueCGSizeType = 2.
 const K_AX_VALUE_CGPOINT: u32 = 1;
 const K_AX_VALUE_CGSIZE: u32 = 2;
 
@@ -191,11 +193,16 @@ fn element_rect(element: AXUIElementRef) -> Option<LogicalRect> {
 
 fn element_string(element: AXUIElementRef, name: &str) -> String {
     match copy_attr(element, name) {
-        Some(value) => {
-            // Takes ownership of the +1 ref (create rule), releases on drop.
-            let s = unsafe { CFString::wrap_under_create_rule(value as CFStringRef) };
-            s.to_string()
-        }
+        Some(value) => unsafe {
+            // Only wrap genuine CFStrings; AX can hand back other CF types.
+            if core_foundation::base::CFGetTypeID(value) == CFString::type_id() {
+                // Takes ownership of the +1 ref (create rule), releases on drop.
+                CFString::wrap_under_create_rule(value as CFStringRef).to_string()
+            } else {
+                CFRelease(value);
+                String::new()
+            }
+        },
         None => String::new(),
     }
 }
