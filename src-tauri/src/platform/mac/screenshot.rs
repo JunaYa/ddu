@@ -50,8 +50,8 @@ struct CaptureSettings {
 }
 
 /// Read the user's capture preferences from the store (shape `{ "value": ... }`).
-/// Defaults are conservative: no delay, no cursor, keep the window shadow — so an
-/// untouched install behaves exactly as before.
+/// Defaults are conservative: no delay, no cursor — so an untouched install
+/// behaves exactly as before.
 fn read_capture_settings(app: &tauri::AppHandle) -> CaptureSettings {
     let store = app.get_store("settings.json");
     let num = |key: &str, default: u32| -> u32 {
