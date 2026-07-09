@@ -169,15 +169,24 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
         }
         MenuID::CAPTURE_SELECT => {
             info!("Capture Select");
-            if let Err(e) = tauri::async_runtime::block_on(crate::cmd::start_smart_capture(app, "auto")) {
-                tracing::info!("smart capture failed to start: {e}");
-            }
+            // I4: spawn onto the async runtime instead of block_on so the
+            // tray menu event handler thread is never stalled.
+            let app_clone = app.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = crate::cmd::start_smart_capture(&app_clone, "auto").await {
+                    tracing::info!("smart capture failed to start: {e}");
+                }
+            });
         }
         MenuID::CAPTURE_WINDOW => {
             info!("Capture Window");
-            if let Err(e) = tauri::async_runtime::block_on(crate::cmd::start_smart_capture(app, "window")) {
-                tracing::info!("smart capture failed to start: {e}");
-            }
+            // I4: same non-blocking pattern as CAPTURE_SELECT.
+            let app_clone = app.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = crate::cmd::start_smart_capture(&app_clone, "window").await {
+                    tracing::info!("smart capture failed to start: {e}");
+                }
+            });
         }
         MenuID::SHOW_MAIN_WINDOW => {
             info!("Show Home");

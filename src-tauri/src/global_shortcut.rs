@@ -166,17 +166,25 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                 }
                 CaptureAction::Region => {
                     info!("Capture Select Pressed!");
-                    // Smart capture runs its own post-capture flow from finalize.
-                    if let Err(e) = tauri::async_runtime::block_on(cmd::start_smart_capture(app, "auto")) {
-                        info!("smart capture failed to start: {e}");
-                    }
+                    // I4: spawn onto the async runtime instead of block_on so
+                    // the hotkey handler thread (sync) is never stalled.
+                    let app_clone = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(e) = cmd::start_smart_capture(&app_clone, "auto").await {
+                            info!("smart capture failed to start: {e}");
+                        }
+                    });
                     return;
                 }
                 CaptureAction::Window => {
                     info!("Capture Window Pressed!");
-                    if let Err(e) = tauri::async_runtime::block_on(cmd::start_smart_capture(app, "window")) {
-                        info!("smart capture failed to start: {e}");
-                    }
+                    // I4: same non-blocking pattern as Region.
+                    let app_clone = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(e) = cmd::start_smart_capture(&app_clone, "window").await {
+                            info!("smart capture failed to start: {e}");
+                        }
+                    });
                     return;
                 }
             };
