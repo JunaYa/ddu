@@ -67,6 +67,7 @@ export default defineConfig(async () => ({
         setting: path.resolve(__dirname, './setting.html'),
         preview: path.resolve(__dirname, './preview.html'),
         startup: path.resolve(__dirname, './startup.html'),
+        capture: path.resolve(__dirname, './capture.html'),
       },
       onwarn(warning, warn) {
         if (

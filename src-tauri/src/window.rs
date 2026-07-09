@@ -4,7 +4,7 @@ use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 use tauri::window::{Effect, EffectState, EffectsBuilder};
 use tracing::info;
 
-use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW, STARTUP_WINDOW};
+use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW, STARTUP_WINDOW, CAPTURE_WINDOW};
 use crate::platform;
 
 pub fn find_monitor(window: &WebviewWindow) -> Option<Monitor> {
@@ -237,4 +237,54 @@ pub fn hide_setting_window(app: &AppHandle) {
 pub fn show_startup_window(app: &AppHandle) {
     let window = get_startup_window(app);
     platform::show_startup_window(&window);
+}
+
+/// Frameless, opaque, always-on-top overlay covering one monitor. Recreated
+/// from scratch on every session so repeated hotkey presses never stack.
+pub fn create_capture_window(app: &AppHandle, x: f64, y: f64, w: f64, h: f64) -> WebviewWindow {
+    close_capture_window(app);
+
+    let window = WebviewWindowBuilder::new(app, CAPTURE_WINDOW, WebviewUrl::App("/capture.html".into()))
+        .title("capture")
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .skip_taskbar(true)
+        .always_on_top(true)
+        .visible_on_all_workspaces(true)
+        .accept_first_mouse(true)
+        .focused(true)
+        .position(x, y)
+        .inner_size(w, h)
+        .build()
+        .expect("Unable to build capture overlay window");
+
+    #[cfg(target_os = "macos")]
+    raise_capture_window_above_menu_bar(&window);
+
+    let _ = window.set_focus();
+    window
+}
+
+#[cfg(target_os = "macos")]
+fn raise_capture_window_above_menu_bar(window: &WebviewWindow) {
+    use objc::runtime::{Object, Sel};
+    use objc::Message;
+
+    // NSScreenSaverWindowLevel: above the menu bar and Dock, which the
+    // overlay must cover to offer the full monitor as selection surface.
+    const NS_SCREEN_SAVER_WINDOW_LEVEL: libc::c_long = 1000;
+
+    unsafe {
+        let ns_window = window.ns_window().unwrap() as *mut Object;
+        let _: () = (&*ns_window)
+            .send_message(Sel::register("setLevel:"), (NS_SCREEN_SAVER_WINDOW_LEVEL,))
+            .expect("failed to raise capture window level");
+    }
+}
+
+pub fn close_capture_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window(CAPTURE_WINDOW) {
+        let _ = window.close();
+    }
 }
