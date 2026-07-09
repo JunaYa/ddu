@@ -130,16 +130,19 @@ function onMouseDown(e: MouseEvent) {
 
 async function onMouseUp() {
   if (finalizing.value || !session.value) return
-  if (dragging.value && dragRect.value) {
+  const wasDragging = dragging.value
+  const rect = dragRect.value
+  dragStart.value = null
+  dragging.value = false
+  dragRect.value = null
+  if (wasDragging && rect) {
     const m = session.value.monitor
-    await finalize({ x: m.x + dragRect.value.x, y: m.y + dragRect.value.y, w: dragRect.value.w, h: dragRect.value.h })
+    await finalize({ x: m.x + rect.x, y: m.y + rect.y, w: rect.w, h: rect.h })
   }
   else {
     const node = chain.value[chainIndex.value]
     if (node) await finalize(node.rect)
   }
-  dragStart.value = null
-  dragging.value = false
 }
 
 async function finalize(rect: Rect) {
@@ -149,13 +152,20 @@ async function finalize(rect: Rect) {
     await invoke('smart_capture_finalize', { x: rect.x, y: rect.y, w: rect.w, h: rect.h })
   }
   catch (err) {
+    // Rust closes the overlay on every finalize path; recovering here is
+    // defense-in-depth so a failed IPC call can never freeze the overlay.
     console.error('finalize failed:', err)
+    finalizing.value = false
   }
 }
 
 function onKeyDown(e: KeyboardEvent) {
-  if (e.key === 'Escape') invoke('smart_capture_cancel')
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    invoke('smart_capture_cancel')
+  }
   if (e.key === 'Enter') {
+    e.preventDefault()
     const node = chain.value[chainIndex.value]
     if (node) finalize(node.rect)
   }
