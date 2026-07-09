@@ -33,6 +33,7 @@ pub struct WindowInfo {
     pub rect: LogicalRect,
     pub title: String,
     pub app_name: String,
+    pub pid: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -99,6 +100,12 @@ pub struct SmartSession {
     pub snapshot: image::RgbaImage,
     pub windows: Vec<WindowInfo>,
     pub ax_available: bool,
+    /// Monotonically-increasing id assigned at session start; the watchdog
+    /// uses it to confirm the session it checks is the one it was spawned for.
+    pub session_id: u64,
+    /// Set to `true` by `smart_capture_get_session` once the overlay JS has
+    /// successfully fetched the session data (handshake complete).
+    pub handshake_done: bool,
 }
 
 #[derive(Default)]
@@ -157,8 +164,8 @@ mod tests {
     #[test]
     fn picks_first_hit_in_z_order() {
         let wins = vec![
-            WindowInfo { rect: rect(0.0, 0.0, 100.0, 100.0), title: "top".into(), app_name: "A".into() },
-            WindowInfo { rect: rect(0.0, 0.0, 500.0, 500.0), title: "bottom".into(), app_name: "B".into() },
+            WindowInfo { rect: rect(0.0, 0.0, 100.0, 100.0), title: "top".into(), app_name: "A".into(), pid: 1 },
+            WindowInfo { rect: rect(0.0, 0.0, 500.0, 500.0), title: "bottom".into(), app_name: "B".into(), pid: 2 },
         ];
         assert_eq!(topmost_window_at(&wins, 50.0, 50.0), Some(0));
         assert_eq!(topmost_window_at(&wins, 300.0, 300.0), Some(1));

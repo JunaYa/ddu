@@ -25,6 +25,14 @@ pub(crate) struct CGSize {
 extern "C" {
     fn CGEventCreate(source: *const c_void) -> *const c_void;
     fn CGEventGetLocation(event: *const c_void) -> CGPoint;
+    fn CGPreflightScreenCaptureAccess() -> bool;
+}
+
+/// Returns `true` when Screen Recording permission has been granted.
+/// xcap succeeds without it (returns blanked frames for other apps), so we
+/// must check explicitly before freezing.
+pub fn has_screen_recording_permission() -> bool {
+    unsafe { CGPreflightScreenCaptureAccess() }
 }
 
 /// Global cursor position in logical points, top-left origin — the same space
@@ -107,6 +115,7 @@ pub fn list_windows_on_monitor(monitor_rect: &LogicalRect) -> Vec<WindowInfo> {
             !EXCLUDED_APPS.contains(&app.as_str())
         })
         .filter_map(|w| {
+            let pid = w.pid().ok()?;
             let rect = LogicalRect {
                 x: w.x().ok()? as f64,
                 y: w.y().ok()? as f64,
@@ -122,11 +131,12 @@ pub fn list_windows_on_monitor(monitor_rect: &LogicalRect) -> Vec<WindowInfo> {
                     rect,
                     title: w.title().unwrap_or_default(),
                     app_name: w.app_name().unwrap_or_default(),
+                    pid,
                 },
             ))
         })
         .collect();
-    wins.sort_by(|a, b| b.0.cmp(&a.0));
+    wins.sort_by_key(|w| std::cmp::Reverse(w.0));
     wins.into_iter().map(|(_, w)| w).collect()
 }
 
@@ -146,7 +156,7 @@ const K_AX_VALUE_CGSIZE: u32 = 2;
 
 #[link(name = "ApplicationServices", kind = "framework")]
 extern "C" {
-    fn AXUIElementCreateSystemWide() -> AXUIElementRef;
+    fn AXUIElementCreateApplication(pid: libc::pid_t) -> AXUIElementRef;
     fn AXUIElementCopyElementAtPosition(
         application: AXUIElementRef,
         x: f32,
@@ -207,20 +217,23 @@ fn element_string(element: AXUIElementRef, name: &str) -> String {
     }
 }
 
-/// Walk the AX hierarchy upward from the element under (x, y), deepest first.
-/// Stops at the window level (the command layer appends the authoritative
-/// window rect from the frozen window list). Any failure → empty vec, which
-/// downgrades hit-testing to window-level: that is the designed fallback.
-pub fn ax_chain_at(x: f64, y: f64, max_depth: usize) -> Vec<ChainNode> {
+/// Walk the AX hierarchy upward from the element under (x, y) for the app
+/// identified by `pid`, deepest first. Using a per-app element (rather than
+/// the system-wide one) prevents hitting our own screensaver-level overlay
+/// when a session is in progress. Stops at the window level (the command layer
+/// appends the authoritative window rect from the frozen window list). Any
+/// failure → empty vec, which downgrades hit-testing to window-level: that is
+/// the designed fallback.
+pub fn ax_chain_at(x: f64, y: f64, pid: u32, max_depth: usize) -> Vec<ChainNode> {
     let mut nodes = Vec::new();
     unsafe {
-        let system_wide = AXUIElementCreateSystemWide();
-        if system_wide.is_null() {
+        let app_element = AXUIElementCreateApplication(pid as libc::pid_t);
+        if app_element.is_null() {
             return nodes;
         }
         let mut element: AXUIElementRef = std::ptr::null();
-        let err = AXUIElementCopyElementAtPosition(system_wide, x as f32, y as f32, &mut element);
-        CFRelease(system_wide as CFTypeRef);
+        let err = AXUIElementCopyElementAtPosition(app_element, x as f32, y as f32, &mut element);
+        CFRelease(app_element as CFTypeRef);
         if err != K_AX_ERROR_SUCCESS || element.is_null() {
             return nodes;
         }
@@ -280,21 +293,51 @@ mod tests {
         assert!(!wins.is_empty());
     }
 
-    /// Requires Accessibility permission. Hovers the screen center.
+    /// Requires Accessibility permission. Uses a real non-minimized window not
+    /// owned by the test process as the probe target so the hit-test resolves
+    /// into an actual app rather than our own overlay.
     #[test]
     #[ignore]
     fn mac_smart_ax_chain_smoke() {
+        let own_pid = std::process::id();
+        // Find a visible non-minimized window owned by another process.
+        let target = xcap::Window::all()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|w| !w.is_minimized().unwrap_or(true))
+            .filter(|w| w.pid().map(|p| p != own_pid).unwrap_or(false))
+            .filter_map(|w| {
+                let pid = w.pid().ok()?;
+                let cx = w.x().ok()? as f64 + w.width().ok()? as f64 / 2.0;
+                let cy = w.y().ok()? as f64 + w.height().ok()? as f64 / 2.0;
+                Some((cx, cy, pid))
+            })
+            .next();
+
         if !crate::platform::check_accessibility_permissions() {
-            eprintln!("Accessibility not granted; ax_chain_at must return empty");
-            assert!(ax_chain_at(400.0, 400.0, 12).is_empty());
+            eprintln!("Accessibility not granted; skipping ax chain smoke test");
+            // Confirm that without AX the call still returns safely (empty).
+            if let Some((cx, cy, pid)) = target {
+                assert!(ax_chain_at(cx, cy, pid, 12).is_empty());
+            }
             return;
         }
-        let chain = ax_chain_at(400.0, 400.0, 12);
+
+        let (cx, cy, pid) = match target {
+            Some(t) => t,
+            None => {
+                eprintln!("No suitable probe window found; skipping");
+                return;
+            }
+        };
+
+        let chain = ax_chain_at(cx, cy, pid, 12);
         for n in &chain {
             println!("{} '{}' {:?}", n.role, n.label, n.rect);
         }
-        // With AX granted and anything at (400,400), the chain is non-empty
-        // and every node has a positive-size rect.
+        // With AX granted and a real window in scope, chain must be non-empty
+        // and every node must have a positive-size rect.
+        assert!(!chain.is_empty(), "expected non-empty AX chain for target window");
         assert!(chain.iter().all(|n| n.rect.w > 0.0 && n.rect.h > 0.0));
     }
 

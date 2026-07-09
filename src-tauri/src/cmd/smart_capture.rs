@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use chrono::Local;
 use image::codecs::png::{CompressionType, FilterType, PngEncoder};
@@ -14,6 +16,10 @@ use crate::smart_capture::{
     SmartCaptureState, SmartSession,
 };
 use crate::window;
+
+/// Monotonically-increasing session counter. Overflow is not a concern in
+/// practice: u64::MAX sessions would take astronomical time at human speed.
+static SESSION_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -35,19 +41,23 @@ pub struct HitTestDto {
 /// Freeze the cursor's monitor, cache the session and raise the overlay.
 /// Shared by the `smart_capture_start` command, global hotkeys and the tray.
 pub async fn start_smart_capture(app: &tauri::AppHandle, mode: &str) -> Result<(), String> {
+    // C1: preflight Screen Recording permission before touching xcap. xcap
+    // succeeds silently without it (returns blanked frames for other apps), so
+    // the old error path after freeze_screen_at never fired in practice.
+    if !platform::has_screen_recording_permission() {
+        platform::open_screen_capture_preferences();
+        return Err("screen recording permission not granted".into());
+    }
+
     let (cursor_x, cursor_y) = platform::cursor_position_logical();
-    let frozen = match platform::freeze_screen_at(cursor_x, cursor_y) {
-        Ok(frozen) => frozen,
-        Err(e) => {
-            // Most likely missing Screen Recording permission: guide the user
-            // to the system pane instead of showing a dead overlay.
-            platform::open_screen_capture_preferences();
-            return Err(e);
-        }
-    };
+    let frozen = platform::freeze_screen_at(cursor_x, cursor_y)
+        .inspect_err(|_| platform::open_screen_capture_preferences())?;
+
     let windows = platform::list_windows_on_monitor(&frozen.monitor_rect);
     let ax_available = platform::check_accessibility_permissions();
     let monitor_rect = frozen.monitor_rect;
+
+    let session_id = SESSION_COUNTER.fetch_add(1, Ordering::Relaxed);
 
     {
         let state = app.state::<SmartCaptureState>();
@@ -58,12 +68,38 @@ pub async fn start_smart_capture(app: &tauri::AppHandle, mode: &str) -> Result<(
             snapshot: frozen.snapshot,
             windows,
             ax_available,
+            session_id,
+            handshake_done: false,
         });
     }
 
-    // create_capture_window closes any stale overlay first (single-overlay
-    // guarantee, R8).
-    window::create_capture_window(app, monitor_rect.x, monitor_rect.y, monitor_rect.w, monitor_rect.h);
+    // I2: create_capture_window is now fallible; on failure, clean up the
+    // session so the app is not stranded in a started-but-windowless state.
+    if let Err(e) = window::create_capture_window(app, monitor_rect.x, monitor_rect.y, monitor_rect.w, monitor_rect.h) {
+        app.state::<SmartCaptureState>().0.lock().unwrap().take();
+        return Err(e);
+    }
+
+    // I3: watchdog — if the overlay page never calls smart_capture_get_session
+    // within 3 s, tear down the session so the user is never stranded behind a
+    // frozen overlay with no JS escape hatch.
+    let app_handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        let state = app_handle.state::<SmartCaptureState>();
+        let mut guard = state.0.lock().unwrap();
+        let tear_down = guard
+            .as_ref()
+            .map(|s| s.session_id == session_id && !s.handshake_done)
+            .unwrap_or(false);
+        if tear_down {
+            guard.take();
+            drop(guard);
+            info!("capture overlay never handshook; tearing down");
+            window::close_capture_window(&app_handle);
+        }
+    });
+
     Ok(())
 }
 
@@ -78,8 +114,10 @@ pub async fn smart_capture_get_session(app: tauri::AppHandle) -> Result<SessionD
     // so concurrent hit_test calls are never starved.
     let (raw, width, height, mode, ax_available, monitor, scale_factor) = {
         let state = app.state::<SmartCaptureState>();
-        let guard = state.0.lock().unwrap();
-        let session = guard.as_ref().ok_or("no active capture session")?;
+        let mut guard = state.0.lock().unwrap();
+        let session = guard.as_mut().ok_or("no active capture session")?;
+        // I3: mark handshake complete so the watchdog knows the overlay loaded.
+        session.handshake_done = true;
         (
             session.snapshot.as_raw().to_vec(),
             session.snapshot.width(),
@@ -111,7 +149,9 @@ pub async fn smart_capture_get_session(app: tauri::AppHandle) -> Result<SessionD
 #[tauri::command]
 pub async fn smart_capture_hit_test(app: tauri::AppHandle, x: f64, y: f64) -> Result<HitTestDto, String> {
     // Copy what we need and drop the lock before the potentially slow AX call.
-    let (window_node, app_name, ax_available) = {
+    // C2: also extract the window pid so we can scope AX to that app, avoiding
+    // resolution into our own screensaver-level overlay.
+    let (window_node, app_name, ax_available, window_pid) = {
         let state = app.state::<SmartCaptureState>();
         let guard = state.0.lock().unwrap();
         let session = guard.as_ref().ok_or("no active capture session")?;
@@ -122,21 +162,29 @@ pub async fn smart_capture_hit_test(app: tauri::AppHandle, x: f64, y: f64) -> Re
                     ChainNode { rect: win.rect, role: "AXWindow".into(), label: win.title.clone() },
                     win.app_name.clone(),
                     session.ax_available,
+                    Some(win.pid),
                 )
             }
             None => (
                 ChainNode { rect: session.monitor_rect, role: "AXScreen".into(), label: String::new() },
                 String::new(),
-                session.ax_available,
+                // C2: no window under cursor — no pid to scope to, so skip AX
+                // entirely; the chain is just the screen fallback node.
+                false,
+                None,
             ),
         }
     };
 
     let mut chain = if ax_available {
-        // AX calls can block on slow apps; keep them off the async runtime.
-        tauri::async_runtime::spawn_blocking(move || platform::ax_chain_at(x, y, 12))
-            .await
-            .unwrap_or_default()
+        if let Some(pid) = window_pid {
+            // AX calls can block on slow apps; keep them off the async runtime.
+            tauri::async_runtime::spawn_blocking(move || platform::ax_chain_at(x, y, pid, 12))
+                .await
+                .unwrap_or_default()
+        } else {
+            Vec::new()
+        }
     } else {
         Vec::new()
     };
