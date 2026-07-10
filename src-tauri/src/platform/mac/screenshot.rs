@@ -1,5 +1,5 @@
 use std::{
-    path::Path, process::Command, sync::Mutex, thread, time::{Duration, Instant}
+    path::Path, process::Command, sync::Mutex, time::Instant,
 };
 
 use chrono::Local;
@@ -27,10 +27,7 @@ fn build_capture_result(output_path: &Path, mode: &str) -> Result<CaptureResult,
     if !output_path.exists() {
         return Err("NoExist".to_string());
     }
-    let (width, height) = match image::image_dimensions(output_path) {
-        Ok(dims) => dims,
-        Err(_) => (0, 0),
-    };
+    let (width, height) = image::image_dimensions(output_path).unwrap_or_default();
     Ok(CaptureResult {
         filename: output_path
             .file_name()
@@ -47,12 +44,11 @@ fn build_capture_result(output_path: &Path, mode: &str) -> Result<CaptureResult,
 struct CaptureSettings {
     delay: u32,
     include_cursor: bool,
-    include_window_shadow: bool,
 }
 
 /// Read the user's capture preferences from the store (shape `{ "value": ... }`).
-/// Defaults are conservative: no delay, no cursor, keep the window shadow — so an
-/// untouched install behaves exactly as before.
+/// Defaults are conservative: no delay, no cursor — so an untouched install
+/// behaves exactly as before.
 fn read_capture_settings(app: &tauri::AppHandle) -> CaptureSettings {
     let store = app.get_store("settings.json");
     let num = |key: &str, default: u32| -> u32 {
@@ -73,7 +69,6 @@ fn read_capture_settings(app: &tauri::AppHandle) -> CaptureSettings {
     CaptureSettings {
         delay: num("capture_delay", 0),
         include_cursor: flag("include_cursor", false),
-        include_window_shadow: flag("include_window_shadow", true),
     }
 }
 
@@ -128,45 +123,9 @@ pub async fn capture_select(app_handle: &tauri::AppHandle, path: String) -> Resu
         .map_err(|e| e.to_string())?;
 
     let result = build_capture_result(&output_path, "region")?;
-    if let Ok(mut last) = LAST_REGION.lock() {
-        *last = Some(output_path.to_string_lossy().to_string());
-    }
+    set_last_capture_path(output_path.to_string_lossy().to_string());
     info!("capture_select took: {:?}", start.elapsed());
     Ok(result)
-}
-
-pub async fn capture_window(app_handle: &tauri::AppHandle, path: String) -> Result<CaptureResult, String> {
-    let start = Instant::now();
-    let images_dir = get_images_dir(app_handle, path)?;
-
-    let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
-    let output_path = images_dir.join(&filename);
-
-    Command::new("osascript")
-        .args(["-e", "tell application \"System Events\" to key code 48 using {command down}"])
-        .output()
-        .map_err(|e| e.to_string())?;
-
-    thread::sleep(Duration::from_secs(1));
-
-    let settings = read_capture_settings(app_handle);
-    let out = output_path.to_str().ok_or("invalid output path")?;
-    let mut args: Vec<String> = vec!["-iw".into(), "-t".into(), "png".into()];
-    if !settings.include_window_shadow {
-        args.push("-o".into()); // -o excludes the window shadow
-    }
-    if settings.delay > 0 {
-        args.push("-T".into());
-        args.push(settings.delay.to_string());
-    }
-    args.push(out.to_string());
-    Command::new("screencapture")
-        .args(&args)
-        .output()
-        .map_err(|e| e.to_string())?;
-
-    info!("capture_window took: {:?}", start.elapsed());
-    build_capture_result(&output_path, "activeWindow")
 }
 
 pub async fn capture_delayed(app_handle: &tauri::AppHandle, path: String, delay_secs: u32) -> Result<CaptureResult, String> {
@@ -217,6 +176,12 @@ pub async fn capture_current_screen(app_handle: &tauri::AppHandle, path: String)
 
 pub fn get_last_capture_path() -> Option<String> {
     LAST_REGION.lock().ok().and_then(|r| r.clone())
+}
+
+pub fn set_last_capture_path(path: String) {
+    if let Ok(mut last) = LAST_REGION.lock() {
+        *last = Some(path);
+    }
 }
 
 pub fn open_screen_capture_preferences() {

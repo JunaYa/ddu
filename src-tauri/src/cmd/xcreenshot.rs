@@ -26,11 +26,11 @@ pub async fn xcap_monitor(app_handle: tauri::AppHandle, path: String) -> Result<
 }
 
 fn normalized(filename: &str) -> String {
-    filename
-        .replace('|', "")
-        .replace('\\', "")
-        .replace(':', "")
-        .replace('/', "")
+    let mut s = filename.to_string();
+    for ch in ['|', '\\', ':', '/'] {
+        s = s.replace(ch, "");
+    }
+    s
 }
 
 fn window_capture(path: PathBuf) -> Result<String, String> {

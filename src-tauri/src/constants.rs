@@ -5,3 +5,5 @@ pub const PREVIEW_WINDOW: &str = "preview";
 pub const SETTING_WINDOW: &str = "setting";
 
 pub const STARTUP_WINDOW: &str = "startup";
+
+pub const CAPTURE_WINDOW: &str = "capture";

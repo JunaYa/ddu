@@ -7,7 +7,6 @@ const store = new LazyStore('settings.json')
 
 const defaultDelay = ref(3)
 const includeCursor = ref(false)
-const includeWindowShadow = ref(true)
 const namingTemplate = ref('{date}_{time}_{mode}')
 
 const delayOptions = [0, 3, 5, 10]
@@ -18,9 +17,6 @@ async function loadSettings() {
 
   const cursor = await store.get<{ value: boolean }>('include_cursor')
   if (cursor?.value !== undefined) includeCursor.value = cursor.value
-
-  const shadow = await store.get<{ value: boolean }>('include_window_shadow')
-  if (shadow?.value !== undefined) includeWindowShadow.value = shadow.value
 
   const template = await store.get<{ value: string }>('naming_template')
   if (template?.value) namingTemplate.value = template.value
@@ -35,12 +31,6 @@ async function saveDelay(val: number) {
 async function saveCursor(val: boolean) {
   includeCursor.value = val
   await store.set('include_cursor', { value: val })
-  await store.save()
-}
-
-async function saveShadow(val: boolean) {
-  includeWindowShadow.value = val
-  await store.set('include_window_shadow', { value: val })
   await store.save()
 }
 
@@ -75,11 +65,6 @@ onMounted(loadSettings)
     <div class="setting-row">
       <span class="setting-label">Include Cursor</span>
       <Toggle :value="includeCursor" @change="saveCursor(!includeCursor)" />
-    </div>
-
-    <div class="setting-row">
-      <span class="setting-label">Window Shadow</span>
-      <Toggle :value="includeWindowShadow" @change="saveShadow(!includeWindowShadow)" />
     </div>
 
     <div class="setting-row">

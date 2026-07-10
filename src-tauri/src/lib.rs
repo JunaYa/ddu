@@ -8,6 +8,7 @@ mod constants;
 mod global_shortcut;
 mod menu;
 mod platform;
+mod smart_capture;
 mod window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -15,6 +16,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_positioner::init())
+        .manage(smart_capture::SmartCaptureState::default())
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             #[cfg(desktop)]
@@ -57,7 +59,7 @@ pub fn run() {
                 .unwrap_or_else(|| json!({ "value": false }));
             if value.is_null() {
                 store.set("first_run".to_string(), json!({ "value": true }));
-                window::show_startup_window(&app.handle());
+                window::show_startup_window(app.handle());
             }
 
             // Enforce history retention on launch (no-op unless the user opted in).
@@ -87,7 +89,6 @@ pub fn run() {
             cmd::greet,
             cmd::capture_screen,
             cmd::capture_select,
-            cmd::capture_window,
             cmd::capture_delayed,
             cmd::capture_current_screen,
             cmd::get_last_capture_path,
@@ -102,6 +103,12 @@ pub fn run() {
             cmd::hide_setting_window,
             cmd::open_screen_capture_preferences,
             cmd::check_accessibility_permissions,
+            cmd::smart_capture_start,
+            cmd::smart_capture_get_session,
+            cmd::smart_capture_hit_test,
+            cmd::smart_capture_finalize,
+            cmd::smart_capture_cancel,
+            cmd::open_accessibility_preferences,
             cmd::copy_image_to_clipboard,
             cmd::copy_image_bytes,
             cmd::get_image_base64,

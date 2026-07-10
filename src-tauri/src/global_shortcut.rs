@@ -8,7 +8,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use tauri_plugin_store::StoreExt;
 use tracing::info;
 
-use crate::{platform, window};
+use crate::{cmd, platform, window};
 
 const DEFAULT_HOTKEY_FULLSCREEN: &str = "CmdOrCtrl+Shift+A";
 const DEFAULT_HOTKEY_REGION: &str = "CmdOrCtrl+Shift+S";
@@ -31,7 +31,10 @@ pub struct ShortcutRegistry {
     registered: Mutex<Vec<(String, CaptureAction)>>,
 }
 
-fn handle_capture_result(app: &AppHandle, result: Result<platform::CaptureResult, String>) {
+/// Shared post-capture UX: hide the main window, pop the preview floater and
+/// hand it the capture payload. Used by hotkeys, the tray menu and smart
+/// capture's finalize.
+pub fn post_capture_flow(app: &AppHandle, result: Result<platform::CaptureResult, String>) {
     if let Ok(capture) = result {
         window::hide_main_window(app);
         let window = window::show_preview_window(app);
@@ -163,14 +166,29 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                 }
                 CaptureAction::Region => {
                     info!("Capture Select Pressed!");
-                    tauri::async_runtime::block_on(platform::capture_select(app, "images".to_string()))
+                    // I4: spawn onto the async runtime instead of block_on so
+                    // the hotkey handler thread (sync) is never stalled.
+                    let app_clone = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(e) = cmd::start_smart_capture(&app_clone, "auto").await {
+                            info!("smart capture failed to start: {e}");
+                        }
+                    });
+                    return;
                 }
                 CaptureAction::Window => {
                     info!("Capture Window Pressed!");
-                    tauri::async_runtime::block_on(platform::capture_window(app, "images".to_string()))
+                    // I4: same non-blocking pattern as Region.
+                    let app_clone = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(e) = cmd::start_smart_capture(&app_clone, "window").await {
+                            info!("smart capture failed to start: {e}");
+                        }
+                    });
+                    return;
                 }
             };
-            handle_capture_result(app, result);
+            post_capture_flow(app, result);
         })
         .build()
 }
