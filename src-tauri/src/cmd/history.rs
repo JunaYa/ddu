@@ -7,6 +7,19 @@ use tracing::info;
 
 use crate::common::get_images_dir;
 
+pub const DEFAULT_HISTORY_RETENTION_DAYS: i64 = 30;
+
+pub fn retention_policy_for_install(
+    is_first_run: bool,
+    configured_days: Option<i64>,
+    configured_cleanup_enabled: Option<bool>,
+) -> (i64, bool) {
+    (
+        configured_days.unwrap_or(DEFAULT_HISTORY_RETENTION_DAYS),
+        configured_cleanup_enabled.unwrap_or(is_first_run),
+    )
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistoryItem {
     pub id: String,
@@ -19,6 +32,21 @@ pub struct HistoryItem {
     pub captured_at: String,
     pub favorite: bool,
     pub tags: Vec<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fresh_install_enables_the_default_retention_policy() {
+        assert_eq!(retention_policy_for_install(true, None, None), (30, true));
+    }
+
+    #[test]
+    fn existing_install_keeps_cleanup_disabled_until_user_opts_in() {
+        assert_eq!(retention_policy_for_install(false, None, None), (30, false));
+    }
 }
 
 #[tauri::command]
@@ -100,11 +128,17 @@ pub async fn list_history_items(
 ///   inside the controlled directory are eligible, so a user's own images in a
 ///   shared save folder are never collateral.
 pub fn prune_history(app: &tauri::AppHandle) {
-    let Some(store) = app.get_store("settings.json") else { return };
+    let Some(store) = app.get_store("settings.json") else {
+        return;
+    };
 
     let opted_in = store
         .get("history_cleanup_enabled")
-        .and_then(|v| v.as_object().and_then(|o| o.get("value")).and_then(|x| x.as_bool()))
+        .and_then(|v| {
+            v.as_object()
+                .and_then(|o| o.get("value"))
+                .and_then(|x| x.as_bool())
+        })
         .unwrap_or(false);
     if !opted_in {
         return;
@@ -112,19 +146,27 @@ pub fn prune_history(app: &tauri::AppHandle) {
 
     let days = store
         .get("history_retention_days")
-        .and_then(|v| v.as_object().and_then(|o| o.get("value")).and_then(|x| x.as_i64()))
+        .and_then(|v| {
+            v.as_object()
+                .and_then(|o| o.get("value"))
+                .and_then(|x| x.as_i64())
+        })
         .unwrap_or(-1);
     if days <= 0 {
         // -1 = keep forever; 0 / negative = invalid => never delete.
         return;
     }
 
-    let Ok(images_dir) = get_images_dir(app, "images".to_string()) else { return };
+    let Ok(images_dir) = get_images_dir(app, "images".to_string()) else {
+        return;
+    };
     let Some(cutoff) = SystemTime::now().checked_sub(Duration::from_secs(days as u64 * 86_400))
     else {
         return;
     };
-    let Ok(entries) = fs::read_dir(&images_dir) else { return };
+    let Ok(entries) = fs::read_dir(&images_dir) else {
+        return;
+    };
 
     let mut removed = 0u32;
     for entry in entries.flatten() {
@@ -145,7 +187,9 @@ pub fn prune_history(app: &tauri::AppHandle) {
         if !ext_ok || !name_ok {
             continue;
         }
-        let Ok(modified) = fs::metadata(&path).and_then(|m| m.modified()) else { continue };
+        let Ok(modified) = fs::metadata(&path).and_then(|m| m.modified()) else {
+            continue;
+        };
         if modified < cutoff
             && crate::common::ensure_within_images_dir(app, &path).is_ok()
             && fs::remove_file(&path).is_ok()
@@ -183,7 +227,8 @@ pub async fn get_history_item_detail(
     app_handle: tauri::AppHandle,
     path: String,
 ) -> Result<HistoryItem, String> {
-    let guarded = crate::common::ensure_within_images_dir(&app_handle, std::path::Path::new(&path))?;
+    let guarded =
+        crate::common::ensure_within_images_dir(&app_handle, std::path::Path::new(&path))?;
     let path_ref = guarded.as_path();
     if !path_ref.exists() {
         return Err("File not found".to_string());

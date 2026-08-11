@@ -1,5 +1,11 @@
 use std::{
-    path::Path, process::Command, sync::Mutex, time::Instant,
+    path::Path,
+    process::Command,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Mutex,
+    },
+    time::Instant,
 };
 
 use chrono::Local;
@@ -21,6 +27,22 @@ pub struct CaptureResult {
 }
 
 static LAST_REGION: Mutex<Option<String>> = Mutex::new(None);
+static CAPTURE_SEQUENCE: AtomicU64 = AtomicU64::new(1);
+
+fn capture_filename(captured_at: chrono::NaiveDateTime, sequence: u64) -> String {
+    format!(
+        "screenshot_{}_{}.png",
+        captured_at.format("%Y%m%d_%H%M%S_%3f"),
+        sequence
+    )
+}
+
+fn next_capture_filename() -> String {
+    capture_filename(
+        Local::now().naive_local(),
+        CAPTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed),
+    )
+}
 
 fn build_capture_result(output_path: &Path, mode: &str) -> Result<CaptureResult, String> {
     if !output_path.exists() {
@@ -54,7 +76,11 @@ fn read_capture_settings(app: &tauri::AppHandle) -> CaptureSettings {
         store
             .as_ref()
             .and_then(|s| s.get(key))
-            .and_then(|v| v.as_object().and_then(|o| o.get("value")).and_then(|x| x.as_u64()))
+            .and_then(|v| {
+                v.as_object()
+                    .and_then(|o| o.get("value"))
+                    .and_then(|x| x.as_u64())
+            })
             .map(|n| n as u32)
             .unwrap_or(default)
     };
@@ -62,7 +88,11 @@ fn read_capture_settings(app: &tauri::AppHandle) -> CaptureSettings {
         store
             .as_ref()
             .and_then(|s| s.get(key))
-            .and_then(|v| v.as_object().and_then(|o| o.get("value")).and_then(|x| x.as_bool()))
+            .and_then(|v| {
+                v.as_object()
+                    .and_then(|o| o.get("value"))
+                    .and_then(|x| x.as_bool())
+            })
             .unwrap_or(default)
     };
     CaptureSettings {
@@ -71,12 +101,15 @@ fn read_capture_settings(app: &tauri::AppHandle) -> CaptureSettings {
     }
 }
 
-pub async fn capture_screen(app_handle: &tauri::AppHandle, path: String) -> Result<CaptureResult, String> {
+pub async fn capture_screen(
+    app_handle: &tauri::AppHandle,
+    path: String,
+) -> Result<CaptureResult, String> {
     let start = Instant::now();
     let images_dir = get_images_dir(app_handle, path)?;
     std::fs::create_dir_all(&images_dir).map_err(|e| e.to_string())?;
 
-    let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
+    let filename = next_capture_filename();
     let output_path = images_dir.join(&filename);
 
     let settings = read_capture_settings(app_handle);
@@ -99,11 +132,14 @@ pub async fn capture_screen(app_handle: &tauri::AppHandle, path: String) -> Resu
     build_capture_result(&output_path, "fullScreen")
 }
 
-pub async fn capture_select(app_handle: &tauri::AppHandle, path: String) -> Result<CaptureResult, String> {
+pub async fn capture_select(
+    app_handle: &tauri::AppHandle,
+    path: String,
+) -> Result<CaptureResult, String> {
     let start = Instant::now();
     let images_dir = get_images_dir(app_handle, path)?;
 
-    let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
+    let filename = next_capture_filename();
     let output_path = images_dir.join(&filename);
 
     let settings = read_capture_settings(app_handle);
@@ -127,12 +163,16 @@ pub async fn capture_select(app_handle: &tauri::AppHandle, path: String) -> Resu
     Ok(result)
 }
 
-pub async fn capture_delayed(app_handle: &tauri::AppHandle, path: String, delay_secs: u32) -> Result<CaptureResult, String> {
+pub async fn capture_delayed(
+    app_handle: &tauri::AppHandle,
+    path: String,
+    delay_secs: u32,
+) -> Result<CaptureResult, String> {
     let start = Instant::now();
     let images_dir = get_images_dir(app_handle, path)?;
     std::fs::create_dir_all(&images_dir).map_err(|e| e.to_string())?;
 
-    let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
+    let filename = next_capture_filename();
     let output_path = images_dir.join(&filename);
 
     let out = output_path.to_str().ok_or("invalid output path")?;
@@ -141,16 +181,23 @@ pub async fn capture_delayed(app_handle: &tauri::AppHandle, path: String, delay_
         .output()
         .map_err(|e| e.to_string())?;
 
-    info!("capture_delayed ({}s) took: {:?}", delay_secs, start.elapsed());
+    info!(
+        "capture_delayed ({}s) took: {:?}",
+        delay_secs,
+        start.elapsed()
+    );
     build_capture_result(&output_path, "delayed")
 }
 
-pub async fn capture_current_screen(app_handle: &tauri::AppHandle, path: String) -> Result<CaptureResult, String> {
+pub async fn capture_current_screen(
+    app_handle: &tauri::AppHandle,
+    path: String,
+) -> Result<CaptureResult, String> {
     let start = Instant::now();
     let images_dir = get_images_dir(app_handle, path)?;
     std::fs::create_dir_all(&images_dir).map_err(|e| e.to_string())?;
 
-    let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
+    let filename = next_capture_filename();
     let output_path = images_dir.join(&filename);
 
     let settings = read_capture_settings(app_handle);
@@ -180,5 +227,23 @@ pub fn get_last_capture_path() -> Option<String> {
 pub fn set_last_capture_path(path: String) {
     if let Ok(mut last) = LAST_REGION.lock() {
         *last = Some(path);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn capture_filename_distinguishes_captures_in_the_same_second() {
+        let captured_at = chrono::NaiveDate::from_ymd_opt(2026, 8, 11)
+            .unwrap()
+            .and_hms_milli_opt(9, 30, 45, 123)
+            .unwrap();
+
+        assert_eq!(
+            capture_filename(captured_at, 7),
+            "screenshot_20260811_093045_123_7.png"
+        );
     }
 }

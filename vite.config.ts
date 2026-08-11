@@ -1,7 +1,7 @@
 import path from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import UnoCSS from 'unocss/vite'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 const host = process.env.TAURI_DEV_HOST
 
@@ -80,5 +80,9 @@ export default defineConfig(async () => ({
         warn(warning)
       },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.test.ts'],
   },
 }))

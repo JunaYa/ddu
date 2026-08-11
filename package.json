@@ -11,7 +11,8 @@
     "build:web": "vue-tsc --noEmit && vite build",
     "build:desktop": "tauri build --bundles app",
     "build:dmg": "tauri build --bundles dmg",
-    "test": "pnpm build:web && cargo test --manifest-path src-tauri/Cargo.toml",
+    "test": "pnpm test:web && pnpm build:web && cargo test --manifest-path src-tauri/Cargo.toml",
+    "test:web": "vitest run",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "preview": "vite preview",
     "lint": "echo 'eslint'",
@@ -41,9 +42,12 @@
     "@unocss/eslint-config": "^66.7.0",
     "@unocss/preset-mini": "^66.7.0",
     "@vitejs/plugin-vue": "^6.0.7",
+    "@vue/test-utils": "^2.4.11",
     "eslint": "^10.4.0",
+    "jsdom": "^30.0.1",
     "unocss": "^66.7.0",
     "vite": "^8.0.14",
+    "vitest": "^4.1.10",
     "vue-tsc": "^3.3.1"
   },
   "dmg": {

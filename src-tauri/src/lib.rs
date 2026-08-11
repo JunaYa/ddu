@@ -30,6 +30,7 @@ pub fn run() {
             menu::create_tray(app)?;
 
             let store = app.store("settings.json")?;
+            let first_run = is_first_run(store.get("first_run"));
             // Only seed the default screenshot path when the user has not set
             // one yet. Previously this ran unconditionally on every launch and
             // clobbered any custom path the user configured in settings.
@@ -53,9 +54,37 @@ pub fn run() {
                 );
             }
 
+            let configured_retention_days = store.get("history_retention_days").and_then(|v| {
+                v.as_object()
+                    .and_then(|o| o.get("value"))
+                    .and_then(|x| x.as_i64())
+            });
+            let configured_cleanup_enabled = store.get("history_cleanup_enabled").and_then(|v| {
+                v.as_object()
+                    .and_then(|o| o.get("value"))
+                    .and_then(|x| x.as_bool())
+            });
+            let (retention_days, cleanup_enabled) = cmd::retention_policy_for_install(
+                first_run,
+                configured_retention_days,
+                configured_cleanup_enabled,
+            );
+            if configured_retention_days.is_none() {
+                store.set(
+                    "history_retention_days".to_string(),
+                    json!({ "value": retention_days }),
+                );
+            }
+            if configured_cleanup_enabled.is_none() {
+                store.set(
+                    "history_cleanup_enabled".to_string(),
+                    json!({ "value": cleanup_enabled }),
+                );
+            }
+
             // First launch: show the startup window, which doubles as the
             // permission-guide (Screen Recording / Accessibility / Microphone).
-            if is_first_run(store.get("first_run")) {
+            if first_run {
                 store.set("first_run".to_string(), json!({ "value": true }));
                 window::show_startup_window(app.handle());
             }
