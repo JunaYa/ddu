@@ -3,8 +3,9 @@ import { invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { LazyStore } from '@tauri-apps/plugin-store'
 import { useElementHover } from '@vueuse/core'
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Button from '~/components/Button.vue'
+import { shouldAutoHidePreview } from '~/lib/preview-lifecycle'
 import PictureReview from './PictureReview.vue'
 import ImageEditor from './editor/ImageEditor.vue'
 
@@ -16,6 +17,7 @@ const isHovered = useElementHover(snapHoverableElement)
 const imagePath = ref('')
 const imageSrc = ref('')
 const isEdit = ref(false)
+const copyError = ref('')
 
 const captureInfo = ref<{
   filename: string
@@ -27,6 +29,24 @@ const captureInfo = ref<{
 } | null>(null)
 
 const appWindow = getCurrentWindow()
+let previewTimer: ReturnType<typeof setTimeout> | undefined
+let unlistenImagePrepared: (() => void) | undefined
+
+function clearPreviewTimer() {
+  if (previewTimer) {
+    clearTimeout(previewTimer)
+    previewTimer = undefined
+  }
+}
+
+function schedulePreviewHide() {
+  clearPreviewTimer()
+  if (!imagePath.value || !shouldAutoHidePreview({ hovered: isHovered.value, editing: isEdit.value })) return
+
+  previewTimer = setTimeout(() => {
+    invoke('hide_preview_window')
+  }, 5000)
+}
 
 function dragStart() {
   if (isEdit.value) return
@@ -34,6 +54,7 @@ function dragStart() {
 }
 
 async function onEdit() {
+  clearPreviewTimer()
   await invoke('update_preview_window')
   // Load the bitmap through the backend (path-guarded, works for custom save
   // paths) rather than plugin-fs readFile, then build a blob URL for the editor.
@@ -45,31 +66,42 @@ async function onEdit() {
 }
 
 async function onCopy() {
-  await invoke('copy_image_to_clipboard', { path: imagePath.value })
+  try {
+    await invoke('copy_image_to_clipboard', { path: imagePath.value })
+    copyError.value = ''
+  }
+  catch (error) {
+    copyError.value = `复制失败: ${error}`
+  }
 }
 
 function onSave() {
-  appWindow.close()
+  invoke('hide_preview_window')
 }
 
 function onCloseEditor() {
   isEdit.value = false
+  URL.revokeObjectURL(imageSrc.value)
   imageSrc.value = ''
 }
 
 function onEditorSaved(_path: string) {
   isEdit.value = false
+  URL.revokeObjectURL(imageSrc.value)
   imageSrc.value = ''
 }
 
+watch([isHovered, isEdit, imagePath], schedulePreviewHide)
+
 onMounted(async () => {
   const val = await store.get<{ value: string }>('screenshot_path')
-  appWindow.listen<any>('image-prepared', (event: any) => {
+  unlistenImagePrepared = await appWindow.listen<any>('image-prepared', (event: any) => {
     const payload = event.payload
     if (typeof payload === 'string') {
       imagePath.value = `${val?.value}/images/${payload}`
     } else {
       captureInfo.value = payload
+      copyError.value = payload.copyError || ''
       if (payload.fullPath) {
         imagePath.value = payload.fullPath
       } else {
@@ -77,6 +109,11 @@ onMounted(async () => {
       }
     }
   })
+})
+
+onBeforeUnmount(() => {
+  clearPreviewTimer()
+  unlistenImagePrepared?.()
 })
 </script>
 
@@ -103,6 +140,12 @@ onMounted(async () => {
       <Button class-name="btn-solid" :anim="true" @click="onSave">
         Close
       </Button>
+    </div>
+    <div v-if="copyError" class="absolute bottom-2 left-2 right-2 rounded bg-#7f1d1d p-2 text-center text-xs text-white">
+      {{ copyError }}
+      <button class="ml-2 underline" @click="onCopy">
+        重试复制
+      </button>
     </div>
   </div>
 </template>

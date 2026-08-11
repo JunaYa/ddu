@@ -31,6 +31,40 @@ pub struct ShortcutRegistry {
     registered: Mutex<Vec<(String, CaptureAction)>>,
 }
 
+fn capture_payload(capture: platform::CaptureResult, copy_error: Option<String>) -> serde_json::Value {
+    serde_json::json!({
+        "filename": capture.filename,
+        "fullPath": capture.full_path,
+        "width": capture.width,
+        "height": capture.height,
+        "mode": capture.mode,
+        "capturedAt": capture.captured_at,
+        "copyError": copy_error,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn capture_payload_keeps_copy_failure_visible_to_preview() {
+        let capture = platform::CaptureResult {
+            filename: "screenshot.png".to_string(),
+            full_path: "/safe/images/screenshot.png".to_string(),
+            width: 20,
+            height: 10,
+            mode: "fullScreen".to_string(),
+            captured_at: "2026-08-11T00:00:00Z".to_string(),
+        };
+
+        let payload = capture_payload(capture, Some("clipboard unavailable".to_string()));
+
+        assert_eq!(payload["filename"], "screenshot.png");
+        assert_eq!(payload["copyError"], "clipboard unavailable");
+    }
+}
+
 /// Shared post-capture UX: hide the main window, pop the preview floater and
 /// hand it the capture payload. Used by hotkeys, the tray menu and smart
 /// capture's finalize.
@@ -38,15 +72,13 @@ pub fn post_capture_flow(app: &AppHandle, result: Result<platform::CaptureResult
     if let Ok(capture) = result {
         window::hide_main_window(app);
         let window = window::show_preview_window(app);
-        let payload = serde_json::json!({
-            "filename": capture.filename,
-            "fullPath": capture.full_path,
-            "width": capture.width,
-            "height": capture.height,
-            "mode": capture.mode,
-            "capturedAt": capture.captured_at,
-        });
+        let app_handle = app.clone();
+        let image_path = capture.full_path.clone();
         tauri::async_runtime::spawn(async move {
+            let copy_error = crate::common::copy_picture_to_clipboard(app_handle, image_path)
+                .await
+                .err();
+            let payload = capture_payload(capture, copy_error);
             sleep(Duration::from_millis(500));
             let _ = window.emit("image-prepared", payload);
         });
