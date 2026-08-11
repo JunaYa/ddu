@@ -179,7 +179,7 @@ pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
                 .skip_taskbar(false)
                 .shadow(true)
                 .resizable(false)
-                .inner_size(360.0, 280.0);
+                .inner_size(380.0, 420.0);
 
         #[cfg(target_os = "macos")]
         let win_builder = win_builder.effects(macos_glass_effect());

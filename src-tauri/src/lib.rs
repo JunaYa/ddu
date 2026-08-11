@@ -53,11 +53,9 @@ pub fn run() {
                 );
             }
 
-            // check if first run
-            let value = store
-                .get("first_run")
-                .unwrap_or_else(|| json!({ "value": false }));
-            if value.is_null() {
+            // First launch: show the startup window, which doubles as the
+            // permission-guide (Screen Recording / Accessibility / Microphone).
+            if is_first_run(store.get("first_run")) {
                 store.set("first_run".to_string(), json!({ "value": true }));
                 window::show_startup_window(app.handle());
             }
@@ -103,6 +101,10 @@ pub fn run() {
             cmd::hide_setting_window,
             cmd::open_screen_capture_preferences,
             cmd::check_accessibility_permissions,
+            cmd::permission_status,
+            cmd::permission_request,
+            cmd::permission_open_settings,
+            cmd::restart_app,
             cmd::smart_capture_start,
             cmd::smart_capture_get_session,
             cmd::smart_capture_hit_test,
@@ -135,6 +137,16 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// The startup/permission-guide window shows only when the `first_run` marker
+/// has never been written. An explicit `null` (from older builds) also counts
+/// as a first run.
+fn is_first_run(stored: Option<serde_json::Value>) -> bool {
+    match stored {
+        None => true,
+        Some(value) => value.is_null(),
+    }
 }
 
 fn should_hide_instead_of_close(label: &str) -> bool {
@@ -178,5 +190,20 @@ mod tests {
     #[test]
     fn transient_preview_window_can_close_normally() {
         assert!(!should_hide_instead_of_close(constants::PREVIEW_WINDOW));
+    }
+
+    #[test]
+    fn fresh_install_with_no_marker_is_first_run() {
+        assert!(is_first_run(None));
+    }
+
+    #[test]
+    fn explicit_null_marker_is_first_run() {
+        assert!(is_first_run(Some(serde_json::Value::Null)));
+    }
+
+    #[test]
+    fn written_marker_is_not_first_run() {
+        assert!(!is_first_run(Some(json!({ "value": true }))));
     }
 }

@@ -12,11 +12,17 @@ const BASE_DIR = BaseDirectory.AppData
 
 // capture_screen
 async function capture_screen() {
-  const result = await invoke('capture_screen', {
-    path: `images`,
-  })
-  const val = await store.get<{ value: string }>('screenshot_path')
-  await showPreviewWindow(`${val?.value}/` + `images/${result}`)
+  try {
+    const result = await invoke('capture_screen', {
+      path: `images`,
+    })
+    const val = await store.get<{ value: string }>('screenshot_path')
+    await showPreviewWindow(`${val?.value}/` + `images/${result}`)
+  }
+  catch (error) {
+    // PERMISSION_DENIED:* errors already open the permission guide natively.
+    console.error('capture_screen error:', error)
+  }
 }
 
 // capture select — smart snapping overlay (auto granularity)

@@ -172,7 +172,9 @@ function onKeyDown(e: KeyboardEvent) {
 }
 
 function openAxPrefs() {
-  invoke('open_accessibility_preferences')
+  // Shows the one-time system prompt; falls back to opening the
+  // Accessibility pane in System Settings when already denied.
+  invoke('permission_request', { kind: 'accessibility' })
 }
 
 onMounted(async () => {

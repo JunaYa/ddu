@@ -9,6 +9,7 @@ use crate::common::get_images_dir;
 
 #[tauri::command]
 pub async fn xcap_window(app_handle: tauri::AppHandle, path: String) -> Result<String, String> {
+    super::ensure_screen_recording(&app_handle)?;
     let images_dir = get_images_dir(&app_handle, path)?;
 
     let filename = window_capture(images_dir)?;
@@ -18,6 +19,7 @@ pub async fn xcap_window(app_handle: tauri::AppHandle, path: String) -> Result<S
 
 #[tauri::command]
 pub async fn xcap_monitor(app_handle: tauri::AppHandle, path: String) -> Result<String, String> {
+    super::ensure_screen_recording(&app_handle)?;
     let images_dir = get_images_dir(&app_handle, path)?;
 
     let filename = monitor_capture(images_dir)?;

@@ -37,6 +37,9 @@ pub async fn start_recording(
         }
     }
 
+    super::ensure_screen_recording(&app_handle)?;
+    super::ensure_microphone(config.include_audio)?;
+
     let recordings_dir = get_images_dir(&app_handle, path)?;
     let recordings_dir = recordings_dir.parent().unwrap_or(&recordings_dir).join("recordings");
     std::fs::create_dir_all(&recordings_dir).map_err(|e| e.to_string())?;

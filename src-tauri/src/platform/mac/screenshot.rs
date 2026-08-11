@@ -3,7 +3,6 @@ use std::{
 };
 
 use chrono::Local;
-use core_foundation::{base::TCFType, boolean::CFBoolean, string::CFString};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
@@ -181,30 +180,5 @@ pub fn get_last_capture_path() -> Option<String> {
 pub fn set_last_capture_path(path: String) {
     if let Ok(mut last) = LAST_REGION.lock() {
         *last = Some(path);
-    }
-}
-
-pub fn open_screen_capture_preferences() {
-    let _ = Command::new("open")
-        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
-        .spawn();
-}
-
-pub fn check_accessibility_permissions() -> bool {
-    let options = {
-        let key = CFString::new("AXTrustedCheckOptionPrompt");
-        let value = CFBoolean::false_value();
-        let pairs = &[(key, value)];
-        core_foundation::dictionary::CFDictionary::from_CFType_pairs(pairs)
-    };
-
-    unsafe {
-        let accessibility = CFString::new("AXIsProcessTrustedWithOptions");
-        let func: extern "C" fn(*const core_foundation::dictionary::CFDictionary) -> bool =
-            std::mem::transmute(libc::dlsym(
-                libc::RTLD_DEFAULT,
-                accessibility.to_string().as_ptr() as *const _,
-            ));
-        func(options.as_concrete_TypeRef() as *const _)
     }
 }

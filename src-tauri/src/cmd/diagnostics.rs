@@ -133,10 +133,32 @@ fn get_permission_status() -> Vec<PlatformCapability> {
                 None
             },
         });
+        let has_screen_recording = crate::platform::has_screen_recording_permission();
         perms.push(PlatformCapability {
             key: "screenRecording".to_string(),
-            status: "unknown".to_string(),
-            reason: Some("Check System Settings > Privacy > Screen Recording".to_string()),
+            status: if has_screen_recording { "available" } else { "unavailable" }.to_string(),
+            reason: if !has_screen_recording {
+                Some("Grant in System Settings > Privacy > Screen Recording".to_string())
+            } else {
+                None
+            },
+        });
+        let mic = super::microphone_status();
+        perms.push(PlatformCapability {
+            key: "microphone".to_string(),
+            status: match mic {
+                super::MicAuthStatus::Authorized => "available",
+                super::MicAuthStatus::NotDetermined => "unknown",
+                _ => "unavailable",
+            }
+            .to_string(),
+            reason: match mic {
+                super::MicAuthStatus::Authorized => None,
+                super::MicAuthStatus::NotDetermined => {
+                    Some("macOS will ask on first audio recording".to_string())
+                }
+                _ => Some("Grant in System Settings > Privacy > Microphone".to_string()),
+            },
         });
     }
 

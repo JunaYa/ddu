@@ -1,5 +1,6 @@
 mod common;
 mod diagnostics;
+mod permissions;
 mod export;
 mod history;
 mod ocr;
@@ -12,6 +13,7 @@ mod xcreenshot;
 
 pub use self::common::*;
 pub use self::diagnostics::*;
+pub use self::permissions::*;
 pub use self::export::*;
 pub use self::history::*;
 pub use self::ocr::*;
