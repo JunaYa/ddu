@@ -40,7 +40,7 @@ async function saveCleanupEnabled(val: boolean) {
 }
 
 async function clearHistory() {
-  const ok = await confirm('This will delete all capture history. This action cannot be undone.', {
+  const ok = await confirm('This moves all DDU captures to the Trash. You can restore them from macOS Trash.', {
     title: 'Clear History',
     kind: 'warning',
   })

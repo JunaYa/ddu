@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path::Path};
 use std::time::{Duration, SystemTime};
 
 use serde::{Deserialize, Serialize};
@@ -20,6 +20,21 @@ pub fn retention_policy_for_install(
     )
 }
 
+fn is_app_generated_image(path: &Path) -> bool {
+    let extension_is_image = path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(|extension| matches!(extension.to_lowercase().as_str(), "png" | "jpg" | "jpeg" | "webp"))
+        .unwrap_or(false);
+    let name_is_generated = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .map(|name| name.starts_with("screenshot_") || name.contains("_annotated") || name.contains("_edited_"))
+        .unwrap_or(false);
+
+    extension_is_image && name_is_generated
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistoryItem {
     pub id: String,
@@ -37,6 +52,7 @@ pub struct HistoryItem {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
 
     #[test]
     fn fresh_install_enables_the_default_retention_policy() {
@@ -46,6 +62,14 @@ mod tests {
     #[test]
     fn existing_install_keeps_cleanup_disabled_until_user_opts_in() {
         assert_eq!(retention_policy_for_install(false, None, None), (30, false));
+    }
+
+    #[test]
+    fn app_generated_images_are_the_only_files_eligible_for_history_removal() {
+        assert!(is_app_generated_image(Path::new("screenshot_20260811_093045.png")));
+        assert!(is_app_generated_image(Path::new("screenshot_20260811_093045_edited_1.png")));
+        assert!(!is_app_generated_image(Path::new("family-photo.png")));
+        assert!(!is_app_generated_image(Path::new("screenshot_notes.txt")));
     }
 }
 
@@ -70,8 +94,7 @@ pub async fn list_history_items(
             continue;
         }
 
-        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-        if !matches!(ext.to_lowercase().as_str(), "png" | "jpg" | "jpeg" | "webp") {
+        if !is_app_generated_image(&path) {
             continue;
         }
 
@@ -174,17 +197,7 @@ pub fn prune_history(app: &tauri::AppHandle) {
         if !path.is_file() {
             continue;
         }
-        let ext_ok = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .map(|e| matches!(e.to_lowercase().as_str(), "png" | "jpg" | "jpeg" | "webp"))
-            .unwrap_or(false);
-        let name_ok = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .map(|n| n.starts_with("screenshot_") || n.contains("_annotated"))
-            .unwrap_or(false);
-        if !ext_ok || !name_ok {
+        if !is_app_generated_image(&path) {
             continue;
         }
         let Ok(modified) = fs::metadata(&path).and_then(|m| m.modified()) else {
@@ -211,7 +224,7 @@ pub async fn delete_history_items(
     for path in &paths {
         match crate::common::ensure_within_images_dir(&app_handle, std::path::Path::new(path)) {
             Ok(guarded) => {
-                if fs::remove_file(&guarded).is_ok() {
+                if is_app_generated_image(&guarded) && trash::delete(&guarded).is_ok() {
                     deleted += 1;
                 }
             }

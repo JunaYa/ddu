@@ -69,7 +69,7 @@ async function handleDelete() {
   deleteLoading.value = true
   const newList = list.value.filter(item => item.checked)
   const confirmation = await confirm(
-    `是否确认删除 ${ newList.length } 个文件?`,
+    `是否确认将 ${ newList.length } 个截图移到废纸篓？`,
     { title: '确认删除', kind: 'warning' },
   )
   if (confirmation) {

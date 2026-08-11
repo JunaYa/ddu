@@ -50,6 +50,7 @@ base64 = "0.22"
 image_compressor = "1.5"
 regex-lite = "0.1"
 os_info = "3"
+trash = "5.2.6"
 
 [features]
 default = [ "custom-protocol" ]
