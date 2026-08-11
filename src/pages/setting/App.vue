@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AutoStart from './componnets/AutoStart.vue'
 import CaptureSettings from './componnets/CaptureSettings.vue'
+import DiagnosticsSettings from './componnets/DiagnosticsSettings.vue'
 import HistorySettings from './componnets/HistorySettings.vue'
 import ScreenshotPath from './componnets/ScreenshotPath.vue'
 import ShortcutSettings from './componnets/ShortcutSettings.vue'
@@ -17,5 +18,7 @@ import ShortcutSettings from './componnets/ShortcutSettings.vue'
     <ShortcutSettings />
     <div class="my-4 h-.5px w-full bg-border" />
     <HistorySettings />
+    <div class="my-4 h-.5px w-full bg-border" />
+    <DiagnosticsSettings />
   </div>
 </template>

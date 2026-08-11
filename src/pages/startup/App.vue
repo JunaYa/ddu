@@ -5,12 +5,11 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import logo from '~/assets/logo.png'
 import Button from '~/components/Button.vue'
 
-type PermissionKind = 'screenRecording' | 'accessibility' | 'microphone'
+type PermissionKind = 'screenRecording' | 'accessibility'
 
 interface PermissionStatus {
   screenRecording: string
   accessibility: string
-  microphone: string
 }
 
 const appVersion = ref('')
@@ -21,8 +20,6 @@ const screenRecordingRequested = ref(false)
 
 const screenRecordingGranted = computed(() => status.value?.screenRecording === 'granted')
 const accessibilityGranted = computed(() => status.value?.accessibility === 'granted')
-const microphoneGranted = computed(() => status.value?.microphone === 'granted')
-const microphoneUndetermined = computed(() => status.value?.microphone === 'undetermined')
 
 async function refresh() {
   // The startup window hides instead of closing; skip polling while hidden.
@@ -69,7 +66,7 @@ onBeforeUnmount(() => window.clearInterval(timer))
             屏幕录制 <span class="text-xs text-$c-danger">必需</span>
           </div>
           <div class="text-xs text-secondary">
-            截屏与录屏功能需要
+            截屏功能需要
           </div>
         </div>
         <span v-if="screenRecordingGranted" class="text-xs text-$c-success">已授权</span>
@@ -96,22 +93,6 @@ onBeforeUnmount(() => window.clearInterval(timer))
         <span v-if="accessibilityGranted" class="text-xs text-$c-success">已授权</span>
         <Button v-else class-name="btn-solid" anim @click="request('accessibility')">
           授权
-        </Button>
-      </div>
-
-      <div class="permission-row">
-        <div class="min-w-0">
-          <div class="text-sm">
-            麦克风 <span class="text-xs text-secondary">可选</span>
-          </div>
-          <div class="text-xs text-secondary">
-            录屏收音需要
-          </div>
-        </div>
-        <span v-if="microphoneGranted" class="text-xs text-$c-success">已授权</span>
-        <span v-else-if="microphoneUndetermined" class="text-xs text-secondary">首次使用时询问</span>
-        <Button v-else class-name="btn-solid" anim @click="request('microphone')">
-          去设置
         </Button>
       </div>
     </div>

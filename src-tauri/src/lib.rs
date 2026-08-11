@@ -83,7 +83,7 @@ pub fn run() {
             }
 
             // First launch: show the startup window, which doubles as the
-            // permission-guide (Screen Recording / Accessibility / Microphone).
+            // permission-guide (Screen Recording / Accessibility).
             if first_run {
                 store.set("first_run".to_string(), json!({ "value": true }));
                 window::show_startup_window(app.handle());
@@ -188,17 +188,11 @@ fn should_hide_instead_of_close(label: &str) -> bool {
 #[cfg(desktop)]
 fn configure_autostart(app: &tauri::App) {
     use tauri_plugin_autostart::MacosLauncher;
-    use tauri_plugin_autostart::ManagerExt;
 
     let _ = app.handle().plugin(tauri_plugin_autostart::init(
         MacosLauncher::LaunchAgent,
-        Some(vec!["--flag1", "--flag2"]),
+        None,
     ));
-
-    // Get the autostart manager
-    let autostart_manager = app.autolaunch();
-    // Enable autostart
-    let _ = autostart_manager.enable();
 }
 
 #[cfg(test)]
