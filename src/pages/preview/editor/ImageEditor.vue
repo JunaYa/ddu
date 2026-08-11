@@ -55,15 +55,14 @@ async function handleSave() {
   const dataUrl = exportImage('png')
   if (!dataUrl) return
 
-  // The native save dialog is opened server-side (save_annotated_image), so the
-  // destination path is resolved in Rust and never supplied by the renderer.
+  // Saving creates a distinct, controlled history item so the original capture
+  // remains recoverable and the renderer never selects a destination path.
   const base64 = dataUrl.split(',')[1]
-  const defaultName = props.imagePath.split('/').pop() || 'screenshot.png'
-  const saved = await invoke<string | null>('save_annotated_image', {
+  const saved = await invoke<string>('save_annotated_image', {
     base64,
-    defaultFileName: defaultName,
+    sourcePath: props.imagePath,
   })
-  if (saved) emit('saved', saved)
+  emit('saved', saved)
 }
 
 async function handleCopy() {

@@ -1,10 +1,24 @@
-use std::path::Path;
+use std::{
+    path::Path,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 use base64::{engine::general_purpose, Engine as _};
 use image::ImageReader;
 use serde::{Deserialize, Serialize};
-use tauri_plugin_dialog::DialogExt;
 use tracing::info;
+
+const MAX_ANNOTATED_IMAGE_BYTES: usize = 50 * 1024 * 1024;
+static ANNOTATED_IMAGE_SEQUENCE: AtomicU64 = AtomicU64::new(1);
+
+fn annotated_filename(original_filename: &str, sequence: u64) -> String {
+    let stem = Path::new(original_filename)
+        .file_stem()
+        .and_then(|name| name.to_str())
+        .filter(|name| !name.is_empty())
+        .unwrap_or("screenshot");
+    format!("{stem}_edited_{sequence}.png")
+}
 
 #[tauri::command]
 pub async fn export_image(
@@ -56,37 +70,36 @@ pub async fn export_image(
     Ok(target_str)
 }
 
-/// Save annotated image bytes to a user-chosen location. The native save dialog
-/// is opened server-side, so the destination path never transits the renderer
-/// — a compromised frontend cannot supply an arbitrary write target. Returns
-/// the saved path, or `None` if the user cancelled.
+/// Save an edited PNG as a distinct history item next to its guarded source.
+/// The renderer never selects a destination path, so an edit cannot become an
+/// arbitrary-write primitive or overwrite its original capture.
 #[tauri::command]
 pub async fn save_annotated_image(
     app_handle: tauri::AppHandle,
     base64: String,
-    default_file_name: String,
-) -> Result<Option<String>, String> {
+    source_path: String,
+) -> Result<String, String> {
+    let source = crate::common::ensure_within_images_dir(&app_handle, Path::new(&source_path))?;
     let bytes = general_purpose::STANDARD
         .decode(base64.as_bytes())
         .map_err(|e| e.to_string())?;
-
-    let file_path = app_handle
-        .dialog()
-        .file()
-        .set_file_name(&default_file_name)
-        .add_filter("PNG", &["png"])
-        .add_filter("JPEG", &["jpg", "jpeg"])
-        .blocking_save_file();
-
-    match file_path {
-        Some(fp) => {
-            let path = fp.into_path().map_err(|e| e.to_string())?;
-            std::fs::write(&path, &bytes).map_err(|e| e.to_string())?;
-            info!("Saved annotated image to {}", path.to_string_lossy());
-            Ok(Some(path.to_string_lossy().to_string()))
-        }
-        None => Ok(None),
+    if bytes.len() > MAX_ANNOTATED_IMAGE_BYTES {
+        return Err("edited image is too large to save".to_string());
     }
+
+    image::load_from_memory(&bytes).map_err(|e| format!("edited image is invalid: {e}"))?;
+
+    let images_dir = crate::common::get_images_dir(&app_handle, "images".to_string())?;
+    let filename = annotated_filename(
+        source.file_name().and_then(|name| name.to_str()).unwrap_or("screenshot.png"),
+        ANNOTATED_IMAGE_SEQUENCE.fetch_add(1, Ordering::Relaxed),
+    );
+    let output_path = images_dir.join(filename);
+    std::fs::write(&output_path, &bytes).map_err(|e| e.to_string())?;
+
+    let saved = output_path.to_string_lossy().to_string();
+    info!("Saved annotated image to {saved}");
+    Ok(saved)
 }
 
 #[tauri::command]
@@ -113,4 +126,17 @@ pub struct ImageInfo {
     pub height: u32,
     pub file_size: u64,
     pub format: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn annotated_filename_preserves_the_original_and_marks_the_copy() {
+        assert_eq!(
+            annotated_filename("screenshot_20260811_093045_123_7.png", 2),
+            "screenshot_20260811_093045_123_7_edited_2.png"
+        );
+    }
 }
