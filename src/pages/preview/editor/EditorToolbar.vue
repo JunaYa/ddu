@@ -42,6 +42,7 @@ const colors = ['#ff0000', '#ff6600', '#ffcc00', '#00cc00', '#0066ff', '#9933ff'
         :key="tool.id"
         :class="['tool-btn', { active: currentTool === tool.id }]"
         :title="tool.label"
+        :aria-label="tool.label"
         @click="emit('selectTool', tool.id)"
       >
         {{ tool.icon }}
@@ -57,6 +58,7 @@ const colors = ['#ff0000', '#ff6600', '#ffcc00', '#00cc00', '#0066ff', '#9933ff'
         class="color-btn"
         :class="{ active: style.strokeColor === color }"
         :style="{ backgroundColor: color, border: color === '#ffffff' ? '1px solid #ccc' : 'none' }"
+        :aria-label="`Stroke color ${color}`"
         @click="emit('updateStyle', { strokeColor: color })"
       />
     </div>
@@ -67,6 +69,7 @@ const colors = ['#ff0000', '#ff6600', '#ffcc00', '#00cc00', '#0066ff', '#9933ff'
       <label class="size-label">
         <span>W</span>
         <input
+          aria-label="Stroke width"
           type="range"
           min="1"
           max="20"
@@ -79,16 +82,16 @@ const colors = ['#ff0000', '#ff6600', '#ffcc00', '#00cc00', '#0066ff', '#9933ff'
     <div class="separator" />
 
     <div class="action-group">
-      <button class="action-btn" :disabled="!canUndo" title="Undo (Cmd+Z)" @click="emit('undo')">
+      <button class="action-btn" :disabled="!canUndo" title="Undo (Cmd+Z)" aria-label="Undo" @click="emit('undo')">
         ↩
       </button>
-      <button class="action-btn" :disabled="!canRedo" title="Redo (Cmd+Shift+Z)" @click="emit('redo')">
+      <button class="action-btn" :disabled="!canRedo" title="Redo (Cmd+Shift+Z)" aria-label="Redo" @click="emit('redo')">
         ↪
       </button>
-      <button class="action-btn" title="Delete" @click="emit('delete')">
+      <button class="action-btn" title="Delete" aria-label="Delete selected annotation" @click="emit('delete')">
         🗑
       </button>
-      <button class="action-btn" title="Clear All" @click="emit('clear')">
+      <button class="action-btn" title="Clear All" aria-label="Clear annotations" @click="emit('clear')">
         ✕
       </button>
     </div>

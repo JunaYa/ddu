@@ -131,14 +131,14 @@ onBeforeUnmount(() => {
       <PictureReview v-if="imagePath" :image-path="imagePath" />
     </div>
     <div v-if="isHovered" class="absolute bottom-0 left-0 right-0 top-0 flex items-center justify-around bg-#0000002F">
-      <Button class-name="btn-solid" :anim="true" @click="onEdit">
-        Edit
+      <Button class-name="btn-solid" :anim="true" aria-label="编辑截图 Edit screenshot" @click="onEdit">
+        编辑 Edit
       </Button>
-      <Button class-name="btn-solid" :anim="true" @click="onCopy">
-        Copy
+      <Button class-name="btn-solid" :anim="true" aria-label="复制截图 Copy screenshot" @click="onCopy">
+        复制 Copy
       </Button>
-      <Button class-name="btn-solid" :anim="true" @click="onSave">
-        Close
+      <Button class-name="btn-solid" :anim="true" aria-label="关闭预览 Close preview" @click="onSave">
+        关闭 Close
       </Button>
     </div>
     <div v-if="copyError" class="absolute bottom-2 left-2 right-2 rounded bg-#7f1d1d p-2 text-center text-xs text-white">

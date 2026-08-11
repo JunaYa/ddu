@@ -130,14 +130,14 @@ onUnmounted(() => {
         @update-style="handleUpdateStyle"
       />
       <div class="editor-actions">
-        <button class="action-btn save" @click="handleCopy">
-          Copy
+        <button class="action-btn save" aria-label="复制编辑后的截图 Copy edited screenshot" @click="handleCopy">
+          复制 Copy
         </button>
-        <button class="action-btn save" @click="handleSave">
-          Save As
+        <button class="action-btn save" aria-label="保存编辑副本 Save edited copy" @click="handleSave">
+          保存副本 Save copy
         </button>
-        <button class="action-btn close" @click="emit('close')">
-          Close
+        <button class="action-btn close" aria-label="关闭编辑器 Close editor" @click="emit('close')">
+          关闭 Close
         </button>
       </div>
     </div>
