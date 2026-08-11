@@ -10,13 +10,13 @@ use crate::common::get_images_dir;
 pub const DEFAULT_HISTORY_RETENTION_DAYS: i64 = 30;
 
 pub fn retention_policy_for_install(
-    is_first_run: bool,
+    _is_first_run: bool,
     configured_days: Option<i64>,
     configured_cleanup_enabled: Option<bool>,
 ) -> (i64, bool) {
     (
         configured_days.unwrap_or(DEFAULT_HISTORY_RETENTION_DAYS),
-        configured_cleanup_enabled.unwrap_or(is_first_run),
+        configured_cleanup_enabled.unwrap_or(false),
     )
 }
 
@@ -55,8 +55,8 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn fresh_install_enables_the_default_retention_policy() {
-        assert_eq!(retention_policy_for_install(true, None, None), (30, true));
+    fn fresh_install_sets_retention_without_enabling_permanent_cleanup() {
+        assert_eq!(retention_policy_for_install(true, None, None), (30, false));
     }
 
     #[test]

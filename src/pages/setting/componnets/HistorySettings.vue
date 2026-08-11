@@ -40,8 +40,8 @@ async function saveCleanupEnabled(val: boolean) {
 }
 
 async function clearHistory() {
-  const ok = await confirm('This moves all DDU captures to the Trash. You can restore them from macOS Trash.', {
-    title: 'Clear History',
+  const ok = await confirm('这会将所有 DDU 截图移到废纸篓；你可以从 macOS 废纸篓恢复它们。', {
+    title: '清空历史',
     kind: 'warning',
   })
   if (!ok) return
@@ -59,11 +59,11 @@ onMounted(loadSettings)
 <template>
   <div class="liquid-glass liquid-glass-panel p-4">
     <div class="mb-3 text-base font-bold">
-      History
+      截图历史
     </div>
 
     <div class="setting-row">
-      <span class="setting-label">Retention Period</span>
+      <span class="setting-label">保留期限</span>
       <select
         class="liquid-glass-control select-settings w-36"
         :value="retentionDays"
@@ -76,18 +76,17 @@ onMounted(loadSettings)
     </div>
 
     <div class="setting-row">
-      <span class="setting-label">Auto-delete captures older than retention</span>
-      <Toggle
-        :key="`cleanup-${cleanupEnabled}`"
-        :value="cleanupEnabled"
-        @change="saveCleanupEnabled(!cleanupEnabled)"
-      />
+      <div>
+        <div class="setting-label">自动清理过期截图</div>
+        <div class="text-xs text-secondary">开启后会永久删除超过期限的 DDU 截图。</div>
+      </div>
+      <Toggle :key="`cleanup-${cleanupEnabled}`" :value="cleanupEnabled" @change="saveCleanupEnabled(!cleanupEnabled)" />
     </div>
 
     <div class="setting-row">
-      <span class="setting-label">Clear All History</span>
+      <span class="setting-label">清空全部历史</span>
       <button class="liquid-glass-control danger-btn" @click="clearHistory">
-        Clear
+        移到废纸篓
       </button>
     </div>
   </div>
