@@ -1,72 +1,29 @@
-# DDU (Dynamic Digital Utility)
+# DDU Screenshot
 
-**D**ynamic - Capable of capturing dynamically changing content on screen
+DDU is a lightweight, local-first screenshot utility for macOS. It captures a full screen, a smart region, or a window; copies the result to the clipboard; then offers a short-lived preview for annotation and saving an edited copy.
 
-**D**igital - Focused on processing digital images and media
+## What it does
 
-**U**tility - Provides practical screenshot functionality
+- Capture full screen, region, and window with configurable global shortcuts.
+- Copy each capture to the clipboard automatically, with a retry in the preview.
+- Add annotations, text, steps, pixelation, and blur without overwriting the original.
+- Keep local capture history. User-initiated deletion moves captures to macOS Trash.
+- Offer optional history cleanup, local diagnostics, and an opt-in launch-at-login setting.
 
-So the complete application name and its meaning is:
+DDU does not require an account and does not upload screenshots, diagnostics, or telemetry. OCR, recording, GIF conversion, cloud sync, and workflow automation are not release features.
 
-"**DDU Screenshot**"
+## Platform support
 
-- Dynamic: Captures dynamically changing screen content
-- Digital: Focuses on digital images and media
-- Utility: Provides practical screenshot functionality
+macOS is the supported release platform. Linux support is experimental.
 
-Each letter in this name represents the core features and value proposition of the application. Users can quickly understand the positioning and functionality of this application through this name.
+## Development
 
-## Project Introduction
+```sh
+pnpm install
+pnpm test
+pnpm dev:desktop
+```
 
-This project is a desktop screenshot utility that provides features such as screenshot capture, editing, copying, sending, and cloud synchronization (users bind their own email, keeping data control in their hands).
+## macOS release
 
-This project has two initial motivations:
-
-First, when taking screenshots on Mac OS, there are needs for editing, copying, and sending, but these operations can be cumbersome. While applications like Feishu and WeChat offer screenshot functionality, they don't fully meet my requirements. Therefore, I conceived the idea of developing a tool that meets my needs, resulting in this application.
-
-Second, with the goal of learning the Rust Tauri technology stack, this project was initiated as an opportunity to do so.
-
-The progress of this project is uncertain, but once the functionality reaches a usable level, commercial features will be considered.
-
-## Code and File Structure
-TODO
-
-## Feature Implementation
-
-<!-- todo -->
-
-[x] Screenshot functionality
-
-[x] Screenshot preview
-
-[x] Screenshot saving
-
-[x] Screenshot list display
-
-[x] Screenshot list deletion functionality
-
-[ ] Screenshot list copying functionality
-
-[ ] Automatic screenshot copying
-
-[ ] OCR (Optical Character Recognition) functionality
-
-[ ] Cloud synchronization for cross-device viewing
-
-[ ] Custom cloud server support
-
-[ ] Multi-language support
-
-Application Settings
-
-[x] Auto-start on boot
-
-[x] Screenshot save path settings
-
-[ ] Screenshot hotkey settings
-
-## Technology Stack: Tauri + Vue3 + TypeScript
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+A direct-download DMG must be Developer ID signed, notarized, and stapled. Run `pnpm release:check-macos` before starting a release build; it fails fast when required signing/notarization inputs are missing. See [the release checklist](docs/release-macos.md).

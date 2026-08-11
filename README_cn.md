@@ -1,72 +1,29 @@
-# DDU (Dynamic Digital Utility)
+# DDU 截图
 
-**D**ynamic - 能够捕捉屏幕上动态变化的内容
+DDU 是一款轻量、优先本地保存的 macOS 截图工具。它支持全屏、智能选区和窗口截图；完成截图后自动复制到剪贴板，并提供短暂预览以标注或另存编辑副本。
 
-**D**igital - 专注于处理数字图像和媒体
+## 已提供的功能
 
-**U**tility - 提供了实用的屏幕截图功能
+- 通过可配置的全局快捷键截取全屏、选区和窗口。
+- 自动复制截图到剪贴板；预览中可重试复制。
+- 添加标注、文字、步骤、马赛克和模糊，且不会覆盖原图。
+- 本地保存截图历史；用户主动删除会移到 macOS 废纸篓。
+- 可选的历史自动清理、本机诊断与开机自启动。
 
-所以完整的应用程序名称及其寓意为:
+DDU 不需要账号，不会上传截图、诊断信息或遥测数据。OCR、录屏、GIF、云同步和工作流自动化均不是当前发布功能。
 
-"**DDU Screenshot**"
+## 平台支持
 
-- Dynamic：捕捉动态变化的屏幕内容
-- Digital：专注于数字图像和媒体
-- Utility：提供实用的屏幕截图功能
+macOS 是当前受支持的发布平台；Linux 仅为实验性支持。
 
-这个名称中每个字母都代表了该应用的核心特点和价值主张。用户可以通过这个名称快速了解这个应用程序的定位和功能。
+## 开发
 
-## 项目的介绍
+```sh
+pnpm install
+pnpm test
+pnpm dev:desktop
+```
 
-本项目是一款桌面截图应用工具，提供截图、编辑、复制、发送、云端同步（用户自己绑定邮箱，数据掌握在自己手中）等功能。
+## macOS 发布
 
-本项目初心有两个方面
-
-一、日常使用 Mac 系统截图，会有一些编辑，复制发送等需求，但是操作起来比较麻烦。再有会使用 飞书、微信等应用截图功能，也并不能满足我的需求，故而构思想要开发一款符合自己需求的工具。所以开发了这款应用，来解决日常截图的需求。
-
-二、本着学习 Rust Tauri 技术栈的目的，所以以该项目为契机而启动。
-
-这个项目能进度到哪里完全不确定，但是等到功能达到可用级别，会考虑增加商业功能。
-
-## 代码和文件结构
-TODO
-
-## 功能实现
-
-<!-- todo -->
-
-[x] 截图功能
-
-[x] 截图预览功能
-
-[x] 截图保存功能
-
-[x] 截图列表展示
-
-[x] 截图列表,删除功能
-
-[ ] 截图列表,复制功能
-
-[ ] 截图自动复制
-
-[ ] 图像文字识别提取 OCR 功能
-
-[ ] 云端同步图片能力，支持跨设备查看
-
-[ ] 自定义云盘服务器
-
-[ ] 多语言支持
-
-应用设置功能
-
-[x] 开机自动启动
-
-[x] 截图保存路径设置
-
-[ ] 截图快捷键设置
-
-## 使用技术 Tauri + Vue3 + TypeScript
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+直接下载的 DMG 必须经过 Developer ID 签名、公证和装订。开始发布构建前运行 `pnpm release:check-macos`；缺失签名或公证前置条件时该命令会直接失败。详见 [发布清单](docs/release-macos.md)。
