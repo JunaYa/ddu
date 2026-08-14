@@ -6,6 +6,10 @@
     <!-- Allow loading the bundled WebView / plugin dylibs that aren't signed by this team. -->
     <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
+    <!-- Recording with audio: `screencapture` captures the mic on our behalf and
+         TCC bills it to this app, which the hardened runtime denies without this. -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
     <!-- Accessibility (AXIsProcessTrusted) and screencapture need NO extra entitlement here;
          they are governed by the user's TCC grant, which now persists thanks to a stable signature. -->
 </dict>

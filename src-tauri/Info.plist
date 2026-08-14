@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict/>
+<dict>
+	<!-- Audio is captured by the Apple-signed `screencapture` child process, but
+	     TCC attributes the request to this app as the responsible process, so the
+	     purpose string has to live here. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ddu uses the microphone to include audio when recording your screen.</string>
+</dict>
 </plist>
