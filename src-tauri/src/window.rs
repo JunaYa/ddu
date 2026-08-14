@@ -80,23 +80,49 @@ fn macos_glass_effect() -> tauri::utils::config::WindowEffectsConfig {
         .build()
 }
 
+/// Runs an AppKit call against a window's `NSWindow` on the main thread.
+///
+/// AppKit is main-thread-only, and macOS 26 routes `NSWindow` mutations through
+/// WindowManagement, which traps the process (`EXC_BREAKPOINT`, "Must only be
+/// used from the main thread") rather than misbehaving quietly. Capture flows
+/// run on the async runtime, so every `ns_window()` call has to be marshalled
+/// back. The closure is queued, not awaited — Tauri's own window operations go
+/// through the same event loop, so ordering with them is preserved.
+#[cfg(target_os = "macos")]
+fn with_ns_window_on_main_thread(
+    window: &WebviewWindow,
+    f: impl FnOnce(*mut objc::runtime::Object) + Send + 'static,
+) {
+    let app = window.app_handle().clone();
+    let window = window.clone();
+    let dispatched = app.run_on_main_thread(move || {
+        // The window can be closed between queueing and execution; degrade
+        // rather than panic on the main thread.
+        let Ok(ns_window) = window.ns_window() else { return };
+        f(ns_window as *mut objc::runtime::Object);
+    });
+    if let Err(e) = dispatched {
+        info!("failed to dispatch AppKit call to the main thread: {e}");
+    }
+}
+
 #[cfg(target_os = "macos")]
 fn move_macos_window_to_active_space(window: &WebviewWindow) {
-    use objc::runtime::{Object, Sel};
+    use objc::runtime::Sel;
     use objc::Message;
 
     type NSUInteger = libc::c_ulong;
     const NS_WINDOW_COLLECTION_BEHAVIOR_MOVE_TO_ACTIVE_SPACE: NSUInteger = 1 << 1;
 
-    unsafe {
-        let ns_window = window.ns_window().unwrap() as *mut Object;
-        let _: () = (&*ns_window)
-            .send_message(
-                Sel::register("setCollectionBehavior:"),
-                (NS_WINDOW_COLLECTION_BEHAVIOR_MOVE_TO_ACTIVE_SPACE,),
-            )
-            .expect("failed to set NSWindow collection behavior");
-    }
+    with_ns_window_on_main_thread(window, |ns_window| unsafe {
+        let result: Result<(), _> = (&*ns_window).send_message(
+            Sel::register("setCollectionBehavior:"),
+            (NS_WINDOW_COLLECTION_BEHAVIOR_MOVE_TO_ACTIVE_SPACE,),
+        );
+        if let Err(e) = result {
+            info!("failed to set NSWindow collection behavior: {e}");
+        }
+    });
 }
 
 pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
@@ -270,24 +296,22 @@ pub fn create_capture_window(app: &AppHandle, x: f64, y: f64, w: f64, h: f64) ->
 
 #[cfg(target_os = "macos")]
 fn raise_capture_window_above_menu_bar(window: &WebviewWindow) {
-    use objc::runtime::{Object, Sel};
+    use objc::runtime::Sel;
     use objc::Message;
 
     // NSScreenSaverWindowLevel: above the menu bar and Dock, which the
     // overlay must cover to offer the full monitor as selection surface.
     const NS_SCREEN_SAVER_WINDOW_LEVEL: libc::c_long = 1000;
 
-    unsafe {
-        // I2: graceful degradation — if ns_window() fails (e.g. window was
-        // closed between build and here), operate at the default window level
-        // rather than panicking. The overlay is still usable, just below the
-        // menu bar.
-        let Ok(ns_window_ptr) = window.ns_window() else { return };
-        let ns_window = ns_window_ptr as *mut Object;
-        let _: () = (&*ns_window)
-            .send_message(Sel::register("setLevel:"), (NS_SCREEN_SAVER_WINDOW_LEVEL,))
-            .expect("failed to raise capture window level");
-    }
+    // I2: graceful degradation — if the window is gone, or the level cannot be
+    // applied, the overlay is still usable, just below the menu bar.
+    with_ns_window_on_main_thread(window, |ns_window| unsafe {
+        let result: Result<(), _> =
+            (&*ns_window).send_message(Sel::register("setLevel:"), (NS_SCREEN_SAVER_WINDOW_LEVEL,));
+        if let Err(e) = result {
+            info!("failed to raise capture window level: {e}");
+        }
+    });
 }
 
 pub fn close_capture_window(app: &AppHandle) {
