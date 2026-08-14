@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Hardened Runtime entitlements (required once hardenedRuntime is on, e.g. for notarization). -->
+    <!-- Allow loading the bundled WebView / plugin dylibs that aren't signed by this team. -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    <!-- Accessibility (AXIsProcessTrusted) and screencapture need NO extra entitlement here;
+         they are governed by the user's TCC grant, which now persists thanks to a stable signature. -->
+</dict>
+</plist>
