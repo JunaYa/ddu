@@ -21,10 +21,19 @@ pub(crate) struct CGSize {
     pub height: f64,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub(crate) struct CGRect {
+    pub origin: CGPoint,
+    pub size: CGSize,
+}
+
 #[link(name = "CoreGraphics", kind = "framework")]
 extern "C" {
     fn CGEventCreate(source: *const c_void) -> *const c_void;
     fn CGEventGetLocation(event: *const c_void) -> CGPoint;
+    fn CGGetActiveDisplayList(max_displays: u32, displays: *mut u32, count: *mut u32) -> i32;
+    fn CGDisplayBounds(display: u32) -> CGRect;
 }
 
 /// Global cursor position in logical points, top-left origin — the same space
@@ -38,6 +47,34 @@ pub fn cursor_position_logical() -> (f64, f64) {
         let point = CGEventGetLocation(event);
         core_foundation::base::CFRelease(event as _);
         (point.x, point.y)
+    }
+}
+
+/// `screencapture -D` number for the display containing (x, y), or `None` when
+/// the point is off every display.
+///
+/// `screencapture` documents its numbering as "1 is main, 2 secondary, etc",
+/// and `CGGetActiveDisplayList` is documented to return the main display first,
+/// so list order + 1 is the display number.
+pub fn display_number_at(x: f64, y: f64) -> Option<u32> {
+    const MAX_DISPLAYS: usize = 16;
+    let mut ids = [0u32; MAX_DISPLAYS];
+    let mut count: u32 = 0;
+
+    unsafe {
+        if CGGetActiveDisplayList(MAX_DISPLAYS as u32, ids.as_mut_ptr(), &mut count) != 0 {
+            return None;
+        }
+        ids.iter()
+            .take(count as usize)
+            .position(|&id| {
+                let bounds = CGDisplayBounds(id);
+                x >= bounds.origin.x
+                    && x < bounds.origin.x + bounds.size.width
+                    && y >= bounds.origin.y
+                    && y < bounds.origin.y + bounds.size.height
+            })
+            .map(|index| index as u32 + 1)
     }
 }
 

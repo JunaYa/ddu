@@ -115,6 +115,16 @@ pub async fn capture_screen(
     let settings = read_capture_settings(app_handle);
     let out = output_path.to_str().ok_or("invalid output path")?;
     let mut args: Vec<String> = vec!["-x".into()];
+    // screencapture takes "1 file per screen", so a single output path captures
+    // the main display and silently ignores the others. Target the display the
+    // cursor is on, matching how smart capture picks its monitor.
+    let (cursor_x, cursor_y) = super::cursor_position_logical();
+    let display_number = super::display_number_at(cursor_x, cursor_y);
+    info!("capture_screen: cursor=({cursor_x:.0},{cursor_y:.0}) display={display_number:?}");
+    if let Some(n) = display_number {
+        args.push("-D".into());
+        args.push(n.to_string());
+    }
     if settings.include_cursor {
         args.push("-C".into()); // full-screen is non-interactive, so -C is honored
     }
@@ -202,9 +212,14 @@ pub async fn capture_current_screen(
 
     let settings = read_capture_settings(app_handle);
     let out = output_path.to_str().ok_or("invalid output path")?;
-    let mut args: Vec<String> = vec!["-x".into(), "-m".into()];
+    // -m means "only capture the main monitor", which made this command ignore
+    // which screen is actually current. Pick the cursor's display instead.
+    let mut args: Vec<String> = vec!["-x".into()];
+    let (cursor_x, cursor_y) = super::cursor_position_logical();
+    args.push("-D".into());
+    args.push(super::display_number_at(cursor_x, cursor_y).unwrap_or(1).to_string());
     if settings.include_cursor {
-        args.push("-C".into()); // -m single-display is non-interactive, so -C is honored
+        args.push("-C".into()); // single-display capture is non-interactive, so -C is honored
     }
     if settings.delay > 0 {
         args.push("-T".into());
