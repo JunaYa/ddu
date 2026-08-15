@@ -41,10 +41,13 @@ pub struct HitTestDto {
 /// Freeze the cursor's monitor, cache the session and raise the overlay.
 /// Shared by the `smart_capture_start` command, global hotkeys and the tray.
 pub async fn start_smart_capture(app: &tauri::AppHandle, mode: &str) -> Result<(), String> {
+    info!("start_smart_capture: mode={mode}");
+
     // C1: preflight Screen Recording permission before touching xcap. xcap
     // succeeds silently without it (returns blanked frames for other apps), so
     // the old error path after freeze_screen_at never fired in practice.
-    super::ensure_screen_recording(app)?;
+    super::ensure_screen_recording(app)
+        .inspect_err(|e| info!("screen recording gate blocked capture: {e}"))?;
 
     let (cursor_x, cursor_y) = platform::cursor_position_logical();
     let frozen = platform::freeze_screen_at(cursor_x, cursor_y)
@@ -53,6 +56,20 @@ pub async fn start_smart_capture(app: &tauri::AppHandle, mode: &str) -> Result<(
     let windows = platform::list_windows_on_monitor(&frozen.monitor_rect);
     let ax_available = platform::check_accessibility_permissions();
     let monitor_rect = frozen.monitor_rect;
+
+    // Multi-monitor diagnostics: a display left of or above the primary has a
+    // negative origin, and every downstream rect derives from it.
+    info!(
+        "smart capture: cursor=({cursor_x:.0},{cursor_y:.0}) monitor=({:.0},{:.0} {:.0}x{:.0}) scale={} snapshot={}x{} windows={}",
+        monitor_rect.x,
+        monitor_rect.y,
+        monitor_rect.w,
+        monitor_rect.h,
+        frozen.scale_factor,
+        frozen.snapshot.width(),
+        frozen.snapshot.height(),
+        windows.len(),
+    );
 
     let session_id = SESSION_COUNTER.fetch_add(1, Ordering::Relaxed);
 
@@ -72,9 +89,23 @@ pub async fn start_smart_capture(app: &tauri::AppHandle, mode: &str) -> Result<(
 
     // I2: create_capture_window is now fallible; on failure, clean up the
     // session so the app is not stranded in a started-but-windowless state.
-    if let Err(e) = window::create_capture_window(app, monitor_rect.x, monitor_rect.y, monitor_rect.w, monitor_rect.h) {
-        app.state::<SmartCaptureState>().0.lock().unwrap().take();
-        return Err(e);
+    match window::create_capture_window(app, monitor_rect.x, monitor_rect.y, monitor_rect.w, monitor_rect.h) {
+        Err(e) => {
+            app.state::<SmartCaptureState>().0.lock().unwrap().take();
+            return Err(e);
+        }
+        // Requested geometry is logical and global; the actual geometry is
+        // physical. They must describe the same rectangle once scaled, or the
+        // overlay landed on the wrong display.
+        Ok(overlay) => info!(
+            "capture overlay: requested=({:.0},{:.0} {:.0}x{:.0}) actual_outer={:?} actual_inner={:?}",
+            monitor_rect.x,
+            monitor_rect.y,
+            monitor_rect.w,
+            monitor_rect.h,
+            overlay.outer_position(),
+            overlay.inner_size(),
+        ),
     }
 
     // I3: watchdog — if the overlay page never calls smart_capture_get_session
