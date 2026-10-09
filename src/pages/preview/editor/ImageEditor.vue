@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import type { OcrLine, OcrResult } from '~/lib/ocr'
+import { ocrLines } from '~/lib/ocr'
 import type { EditorStyle, ToolType } from './useEditor'
 import { useEditor } from './useEditor'
 import EditorToolbar from './EditorToolbar.vue'
+import OcrPanel from './OcrPanel.vue'
 
 const props = defineProps<{
   imageSrc: string
@@ -39,8 +42,61 @@ const {
   deleteSelected,
   exportImage,
   clearAnnotations,
+  imageRectToCanvas,
+  selectedImageRegion,
   destroy,
 } = useEditor()
+
+const ocr = ref({
+  open: false,
+  loading: false,
+  error: '',
+  partial: false,
+  lines: [] as OcrLine[],
+})
+const hoveredLine = ref<number | null>(null)
+
+const highlight = computed(() => {
+  if (hoveredLine.value === null) return null
+  const box = ocr.value.lines[hoveredLine.value]?.box
+  return box ? imageRectToCanvas(box) : null
+})
+
+/** Recognize the selected annotation's area, or the whole capture. */
+async function handleOcr() {
+  // Read the original capture, not the canvas, so annotations never get in
+  // the way of the text underneath them.
+  const region = currentTool.value === 'select' ? selectedImageRegion() : null
+  ocr.value = { open: true, loading: true, error: '', partial: !!region, lines: [] }
+  hoveredLine.value = null
+  try {
+    const result = await invoke<OcrResult>('perform_ocr', { path: props.imagePath, region })
+    ocr.value.lines = ocrLines(result)
+  }
+  catch (e) {
+    ocr.value.error = String(e).includes('too small')
+      ? '选区太小，无法识别 Selection too small'
+      : `识别失败 OCR failed: ${e}`
+  }
+  finally {
+    ocr.value.loading = false
+  }
+}
+
+async function handleCopyText(text: string) {
+  try {
+    await invoke('copy_text', { text })
+    showToast('文字已复制', 'success')
+  }
+  catch (e) {
+    showToast(`复制失败: ${e}`, 'error')
+  }
+}
+
+function closeOcr() {
+  ocr.value.open = false
+  hoveredLine.value = null
+}
 
 function handleSelectTool(tool: ToolType) {
   setTool(tool)
@@ -130,6 +186,15 @@ onUnmounted(() => {
         @update-style="handleUpdateStyle"
       />
       <div class="editor-actions">
+        <button
+          class="action-btn close"
+          :class="{ active: ocr.open }"
+          title="提取文字；先选中一个框则只识别该区域 Extract text (select a shape first to read only that area)"
+          aria-label="提取文字 Extract text"
+          @click="handleOcr"
+        >
+          提取文字 Text
+        </button>
         <button class="action-btn save" aria-label="复制编辑后的截图 Copy edited screenshot" @click="handleCopy">
           复制 Copy
         </button>
@@ -141,8 +206,33 @@ onUnmounted(() => {
         </button>
       </div>
     </div>
-    <div class="editor-canvas-container">
-      <canvas ref="canvasRef" />
+    <div class="editor-body">
+      <div class="editor-canvas-container">
+        <div class="canvas-stage">
+          <canvas ref="canvasRef" />
+          <div
+            v-if="highlight"
+            class="ocr-highlight"
+            :style="{
+              left: `${highlight.x}px`,
+              top: `${highlight.y}px`,
+              width: `${highlight.width}px`,
+              height: `${highlight.height}px`,
+            }"
+          />
+        </div>
+      </div>
+      <OcrPanel
+        v-if="ocr.open"
+        class="editor-ocr-panel"
+        :lines="ocr.lines"
+        :loading="ocr.loading"
+        :error="ocr.error"
+        :partial="ocr.partial"
+        @copy="handleCopyText"
+        @hover="hoveredLine = $event"
+        @close="closeOcr"
+      />
     </div>
     <div v-if="toast" class="editor-toast" :class="toast.type">
       {{ toast.message }}
@@ -194,6 +284,43 @@ onUnmounted(() => {
   color: #ccc;
 }
 .action-btn.close:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+.action-btn.close.active {
+  background: rgba(59, 130, 246, 0.3);
+  color: #fff;
+}
+
+.editor-body {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* Overlaid rather than beside the canvas: the canvas is sized once at mount
+   and annotations live in its coordinates. */
+.editor-ocr-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
+}
+
+.canvas-stage {
+  position: relative;
+}
+
+.ocr-highlight {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 2px;
+  background: rgba(59, 130, 246, 0.15);
+}
 
 .editor-canvas-container {
   flex: 1;
