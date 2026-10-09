@@ -51,7 +51,7 @@ pub fn get_platform_capabilities() -> Vec<PlatformCapability> {
         caps.push(PlatformCapability {
             key: "ocr".to_string(),
             status: "available".to_string(),
-            reason: Some("macOS Vision framework".to_string()),
+            reason: Some("Local PP-OCRv6 via LiteParse (macOS Vision fallback)".to_string()),
         });
         caps.push(PlatformCapability {
             key: "systemAudio".to_string(),
