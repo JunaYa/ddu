@@ -111,6 +111,7 @@ pub fn run() {
 
             // Enforce history retention on launch (no-op unless the user opted in).
             cmd::prune_history(app.handle());
+            cmd::prune_ocr_index_orphans(app.handle());
 
             Ok(())
         })
@@ -172,6 +173,9 @@ pub fn run() {
             cmd::get_image_info,
             cmd::perform_ocr,
             cmd::copy_text,
+            cmd::ocr_index_items,
+            cmd::search_history_text,
+            cmd::clear_ocr_index,
             cmd::detect_sensitive_info,
             cmd::list_workflow_rules,
             cmd::save_workflow_rule,

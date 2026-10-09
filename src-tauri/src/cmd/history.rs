@@ -207,6 +207,7 @@ pub fn prune_history(app: &tauri::AppHandle) {
             && crate::common::ensure_within_images_dir(app, &path).is_ok()
             && fs::remove_file(&path).is_ok()
         {
+            super::ocr_index::remove(app, &path);
             removed += 1;
         }
     }
@@ -225,6 +226,9 @@ pub async fn delete_history_items(
         match crate::common::ensure_within_images_dir(&app_handle, std::path::Path::new(path)) {
             Ok(guarded) => {
                 if is_app_generated_image(&guarded) && trash::delete(&guarded).is_ok() {
+                    // The screenshot can be restored from the trash; its text
+                    // is cheap to re-index, so don't keep it around.
+                    super::ocr_index::remove(&app_handle, &guarded);
                     deleted += 1;
                 }
             }

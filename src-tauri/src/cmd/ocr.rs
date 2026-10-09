@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tracing::{info, warn};
 
+use super::ocr_index;
 use crate::common::ensure_within_images_dir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +54,9 @@ pub struct OcrRegion {
 /// Smaller crops carry too few pixels for a glyph to be recognized.
 const MIN_OCR_SIDE: u32 = 8;
 
+/// The PP-OCRv6 variant loaded by [`oar_engine`]; recorded in the OCR index.
+pub const OAR_MODEL: &str = "pp-ocrv6_small";
+
 #[tauri::command]
 pub async fn perform_ocr(
     app_handle: tauri::AppHandle,
@@ -60,17 +64,33 @@ pub async fn perform_ocr(
     region: Option<OcrRegion>,
 ) -> Result<OcrResult, String> {
     let guarded = ensure_within_images_dir(&app_handle, Path::new(&path))?;
-    if !guarded.exists() {
+    let result = recognize(&guarded, region).await?;
+
+    // Whole-image results double as the history search index.
+    if region.is_none() && ocr_index::index_enabled(&app_handle) {
+        if let Err(e) = ocr_index::save(&app_handle, &guarded, &result) {
+            warn!("Failed to index OCR text: {e}");
+        }
+    }
+    Ok(result)
+}
+
+/// Recognize text in `image` (already path-guarded), optionally only inside
+/// `region`. Boxes are in the full image's pixel coordinates.
+pub async fn recognize(image: &Path, region: Option<OcrRegion>) -> Result<OcrResult, String> {
+    if !image.exists() {
         return Err("File not found".to_string());
     }
 
     let crop = match region {
-        Some(region) => Some(CroppedImage::new(&guarded, region)?),
+        Some(region) => Some(CroppedImage::new(image, region)?),
         None => None,
     };
     let source = crop
         .as_ref()
-        .map_or(guarded.to_string_lossy().to_string(), |c| c.path.to_string_lossy().to_string());
+        .map_or(image, |c| c.path.as_path())
+        .to_string_lossy()
+        .to_string();
 
     let mut result = match oar_ocr(&source).await {
         Ok(result) => result,
@@ -155,7 +175,7 @@ fn oar_engine() -> Result<Arc<OarOcrEngine>, String> {
     if let Some(engine) = slot.as_ref() {
         return Ok(engine.clone());
     }
-    // PP-OCRv6 small covers Chinese, English, Japanese and Latin scripts in
+    // Keep in sync with OAR_MODEL. PP-OCRv6 small covers Chinese, English, Japanese and Latin scripts in
     // one model; models are fetched to $OAR_HOME (~/.oar) on first use.
     let engine = Arc::new(
         OarOcrEngine::ppocr_v6_small().map_err(|e| format!("Failed to load OCR models: {e}"))?,
