@@ -144,6 +144,9 @@ onMounted(async () => {
       } else {
         imagePath.value = `${val?.value}/images/${payload.filename}`
       }
+      // "Capture text" hotkey: the backend skipped copying the image.
+      if (payload.extractText)
+        onCopyText()
     }
   })
 })

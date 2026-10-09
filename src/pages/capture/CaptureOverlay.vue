@@ -5,7 +5,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 interface Rect { x: number, y: number, w: number, h: number }
 interface ChainNode { rect: Rect, role: string, label: string }
 interface Session {
-  mode: 'auto' | 'window'
+  mode: 'auto' | 'window' | 'text'
   axAvailable: boolean
   monitor: Rect
   scaleFactor: number
@@ -220,6 +220,9 @@ onBeforeUnmount(() => {
     <div v-if="highlight && label" class="hud" :style="hudStyle">
       {{ label }}
     </div>
+    <div v-if="session?.mode === 'text'" class="mode-chip">
+      框选区域以复制文字 Select an area to copy its text
+    </div>
     <button v-if="session && !session.axAvailable" class="ax-chip" @mousedown.stop @mouseup.stop @click.stop="openAxPrefs">
       开启辅助功能可识别页面模块
     </button>
@@ -253,6 +256,19 @@ onBeforeUnmount(() => {
   font-size: 12px;
   line-height: 18px;
   white-space: nowrap;
+  pointer-events: none;
+}
+
+.mode-chip {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 13px;
   pointer-events: none;
 }
 
