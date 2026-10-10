@@ -45,3 +45,20 @@ test("changes from another window are applied live", async () => {
   await act(() => mock.externalWrite("hotkey_region", { value: "CmdOrCtrl+Shift+R" }));
   await waitFor(() => expect(result.current[0]).toBe("CmdOrCtrl+Shift+R"));
 });
+
+test("a change made before the subscription attached is still picked up", async () => {
+  let raced = false;
+  mockNative({
+    settings: { include_cursor: { value: false } },
+    // Right after the initial read is answered, another writer changes the
+    // value without the event reaching us (no subscription exists yet).
+    onStoreGet: (key, settings) => {
+      if (key === "include_cursor" && !raced) {
+        raced = true;
+        settings.set("include_cursor", { value: true });
+      }
+    },
+  });
+  const { result } = renderHook(() => useSetting("include_cursor"), { wrapper: makeWrapper() });
+  await waitFor(() => expect(result.current?.[0]).toBe(true));
+});

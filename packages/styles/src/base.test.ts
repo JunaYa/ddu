@@ -46,6 +46,14 @@ const SHARED_ONLY_MARKERS = [
 const BASELINE_MARKERS = ["tailwindcss", "tw-animate-css", "./vendor/shadcn.css"] as const;
 
 describe("@ddu/styles shared baseline", () => {
+  // ddu 修改: brand.css only wins the cascade if nothing is imported after it.
+  it("imports the ddu brand layer last", () => {
+    const imports = [...read("packages/styles/src/base.css").matchAll(/@import\s+"([^"]+)"/g)].map(
+      (m) => m[1],
+    );
+    expect(imports.at(-1)).toBe("@ddu/tokens/css/brand.css");
+  });
+
   it("baseline.css carries the host-agnostic plugins", () => {
     const baseline = read("packages/styles/src/baseline.css");
     for (const marker of BASELINE_MARKERS) {

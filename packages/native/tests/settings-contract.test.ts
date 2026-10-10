@@ -45,6 +45,49 @@ function keysReadByRust(): Set<string> {
   return keys;
 }
 
+/** The serde_json accessor Rust uses for each schema value type. */
+const ACCESSOR_FOR_TYPE: Record<string, ReadonlyArray<string>> = {
+  string: ["as_str"],
+  boolean: ["as_bool"],
+  number: ["as_i64", "as_u64"],
+};
+
+function schemaType(key: SettingKey): string {
+  return (settingsSchema[key].schema as unknown as { def: { type: string } }).def.type;
+}
+
+/** Accessor each local read helper (`read`/`num`/`flag`) applies to the stored value. */
+function helperAccessors(): Map<string, string> {
+  const helpers = new Map<string, string>();
+  for (const [, name, accessor] of allRust.matchAll(
+    /let (read|num|flag) = \|[\s\S]{0,500}?\.get\("value"\)[\s\S]{0,80}?\.(as_(?:str|bool|i64|u64|f64))\(\)/g,
+  )) {
+    if (name && accessor) helpers.set(name, accessor);
+  }
+  return helpers;
+}
+
+/** The accessor applied to `key`'s value (inside the `{ value }` envelope) at each Rust read site. */
+function accessorsFor(key: string, helpers: Map<string, string>): string[] {
+  const found: string[] = [];
+  for (const [, helper] of allRust.matchAll(new RegExp(`\\b(read|num|flag)\\(\\s*"${key}"`, "g"))) {
+    const accessor = helper && helpers.get(helper);
+    if (accessor) found.push(accessor);
+  }
+  // Direct reads, by literal or by a `*_KEY` constant naming the key.
+  const consts = [...allRust.matchAll(new RegExp(`const ([A-Z_]+_KEY): &str = "${key}"`, "g"))].map(
+    (m) => m[1],
+  );
+  for (const target of [`"${key}"`, ...consts]) {
+    const site = new RegExp(
+      `\\.get\\(\\s*${target}\\s*\\)[\\s\\S]{0,300}?\\.get\\("value"\\)[\\s\\S]{0,80}?\\.(as_(?:str|bool|i64|u64|f64))\\(\\)`,
+      "g",
+    );
+    for (const [, accessor] of allRust.matchAll(site)) if (accessor) found.push(accessor);
+  }
+  return found;
+}
+
 function defaultOf(key: SettingKey): unknown {
   return settingsSchema[key].default;
 }
@@ -56,6 +99,34 @@ function constValue(name: string): string | undefined {
 describe("Rust ↔ schema settings contract", () => {
   test("the scan finds the settings readers", () => {
     expect(settingsReaders.length).toBeGreaterThan(3);
+  });
+
+  test("store reads keyed by a constant use a known key constant", () => {
+    const keyConsts = new Set(
+      [...allRust.matchAll(/const ([A-Z_]+_KEY): &str = "[a-z_]+"/g)].map((m) => m[1]),
+    );
+    const unresolved = [...allRust.matchAll(/\.get\(\s*([A-Z_][A-Z0-9_]*)\s*\)/g)]
+      .map((m) => m[1])
+      .filter((name) => !keyConsts.has(name));
+    expect(unresolved, "name settings key constants `*_KEY` so this test can resolve them").toEqual(
+      [],
+    );
+  });
+
+  test("Rust reads each key with the accessor matching its schema type", () => {
+    const helpers = helperAccessors();
+    expect([...helpers.keys()].sort()).toEqual(["flag", "num", "read"]);
+    const checked: string[] = [];
+    for (const key of settingKeys) {
+      const allowed = ACCESSOR_FOR_TYPE[schemaType(key)] ?? [];
+      for (const accessor of accessorsFor(key, helpers)) {
+        expect(allowed, `${key} is read with ${accessor}`).toContain(accessor);
+        checked.push(key);
+      }
+    }
+    // Every key Rust reads by value must have been type-checked (first_run is presence-only).
+    const expected = [...keysReadByRust()].filter((key) => key !== "first_run");
+    expect([...new Set(checked)].sort()).toEqual(expected.sort());
   });
 
   test("every key Rust reads is defined in the schema", () => {
@@ -99,8 +170,13 @@ describe("Rust ↔ schema settings contract", () => {
     expect(Number(days)).toBe(defaultOf("history_retention_days"));
   });
 
-  test("first_run is treated as not-yet-run when missing", () => {
-    expect(allRust).toMatch(/fn is_first_run/);
+  test("first_run: absent means the guide has not run, and Rust only ever writes true", () => {
+    expect(allRust).toMatch(
+      /fn is_first_run\(stored: Option<serde_json::Value>\) -> bool \{\s*match stored \{\s*None => true,/,
+    );
+    expect(allRust).toMatch(
+      /store\.set\("first_run"\.to_string\(\), json!\(\{ "value": true \}\)\)/,
+    );
     expect(defaultOf("first_run")).toBe(false);
   });
 

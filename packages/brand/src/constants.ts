@@ -1,3 +1,5 @@
+/* ddu 修改: brand name and accent replaced with ddu's (specs/13 § 3). */
+
 /**
  * Brand identity constants — the single source of truth for the ddu
  * brand name and colors. App manifests, meta tags, and the asset

@@ -49,6 +49,51 @@ export default defineConfig({
         },
       },
       {
+        // @ddu/native is framework-agnostic: no React, no UI, no data hooks (N1).
+        files: ["packages/native/**"],
+        rules: {
+          "no-restricted-imports": [
+            "error",
+            {
+              patterns: [
+                ...DEEP_IMPORTS,
+                {
+                  group: [
+                    "react",
+                    "react-dom",
+                    "react/*",
+                    "react-dom/*",
+                    "@ddu/hooks",
+                    "@ddu/hooks/*",
+                    "@ddu/ui",
+                    "@ddu/ui/*",
+                  ],
+                  message: "@ddu/native must not depend on React or the UI (specs/11 N1).",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        // Only @ddu/native talks to Tauri; hooks and utils go through it (specs/10 § 3).
+        files: ["packages/hooks/src/**", "packages/utils/**"],
+        rules: {
+          "no-restricted-imports": [
+            "error",
+            {
+              patterns: [
+                ...DEEP_IMPORTS,
+                {
+                  group: ["@tauri-apps/*", "@tauri-apps/**"],
+                  message: "Use @ddu/native (specs/11).",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
         // The design system takes data as props (specs/10 § 3).
         files: ["packages/ui/**"],
         rules: {

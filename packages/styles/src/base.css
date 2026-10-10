@@ -1,3 +1,5 @@
+/* ddu 修改: imports ddu's brand layer last (see the end of this file; specs/13 § 3). */
+
 /* @ddu/styles — the shared host CSS baseline.
  *
  * Every host that renders shared product UI components (web, extension,

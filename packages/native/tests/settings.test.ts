@@ -52,6 +52,14 @@ test("setSetting persists the value in the { value } shape (N4)", async () => {
   expect(mock.calls.map(([cmd]) => cmd)).toContain("plugin:store|save");
 });
 
+test("an empty hotkey reads as the default, as Rust treats it (global_shortcut.rs)", async () => {
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+  const mock = mockNative({ settings: { hotkey_text: { value: "" } } });
+  await expect(getSetting("hotkey_text")).resolves.toBe("CmdOrCtrl+Shift+O");
+  await expect(setSetting("hotkey_text", "")).rejects.toThrow();
+  expect(mock.settings.get("hotkey_text")).toEqual({ value: "" });
+});
+
 test("setSetting rejects values outside the schema without writing", async () => {
   const mock = mockNative();
   await expect(setSetting("capture_delay", -1)).rejects.toThrow();

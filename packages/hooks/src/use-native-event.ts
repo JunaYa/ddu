@@ -1,5 +1,5 @@
 import { type EventMap, on } from "@ddu/native";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent } from "react";
 
 /**
  * Subscribe to a Rust event for the component's lifetime. The latest
@@ -9,16 +9,17 @@ export function useNativeEvent<K extends keyof EventMap>(
   name: K,
   handler: (payload: EventMap[K]) => void,
 ): void {
-  const latest = useRef(handler);
-  latest.current = handler;
+  const onEvent = useEffectEvent(handler);
 
   useEffect(() => {
     let off: (() => void) | undefined;
     let active = true;
-    void on(name, (payload) => latest.current(payload)).then((unsubscribe) => {
-      if (active) off = unsubscribe;
-      else unsubscribe();
-    });
+    on(name, (payload) => onEvent(payload))
+      .then((unsubscribe) => {
+        if (active) off = unsubscribe;
+        else unsubscribe();
+      })
+      .catch((error: unknown) => console.error(`Subscribing to "${name}" failed`, error));
     return () => {
       active = false;
       off?.();

@@ -70,6 +70,8 @@ ddu/
 | 禁止深层导入 `@ddu/*/src/**`                                                                                           | 根 `vite.config.ts` 的 oxlint `no-restricted-imports`（沿用模板）                                                                                                 |
 | 应用的 React 代码（`src/windows/**`、`src/shared/**`）禁止导入任何 `@tauri-apps/*` 包；插件也一律经 `@ddu/native` 包装 | 根 `vite.config.ts` 中 `lint.overrides` 的 `no-restricted-imports`（覆盖配置须重复深层导入禁令，因为 override 会替换整条规则的选项）；`src/legacy/**` 不参与 lint |
 | `@ddu/ui` 不得导入数据层                                                                                               | `packages/ui` 的 `no-restricted-imports` 覆盖配置                                                                                                                 |
+| `@ddu/native` 不得依赖 React、`@ddu/hooks`、`@ddu/ui`（[11 N1](./11-native-bridge.md#3-不变量)）                       | `packages/native/**` 的 lint 覆盖配置                                                                                                                             |
+| 只有 `@ddu/native` 可以导入 `@tauri-apps/*`；`@ddu/hooks`、`@ddu/utils` 也不得直接接触 Tauri                           | `packages/hooks/src/**`、`packages/utils/**` 的 lint 覆盖配置（`@ddu/hooks` 的测试通过 `@ddu/native/testing` 模拟 IPC，不受此限）                                 |
 
 ## 4. 工具链
 

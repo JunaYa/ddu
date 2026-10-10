@@ -22,9 +22,9 @@ export function WindowShell({ children }: { children: ReactNode }) {
 }
 
 /** Entry point of a React window: follow the system theme and render into `#root`. */
-export function mountWindow(window: ReactNode): void {
+export function mountWindow(content: ReactNode): void {
   const container = document.getElementById("root");
   if (!container) throw new Error("mountWindow: #root element missing from the window's HTML");
   followSystemTheme();
-  createRoot(container).render(<WindowShell>{window}</WindowShell>);
+  createRoot(container).render(<WindowShell>{content}</WindowShell>);
 }

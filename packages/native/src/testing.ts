@@ -18,6 +18,8 @@ export interface MockNativeOptions {
   commands?: CommandHandlers;
   /** Results for plugin commands such as `plugin:autostart|is_enabled`. */
   plugins?: Record<string, (args: unknown) => unknown>;
+  /** Runs after a `plugin:store|get` is answered, e.g. to simulate a racing write. */
+  onStoreGet?: (key: string, settings: Map<string, unknown>) => void;
 }
 
 export interface NativeMock {
@@ -41,20 +43,34 @@ export function mockNative(options: MockNativeOptions = {}): NativeMock {
   const settings = new Map(Object.entries(options.settings ?? {}));
   const calls: Array<[string, unknown]> = [];
 
+  // Like the real plugin, the change event is broadcast separately from the
+  // IPC reply, so code under test must not rely on seeing it first.
   const changed = (key: string, value: unknown) =>
-    emit("store://change", {
-      path: "settings.json",
-      resourceId: STORE_RID,
-      key,
-      value: value ?? null,
-      exists: value !== undefined,
-    });
+    new Promise<void>((resolve) =>
+      setTimeout(() => {
+        void emit("store://change", {
+          path: "settings.json",
+          resourceId: STORE_RID,
+          key,
+          value: value ?? null,
+          exists: value !== undefined,
+        }).then(resolve);
+      }, 0),
+    );
+
+  const expectStore = (args: Record<string, unknown>) => {
+    if ("path" in args && args.path !== "settings.json")
+      throw `mockNative: unexpected store "${String(args.path)}"`;
+    if ("rid" in args && args.rid !== STORE_RID)
+      throw `mockNative: unknown store resource ${String(args.rid)}`;
+  };
 
   mockWindows(options.window ?? "setting");
   mockIPC(
     async (cmd, payload) => {
       const args = (payload ?? {}) as Record<string, unknown>;
       if (!cmd.startsWith("plugin:event|")) calls.push([cmd, payload]);
+      if (cmd.startsWith("plugin:store|")) expectStore(args);
 
       switch (cmd) {
         case "plugin:store|load":
@@ -62,11 +78,13 @@ export function mockNative(options: MockNativeOptions = {}): NativeMock {
           return STORE_RID;
         case "plugin:store|get": {
           const key = args.key as string;
-          return [settings.get(key) ?? null, settings.has(key)];
+          const reply = [settings.get(key) ?? null, settings.has(key)];
+          options.onStoreGet?.(key, settings);
+          return reply;
         }
         case "plugin:store|set":
           settings.set(args.key as string, args.value);
-          await changed(args.key as string, args.value);
+          void changed(args.key as string, args.value);
           return null;
         case "plugin:store|save":
           return null;
