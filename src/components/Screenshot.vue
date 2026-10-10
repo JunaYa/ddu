@@ -17,7 +17,7 @@ async function capture_screen() {
       path: `images`,
     })
     const val = await store.get<{ value: string }>('screenshot_path')
-    await showPreviewWindow(`${val?.value}/` + `images/${result}`)
+    await showPreviewWindow(`${val?.value}/images/${result}`)
   }
   catch (error) {
     // PERMISSION_DENIED:* errors already open the permission guide natively.
@@ -42,7 +42,7 @@ async function take_capture_screen() {
       path: `images`,
     })
     const val = await store.get<{ value: string }>('screenshot_path')
-    await showPreviewWindow(`${val?.value}/` + `images/${result}`)
+    await showPreviewWindow(`${val?.value}/images/${result}`)
   }
   catch (error) {
     console.error('take_capture_screen error:', error)
@@ -56,7 +56,7 @@ async function take_capture_monitor() {
       path: `images`,
     })
     const val = await store.get<{ value: string }>('screenshot_path')
-    await showPreviewWindow(`${val?.value}/` + `images/${result}`)
+    await showPreviewWindow(`${val?.value}/images/${result}`)
   }
   catch (error) {
     console.error('take_capture_screen error:', error)

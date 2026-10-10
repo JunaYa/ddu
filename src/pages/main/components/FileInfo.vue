@@ -3,7 +3,7 @@ import type { FileInfo } from '@tauri-apps/plugin-fs'
 import { stat } from '@tauri-apps/plugin-fs'
 import { onMounted, ref } from 'vue'
 import { formatTime } from '~/utils/datetime'
-import { FileSizeFormatter } from '~/utils/file'
+import { formatFileSize } from '~/utils/file'
 
 const props = defineProps<{
   path: string
@@ -22,7 +22,7 @@ onMounted(async () => {
   <div :class="className">
     <div class="flex flex-row justify-between">
       <span v-if="showLabel" class="text-sm text-secondary">size: </span>
-      <span class="text-sm text-secondary">{{ FileSizeFormatter.format(metadata?.size || 0, { binary: false }) }}</span>
+      <span class="text-sm text-secondary">{{ formatFileSize(metadata?.size || 0, { binary: false }) }}</span>
     </div>
     <div class="flex flex-row justify-between">
       <span v-if="showLabel" class="text-sm text-secondary">最近修改: </span>
