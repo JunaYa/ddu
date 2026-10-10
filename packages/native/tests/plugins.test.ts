@@ -1,5 +1,13 @@
 import { afterEach, expect, test } from "vite-plus/test";
-import { autostart, confirm, pickDirectory } from "../src/index.ts";
+import {
+  appVersion,
+  autostart,
+  confirm,
+  permissionStatus,
+  pickDirectory,
+  requestPermission,
+  restartApp,
+} from "../src/index.ts";
 import { mockNative, resetNativeMock } from "../src/testing.ts";
 
 afterEach(resetNativeMock);
@@ -49,4 +57,30 @@ test("confirm is true only when the user presses OK", async () => {
   await expect(confirm("清空？", { title: "确认", kind: "warning" })).resolves.toBe(true);
   answer = "Cancel";
   await expect(confirm("清空？", { title: "确认", kind: "warning" })).resolves.toBe(false);
+});
+
+test("permission commands map to the Rust commands", async () => {
+  const mock = mockNative({
+    window: "startup",
+    commands: {
+      permission_status: () => ({
+        screenRecording: "denied",
+        accessibility: "granted",
+        microphone: "denied",
+      }),
+      permission_request: ({ kind }) => kind === "accessibility",
+      restart_app: () => undefined,
+    },
+    plugins: { "plugin:app|version": () => "0.1.9" },
+  });
+  await expect(permissionStatus()).resolves.toMatchObject({ screenRecording: "denied" });
+  await expect(requestPermission("accessibility")).resolves.toBe(true);
+  await restartApp();
+  await expect(appVersion()).resolves.toBe("0.1.9");
+  expect(mock.calls.map(([cmd]) => cmd)).toEqual([
+    "permission_status",
+    "permission_request",
+    "restart_app",
+    "plugin:app|version",
+  ]);
 });

@@ -18,6 +18,20 @@ export interface DiagnosticsBundle {
   permissions: PlatformCapability[];
 }
 
+/** Permission names accepted by `permission_request` (`PermissionKind::parse`). */
+export type PermissionKind = "screenRecording" | "accessibility" | "microphone";
+
+/**
+ * `PermissionStatusDto` in src-tauri/src/cmd/permissions.rs. Screen Recording
+ * and Accessibility are `"granted" | "denied"`; the microphone can also report
+ * other AVFoundation states, so all three are kept as strings.
+ */
+export interface PermissionStatus {
+  screenRecording: string;
+  accessibility: string;
+  microphone: string;
+}
+
 /** `HistoryItem` in src-tauri/src/cmd/history.rs. */
 export interface HistoryItem {
   id: string;

@@ -1,4 +1,4 @@
-import type { DiagnosticsBundle, HistoryItem } from "./types.ts";
+import type { DiagnosticsBundle, HistoryItem, PermissionKind, PermissionStatus } from "./types.ts";
 
 /** Marker for commands that take no arguments. */
 export type NoArgs = Record<string, never>;
@@ -15,6 +15,10 @@ export interface CommandMap {
   list_history_items: { args: { path: string }; result: HistoryItem[] };
   delete_history_items: { args: { paths: string[] }; result: number };
   clear_ocr_index: { args: NoArgs; result: void };
+  permission_status: { args: NoArgs; result: PermissionStatus };
+  /** Resolves to whether the permission is granted afterwards. */
+  permission_request: { args: { kind: PermissionKind }; result: boolean };
+  restart_app: { args: NoArgs; result: void };
 }
 
 export type CommandName = keyof CommandMap;

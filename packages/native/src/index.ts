@@ -1,7 +1,14 @@
 export { call, NativeError } from "./commands/call.ts";
 export type { CommandArgs, CommandMap, CommandName, CommandResult } from "./commands/map.ts";
-export type { DiagnosticsBundle, HistoryItem, PlatformCapability } from "./commands/types.ts";
+export type {
+  DiagnosticsBundle,
+  HistoryItem,
+  PermissionKind,
+  PermissionStatus,
+  PlatformCapability,
+} from "./commands/types.ts";
 export { on, type CapturePrepared, type EventMap } from "./events.ts";
+export { appVersion, permissionStatus, requestPermission, restartApp } from "./permissions.ts";
 export { autostart, confirm, pickDirectory } from "./plugins.ts";
 export {
   applyShortcuts,
