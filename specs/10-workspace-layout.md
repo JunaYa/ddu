@@ -112,19 +112,19 @@ ddu/
 
 沿用模板 `.github/workflows/ci.yml` 的结构，两处修改：
 
-1. **desktop 作业改用 `macos-latest`**：ddu 的 Rust 代码只在 macOS 上可编译（`src/platform/mod.rs` 中 Windows 模块不存在，Linux 模块缺少命令依赖的函数）。作业内容：`vp run desktop#build` → `cargo check` → `cargo test --lib`。
+1. **desktop 作业改用 `macos-latest`**：ddu 的 Rust 代码只在 macOS 上可编译（`src/platform/mod.rs` 中 Windows 模块不存在，Linux 模块缺少命令依赖的函数）。作业内容：`vp run desktop#build` → `cargo clippy --all-targets -- -D warnings`（比 `cargo check` 更严，代码目前已通过）→ `cargo test --lib`。Rust 工具链需显式安装 `clippy` 组件。
 2. **去掉** OpenAPI 代码生成同步检查（无 `@pi/sdk`）和 mobile 守卫。
 
 保留：`vp run -r check`、`vp run -r test`、`vp run -r build`、license gate、`vp pm audit`。
 
 ## 7. 不变量
 
-| #   | 不变量                                  | 如何保证                                                                                           |
-| --- | --------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| W1  | 依赖方向只能沿 § 3 的箭头               | lint 规则；违反即 `vp check` 失败                                                                  |
-| W2  | 应用中的 React 代码不直接接触 Tauri API | lint 规则（§ 3 强制手段）                                                                          |
-| W3  | 每个工作区成员至少有一个测试            | `vp run -r test` 在无测试时失败（模板行为）                                                        |
-| W4  | 产品标识不变                            | `apps/desktop/src-tauri` 中的一个 Rust 测试断言 `tauri.conf.json` 的 `identifier == "com.ddu.app"` |
+| #   | 不变量                                                                   | 如何保证                                                                                                                                    |
+| --- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| W1  | 依赖方向只能沿 § 3 的箭头                                                | lint 规则；违反即 `vp check` 失败                                                                                                           |
+| W2  | 应用中的 React 代码不直接接触 Tauri API                                  | lint 规则（§ 3 强制手段）                                                                                                                   |
+| W3  | ddu 自写或改写的包（native、hooks、utils、brand、desktop）至少有一个测试 | 这些包的 `test` 脚本不带 `--passWithNoTests`，没有测试即失败；原样复制的模板包（tokens、iconography、styles）沿用模板的 `--passWithNoTests` |
+| W4  | 产品标识不变                                                             | `apps/desktop/src-tauri` 中的一个 Rust 测试断言 `tauri.conf.json` 的 `identifier == "com.ddu.app"`                                          |
 
 ## 8. 交叉引用
 

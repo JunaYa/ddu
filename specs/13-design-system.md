@@ -12,6 +12,8 @@ Status: draft · Owner: ddu · Depends on: [10](./10-workspace-layout.md)、[12]
 
 **保持模板代码原样**是为了将来拣选时 diff 干净：ddu 的定制只能放在 § 3 的品牌层和新增文件中，不修改复制来的文件。必须修改时，在文件顶部注释注明“ddu 修改：原因”。
 
+这一规则只约束 `ui`、`tokens`、`styles`、`iconography` 四个设计系统包（`brand` 只改常量）。`utils` 与 `hooks` 复制时只取模板的骨架，此后就是 ddu 自己的包，按需重写，不加注释标记。
+
 ## 3. 品牌层
 
 模板的 token 是三层 CSS 变量：primitives（原始色板）→ semantics（`--primary`、`--background` 等 shadcn 语义名，含 `.dark` 覆盖）→ Tailwind `@theme`。ddu 只在 semantics 之上加**一个**覆盖文件：

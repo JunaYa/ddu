@@ -19,11 +19,11 @@ macOS is the supported release platform. Linux support is experimental.
 ## Development
 
 ```sh
-pnpm install
-pnpm test
-pnpm dev:desktop
+vp install            # dependencies + git hooks
+vp run ready          # format, lint, type-check, test and build everything
+vp run desktop#dev    # launch the app in development mode
 ```
 
 ## macOS release
 
-A direct-download DMG must be Developer ID signed, notarized, and stapled. Run `pnpm release:check-macos` before starting a release build; it fails fast when required signing/notarization inputs are missing. See [the release checklist](docs/release-macos.md).
+A direct-download DMG must be Developer ID signed, notarized, and stapled. Run `vp run desktop#release:check-macos` before starting a release build; it fails fast when required signing/notarization inputs are missing. See [the release checklist](docs/release-macos.md).

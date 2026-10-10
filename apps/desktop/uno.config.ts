@@ -14,6 +14,13 @@ import {
 } from "unocss";
 
 export default defineConfig({
+  // Legacy Vue windows only: React windows use Tailwind via @ddu/styles, and
+  // UnoCSS must not emit utilities for them (specs/12 § 4).
+  content: {
+    pipeline: {
+      include: [/[\\/]src[\\/]legacy[\\/].*\.(vue|html)($|\?)/],
+    },
+  },
   shortcuts: [
     {
       "border-base": "border-$c-border",

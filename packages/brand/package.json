@@ -17,7 +17,7 @@
   },
   "scripts": {
     "check": "vp check",
-    "test": "vp test --passWithNoTests"
+    "test": "vp test"
   },
   "devDependencies": {
     "@storybook/react-vite": "catalog:",

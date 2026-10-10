@@ -19,11 +19,11 @@ macOS 是当前受支持的发布平台；Linux 仅为实验性支持。
 ## 开发
 
 ```sh
-pnpm install
-pnpm test
-pnpm dev:desktop
+vp install            # dependencies + git hooks
+vp run ready          # format, lint, type-check, test and build everything
+vp run desktop#dev    # launch the app in development mode
 ```
 
 ## macOS 发布
 
-直接下载的 DMG 必须经过 Developer ID 签名、公证和装订。开始发布构建前运行 `pnpm release:check-macos`；缺失签名或公证前置条件时该命令会直接失败。详见 [发布清单](docs/release-macos.md)。
+直接下载的 DMG 必须经过 Developer ID 签名、公证和装订。开始发布构建前运行 `vp run desktop#release:check-macos`；缺失签名或公证前置条件时该命令会直接失败。详见 [发布清单](docs/release-macos.md)。

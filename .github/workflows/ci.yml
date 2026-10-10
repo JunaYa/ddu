@@ -13,7 +13,7 @@ jobs:
   # Single task-graph-driven job. Affected-only comes from the vp task cache:
   # unchanged targets replay instead of re-running. The cache is a speed
   # optimization, never a correctness gate — on any miss (first PR, fork PR,
-  # eviction) every task executes and must still pass (R16 / AE6).
+  # eviction) every task executes and must still pass.
   build:
     runs-on: ubuntu-latest
     steps:
@@ -91,6 +91,8 @@ jobs:
 
       - if: steps.changes.outputs.desktop == 'true'
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
       - if: steps.changes.outputs.desktop == 'true'
         uses: swatinem/rust-cache@v2
         with:
