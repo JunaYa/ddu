@@ -196,4 +196,3 @@ interface PlatformCapability {
 - 快捷键测试：冲突、恢复默认、Wayland 降级。
 - 打包测试：macOS 签名、Windows 安装卸载、Linux 多发行版安装。
 - 安全测试：密钥存储、诊断包脱敏、企业策略覆盖用户设置。
-

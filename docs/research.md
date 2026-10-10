@@ -15,45 +15,45 @@
 
 ## 代表应用总览
 
-| 平台 | 应用 | 好评/采用信号 | 主要借鉴点 |
-| --- | --- | --- | --- |
-| macOS | CleanShot X | Mac 端高频推荐的付费全能工具，官方列出截图、录屏、云、OCR、历史、浮动截图等完整能力 | 捕获后浮层、滚动截图、Pin 到桌面、本地 OCR、云链接、背景美化 |
-| macOS | Shottr | 面向设计师和前端工程师，强调 2.3 MB、Apple Silicon 优化和毫秒级响应 | 极快启动、像素测量、取色、滚动截图、OCR/QR、S3 上传 |
-| macOS | Xnip | 专注 Mac 截图、长截图、窗口阴影和置顶图 | 捕获时仍可调整区域、滚动拼接、窗口阴影、多窗口捕获、Pin |
-| macOS | Xnapper | 专注“漂亮截图”和内容自动平衡 | 自动居中、背景、圆角、阴影、展示图生成 |
-| macOS/Windows | Snagit | 面向专业文档和企业异步沟通，官方强调截图、录屏、AI、可搜索库和分享 | 步骤录制、AI 智能打码、可搜索/可标签库、文档化工作流 |
-| macOS/Windows | Monosnap | 截图、录屏、云存储和团队分享工具 | Dropzone、捕获后上传、云文件夹、编辑器拖放 |
-| Windows | Snipping Tool | Windows 原生工具，已覆盖截图、视频 snip、OCR、颜色选择、Copilot+ Perfect Screenshot | 系统级快捷入口、轻量编辑、本地 OCR、一键打码 |
-| Windows | ShareX | 免费开源，GitHub 约 37.6k stars，官方强调 18 年以上开发、工作流和大量目的地 | 自动动作、上传器、自定义工作流、OCR、QR、录屏/GIF、CLI |
-| Windows | Greenshot | 轻量开源工具，面向项目经理、开发者、测试、技术写作 | 简单、低成本、标注、Office/邮件/打印/剪贴板导出 |
-| Windows | PicPick | “all-in-one” 图形工具，带取色、标尺、量角器、白板 | 截图工具周边生产力配件 |
-| Windows | Screenpresso | Windows 截图/录屏工具，官方强调工作区、143 个分享服务、文档生成 | 工作区、拖放、OCR、二维码、Android 捕获、DOCX/PDF/HTML 生成 |
-| Linux | Flameshot | 免费开源、跨平台，Linux 用户常用，强调简单截图和内联标注 | 截图时直接标注、可定制工具栏、Imgur 上传、CLI |
-| Linux | ksnip | Qt 跨平台工具，GitHub 约 3.2k stars，支持 X11、Wayland、Windows、macOS | 平台差异处理、插件 OCR、标签页、Pin、用户自定义动作 |
-| Linux | Shutter | Linux 功能丰富截图工具，2026 仍有发布 | 菜单/tooltip 捕获、网页捕获、内置编辑、插件效果 |
-| Linux | KDE Spectacle | KDE 原生截图工具，随 KDE 生态发布 | 原生快捷键、区域/窗口/全屏、标注、导出、系统集成 |
-| Linux | GNOME/Ubuntu Screenshot | GNOME/Ubuntu 原生 screenshot/screencast overlay | 系统级 overlay、截图/录屏一体、键盘导航、默认目录和剪贴板 |
+| 平台          | 应用                    | 好评/采用信号                                                                       | 主要借鉴点                                                   |
+| ------------- | ----------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| macOS         | CleanShot X             | Mac 端高频推荐的付费全能工具，官方列出截图、录屏、云、OCR、历史、浮动截图等完整能力 | 捕获后浮层、滚动截图、Pin 到桌面、本地 OCR、云链接、背景美化 |
+| macOS         | Shottr                  | 面向设计师和前端工程师，强调 2.3 MB、Apple Silicon 优化和毫秒级响应                 | 极快启动、像素测量、取色、滚动截图、OCR/QR、S3 上传          |
+| macOS         | Xnip                    | 专注 Mac 截图、长截图、窗口阴影和置顶图                                             | 捕获时仍可调整区域、滚动拼接、窗口阴影、多窗口捕获、Pin      |
+| macOS         | Xnapper                 | 专注“漂亮截图”和内容自动平衡                                                        | 自动居中、背景、圆角、阴影、展示图生成                       |
+| macOS/Windows | Snagit                  | 面向专业文档和企业异步沟通，官方强调截图、录屏、AI、可搜索库和分享                  | 步骤录制、AI 智能打码、可搜索/可标签库、文档化工作流         |
+| macOS/Windows | Monosnap                | 截图、录屏、云存储和团队分享工具                                                    | Dropzone、捕获后上传、云文件夹、编辑器拖放                   |
+| Windows       | Snipping Tool           | Windows 原生工具，已覆盖截图、视频 snip、OCR、颜色选择、Copilot+ Perfect Screenshot | 系统级快捷入口、轻量编辑、本地 OCR、一键打码                 |
+| Windows       | ShareX                  | 免费开源，GitHub 约 37.6k stars，官方强调 18 年以上开发、工作流和大量目的地         | 自动动作、上传器、自定义工作流、OCR、QR、录屏/GIF、CLI       |
+| Windows       | Greenshot               | 轻量开源工具，面向项目经理、开发者、测试、技术写作                                  | 简单、低成本、标注、Office/邮件/打印/剪贴板导出              |
+| Windows       | PicPick                 | “all-in-one” 图形工具，带取色、标尺、量角器、白板                                   | 截图工具周边生产力配件                                       |
+| Windows       | Screenpresso            | Windows 截图/录屏工具，官方强调工作区、143 个分享服务、文档生成                     | 工作区、拖放、OCR、二维码、Android 捕获、DOCX/PDF/HTML 生成  |
+| Linux         | Flameshot               | 免费开源、跨平台，Linux 用户常用，强调简单截图和内联标注                            | 截图时直接标注、可定制工具栏、Imgur 上传、CLI                |
+| Linux         | ksnip                   | Qt 跨平台工具，GitHub 约 3.2k stars，支持 X11、Wayland、Windows、macOS              | 平台差异处理、插件 OCR、标签页、Pin、用户自定义动作          |
+| Linux         | Shutter                 | Linux 功能丰富截图工具，2026 仍有发布                                               | 菜单/tooltip 捕获、网页捕获、内置编辑、插件效果              |
+| Linux         | KDE Spectacle           | KDE 原生截图工具，随 KDE 生态发布                                                   | 原生快捷键、区域/窗口/全屏、标注、导出、系统集成             |
+| Linux         | GNOME/Ubuntu Screenshot | GNOME/Ubuntu 原生 screenshot/screencast overlay                                     | 系统级 overlay、截图/录屏一体、键盘导航、默认目录和剪贴板    |
 
 ## 功能矩阵
 
-| 应用 | 区域/窗口/全屏 | 滚动截图 | 标注编辑 | OCR/QR | 录屏/GIF | 历史/库 | 上传/分享 | 自动化/CLI |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| CleanShot X | 是 | 是 | 强 | OCR | MP4/GIF | 最近历史 | CleanShot Cloud | 中 |
-| Shottr | 是 | 是 | 强 | OCR/QR | 弱 | 轻量 | S3 | URL Scheme |
-| Xnip | 是 | 是 | 中 | 未见官方重点 | 否 | 轻量 | 基础 | 弱 |
-| Xnapper | 是 | 弱 | 偏美化 | 邮箱打码等 | 否 | 弱 | 基础 | 弱 |
-| Snagit | 是 | 是 | 强 | OCR/AI | MP4/GIF | 可搜索库 | Screencast/第三方 | 中 |
-| Monosnap | 是 | 未见核心 | 中 | Windows OCR/AI | 是/GIF | 云文件 | 云/集成 | 中 |
-| Snipping Tool | 是 | 否 | 基础 | OCR/本地打码 | 视频 snip | 系统相册/文件 | Windows Share | 弱 |
-| ShareX | 是 | 是 | 强 | OCR/QR | MP4/GIF | 历史 | 大量目的地 | 强 |
-| Greenshot | 是 | IE 网页滚动 | 中 | 否 | 否 | 弱 | 文件/邮件/Office/图片站 | 中 |
-| PicPick | 是 | 是 | 中 | 否 | 有录屏 | 弱 | 云/Office/FTP | 中 |
-| Screenpresso | 是 | 是 | 强 | OCR/QR | MP4 | 工作区 | 143 服务 | 中 |
-| Flameshot | 是 | 否 | 强 | 否 | 否 | 弱 | Imgur | CLI |
-| ksnip | 是 | 否 | 强 | 插件 OCR | 否 | 标签页 | Imgur/FTP/脚本 | CLI/动作 |
-| Shutter | 是 | 网站捕获 | 中 | 否 | 否 | 标签页 | 图床 | 插件 |
-| Spectacle | 是 | 否 | 中 | 否 | 部分 KDE 版本录屏 | 弱 | KDE 导出 | CLI |
-| GNOME/Ubuntu | 是 | 否 | 弱 | 否 | 是 | 系统文件夹 | 剪贴板/文件 | 弱 |
+| 应用          | 区域/窗口/全屏 | 滚动截图    | 标注编辑 | OCR/QR         | 录屏/GIF          | 历史/库       | 上传/分享               | 自动化/CLI |
+| ------------- | -------------- | ----------- | -------- | -------------- | ----------------- | ------------- | ----------------------- | ---------- |
+| CleanShot X   | 是             | 是          | 强       | OCR            | MP4/GIF           | 最近历史      | CleanShot Cloud         | 中         |
+| Shottr        | 是             | 是          | 强       | OCR/QR         | 弱                | 轻量          | S3                      | URL Scheme |
+| Xnip          | 是             | 是          | 中       | 未见官方重点   | 否                | 轻量          | 基础                    | 弱         |
+| Xnapper       | 是             | 弱          | 偏美化   | 邮箱打码等     | 否                | 弱            | 基础                    | 弱         |
+| Snagit        | 是             | 是          | 强       | OCR/AI         | MP4/GIF           | 可搜索库      | Screencast/第三方       | 中         |
+| Monosnap      | 是             | 未见核心    | 中       | Windows OCR/AI | 是/GIF            | 云文件        | 云/集成                 | 中         |
+| Snipping Tool | 是             | 否          | 基础     | OCR/本地打码   | 视频 snip         | 系统相册/文件 | Windows Share           | 弱         |
+| ShareX        | 是             | 是          | 强       | OCR/QR         | MP4/GIF           | 历史          | 大量目的地              | 强         |
+| Greenshot     | 是             | IE 网页滚动 | 中       | 否             | 否                | 弱            | 文件/邮件/Office/图片站 | 中         |
+| PicPick       | 是             | 是          | 中       | 否             | 有录屏            | 弱            | 云/Office/FTP           | 中         |
+| Screenpresso  | 是             | 是          | 强       | OCR/QR         | MP4               | 工作区        | 143 服务                | 中         |
+| Flameshot     | 是             | 否          | 强       | 否             | 否                | 弱            | Imgur                   | CLI        |
+| ksnip         | 是             | 否          | 强       | 插件 OCR       | 否                | 标签页        | Imgur/FTP/脚本          | CLI/动作   |
+| Shutter       | 是             | 网站捕获    | 中       | 否             | 否                | 标签页        | 图床                    | 插件       |
+| Spectacle     | 是             | 否          | 中       | 否             | 部分 KDE 版本录屏 | 弱            | KDE 导出                | CLI        |
+| GNOME/Ubuntu  | 是             | 否          | 弱       | 否             | 是                | 系统文件夹    | 剪贴板/文件             | 弱         |
 
 ## 关键洞察
 

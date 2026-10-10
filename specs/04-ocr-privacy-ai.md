@@ -180,4 +180,3 @@ interface SensitiveFinding {
 - 隐私样例：邮箱、手机号、银行卡、JWT、GitHub token、URL token。
 - 安全测试：离线模式、关闭 AI、清空历史、上传前拦截。
 - 回归测试：打码后导出图片不可通过项目文件恢复原文。
-

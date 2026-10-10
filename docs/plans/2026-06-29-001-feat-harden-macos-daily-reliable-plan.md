@@ -89,6 +89,7 @@ flowchart TB
 ### Phase 1 — 安全与信任(P0)
 
 ### U1. 修保存路径覆盖 + get_images_dir 去 panic
+
 - **Goal:** 用户配置的保存路径跨重启保留;构造图片目录的路径不再 panic。
 - **Requirements:** R6, R3
 - **Dependencies:** 无(基础单元;U2/U6/U7 依赖正确的图片目录;自定义路径的前端可读性见 KTD9/U2)
@@ -102,6 +103,7 @@ flowchart TB
 - **Verification:** 设自定义保存路径 → 重启 → 路径仍为自定义值,新截图落在该处。
 
 ### U2. 路径守卫(全命令)+ 导出后端解析 + 前端读写改后端 + capability 清理
+
 - **Goal:** 所有取路径命令拒绝受控目录外路径;导出目标不经渲染进程;自定义路径前端可读;fs 作用域收紧。
 - **Requirements:** R2, R6(配合 KTD9)
 - **Dependencies:** U1
@@ -117,6 +119,7 @@ flowchart TB
 - **Verification:** 构造越界/兄弟目录路径调用各命令 → 外部文件不受影响;自定义保存路径下历史列表/缩略图/删除均正常;Save As 到桌面成功(经后端)。
 
 ### U3. 真实不可逆打码
+
 - **Goal:** 像素化/实色覆盖真实销毁底层像素,导出/复制不可恢复;blur 标注为 best-effort。
 - **Requirements:** R1
 - **Dependencies:** 无(前端独立)
@@ -134,6 +137,7 @@ flowchart TB
 ### Phase 2 — 日常工作流正确性
 
 ### U4. 快捷键运行时热重载(含失败回滚)
+
 - **Goal:** 设置里改快捷键后即时生效;失败不留零快捷键状态。
 - **Requirements:** R7
 - **Dependencies:** U1
@@ -147,6 +151,7 @@ flowchart TB
 - **Verification:** 不重启改键即用;冲突给出内联可见提示且原快捷键仍可用。
 
 ### U5. 复制:去临时文件 + 反馈 + 退役旧命令
+
 - **Goal:** 复制不遗留临时文件;成功/失败都有可见反馈;旧任意路径复制命令退役。
 - **Requirements:** R4, R8
 - **Dependencies:** 无
@@ -160,6 +165,7 @@ flowchart TB
 - **Verification:** 多次复制无临时文件累积;成功/失败均有可见反馈;旧命令不再暴露任意路径读取。
 
 ### U6. 设置真实持久化 + 历史保留清理(安全默认)
+
 - **Goal:** 每个设置控件读写持久且跨重启生效;保留期成为安全的自动清理;接不上的控件移除。
 - **Requirements:** R5
 - **Dependencies:** U1, U2(守卫)
@@ -174,6 +180,7 @@ flowchart TB
 - **Verification:** 重启后设置保留;未 opt-in / 未设保留期 → 启动不删任何文件;opt-in 且设 7 天 → 仅清理 app 生成的超期文件。
 
 ### U7. 捕获按设置执行(延时 / 光标 / 窗口阴影)
+
 - **Goal:** 让已存储但未使用的捕获设置真正影响截图行为(含 macOS 限制)。
 - **Requirements:** R10, R5(接通捕获设置)
 - **Dependencies:** U1
@@ -187,6 +194,7 @@ flowchart TB
 - **Verification:** 开延时 3s 截图 → 实际延时;关窗口阴影 → 窗口截图无阴影;全屏含光标设置生效,区域/窗口的光标限制有文案说明。
 
 ### U10. 预览浮窗 show/hide 行为
+
 - **Goal:** 预览浮窗隐藏时行为直觉,不残留在 Dock/Mission Control。
 - **Requirements:** R9
 - **Dependencies:** 无
@@ -202,6 +210,7 @@ flowchart TB
 ### Phase 3 — 健壮性与新能力
 
 ### U8. 热路径去 panic 清扫
+
 - **Goal:** 用户可达路径上的 `unwrap`/`expect` 不再使进程崩溃。
 - **Requirements:** R3
 - **Dependencies:** U1, U2(其触及文件的 panic 已在各自单元处理)
@@ -214,6 +223,7 @@ flowchart TB
 - **Verification:** 无权限/磁盘满/路径缺失场景走热路径 → 可见错误,应用不崩溃。
 
 ### U9. 多张截图拼合
+
 - **Goal:** 历史多选 → 横/竖排合成一张 → 进编辑器标注并导出。
 - **Requirements:** R11, R12, R13
 - **Dependencies:** 编辑器现有能力;落盘传输见 KTD8。U3 非阻塞(拼图后若要打码复用同一编辑器即可,但拼接本身不依赖 U3)。
@@ -233,12 +243,14 @@ flowchart TB
 ## Scope Boundaries
 
 **Deferred to Follow-Up Work(本方向、以后可做)**
+
 - 前后对比 / 自由拼贴布局;「截图时连续抓多张再拼」的交互(本轮仅历史多选 + 横/竖排)。
 - 历史 max-size 按容量裁剪(本轮**从 UI 移除**该控件;仅做按龄清理)。
 - 带放大镜 / 键盘微调 / 尺寸输入的自定义选区 overlay;交互式捕获的光标包含(macOS `-C` 限制)。
 - 低优先级 cosmetics(datetime 不补零、`Toggle` 不随 prop 同步、清理未使用的 `Greet.vue`/`Screenshot.vue`)——顺手则修,不阻塞。
 
 **Outside this round(别的方向、本轮不碰)**
+
 - 跨平台(Linux / Windows)落地。
 - 云上传/分享、滚动截图、录屏增强、跨平台真本地 OCR。
 - 公证打包、i18n、首次引导、自动更新。
@@ -274,9 +286,11 @@ flowchart TB
 ## Open Questions
 
 **Resolve Before Implementation**
+
 - **KTD9 传输方式:** 自定义保存路径的前端可读性,走「读写统一改后端命令」(推荐:绕过作用域、可保持收紧)还是「启动动态放宽 assetProtocol + fs 作用域到用户路径」(更脆、更宽)?推荐前者;须在 U2 收紧前确认。
 
 **Deferred to Implementation**
+
 - `export_image` 把原生保存对话框移到 Rust 端的具体形态(`tauri-plugin-dialog` 的后端调用)与对既有 `handleSave` 的改动面。
 - 预览浮窗(U10)用真正 hide/show 还是 hide + collection-behavior 调整——视实测副作用而定。
 

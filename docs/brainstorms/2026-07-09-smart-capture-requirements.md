@@ -64,12 +64,12 @@ topic: smart-capture
 
 ### Rust 端(新模块 `smart_capture`,mac 实现放 platform/mac/,沿现有结构)
 
-| 命令 | 入参 | 返回 | 说明 |
-|---|---|---|---|
-| `smart_capture_start` | `mode: "auto"\|"window"` | `{ monitor, scaleFactor, axAvailable, snapshotUrl }` | 冻结 + 建 overlay |
-| `smart_capture_hit_test` | `x, y`(全局逻辑坐标) | `{ chain: [{rect, role, label}], appName }` | 一次返回整条链 |
-| `smart_capture_finalize` | `x, y, w, h` | `CaptureResult{ path, … }` | 内存裁剪 + 现有保存管线 |
-| `smart_capture_cancel` | — | — | 关 overlay、丢快照 |
+| 命令                     | 入参                     | 返回                                                 | 说明                    |
+| ------------------------ | ------------------------ | ---------------------------------------------------- | ----------------------- |
+| `smart_capture_start`    | `mode: "auto"\|"window"` | `{ monitor, scaleFactor, axAvailable, snapshotUrl }` | 冻结 + 建 overlay       |
+| `smart_capture_hit_test` | `x, y`(全局逻辑坐标)     | `{ chain: [{rect, role, label}], appName }`          | 一次返回整条链          |
+| `smart_capture_finalize` | `x, y, w, h`             | `CaptureResult{ path, … }`                           | 内存裁剪 + 现有保存管线 |
+| `smart_capture_cancel`   | —                        | —                                                    | 关 overlay、丢快照      |
 
 **hit_test 父链算法**:
 

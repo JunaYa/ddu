@@ -191,4 +191,3 @@ interface CaptureSource {
 - 集成测试：区域、全屏、窗口、延时、上次区域。
 - 手动矩阵：macOS Retina + 外接屏、Windows HDR + 多 DPI、Linux X11、GNOME Wayland、KDE Wayland。
 - 回归样例：菜单捕获、tooltip、视频画面、虚拟列表、滚动网页、长代码文件。
-

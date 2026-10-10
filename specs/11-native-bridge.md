@@ -81,18 +81,18 @@ export function on<K extends keyof EventMap>(
 ```ts
 // packages/native/src/settings/schema.ts
 export const settingsSchema = {
-  screenshot_path:         { schema: z.string(),            default: "" },
-  capture_delay:           { schema: z.number().int().min(0), default: 0 },
-  include_cursor:          { schema: z.boolean(),           default: false },
-  naming_template:         { schema: z.string(),            default: "{date}_{time}_{mode}" },
-  hotkey_fullscreen:       { schema: z.string(),            default: "CmdOrCtrl+Shift+A" },
-  hotkey_region:           { schema: z.string(),            default: "CmdOrCtrl+Shift+S" },
-  hotkey_window:           { schema: z.string(),            default: "CmdOrCtrl+Shift+W" },
-  hotkey_text:             { schema: z.string(),            default: "CmdOrCtrl+Shift+O" },
-  history_retention_days:  { schema: z.number().int(),      default: 30 },
-  history_cleanup_enabled: { schema: z.boolean(),           default: false },
-  ocr_index_enabled:       { schema: z.boolean(),           default: true },
-  first_run:               { schema: z.boolean(),           default: false },
+  screenshot_path: { schema: z.string(), default: "" },
+  capture_delay: { schema: z.number().int().min(0), default: 0 },
+  include_cursor: { schema: z.boolean(), default: false },
+  naming_template: { schema: z.string(), default: "{date}_{time}_{mode}" },
+  hotkey_fullscreen: { schema: z.string(), default: "CmdOrCtrl+Shift+A" },
+  hotkey_region: { schema: z.string(), default: "CmdOrCtrl+Shift+S" },
+  hotkey_window: { schema: z.string(), default: "CmdOrCtrl+Shift+W" },
+  hotkey_text: { schema: z.string(), default: "CmdOrCtrl+Shift+O" },
+  history_retention_days: { schema: z.number().int(), default: 30 },
+  history_cleanup_enabled: { schema: z.boolean(), default: false },
+  ocr_index_enabled: { schema: z.boolean(), default: true },
+  first_run: { schema: z.boolean(), default: false },
 } as const;
 
 export type SettingKey = keyof typeof settingsSchema;
@@ -116,7 +116,11 @@ export function onSettingChange<K extends SettingKey>(
 
 ```ts
 export const WINDOW = {
-  main: "main", setting: "setting", preview: "preview", startup: "startup", capture: "capture",
+  main: "main",
+  setting: "setting",
+  preview: "preview",
+  startup: "startup",
+  capture: "capture",
 } as const;
 export type WindowLabel = (typeof WINDOW)[keyof typeof WINDOW];
 
@@ -129,21 +133,21 @@ export function currentWindowLabel(): WindowLabel;
 
 设置窗口用到的 Tauri 插件也由本包包装，应用不直接导入插件：
 
-| 导出 | 底层 |
-| --- | --- |
-| `autostart.isEnabled / enable / disable` | `@tauri-apps/plugin-autostart` |
+| 导出                                                       | 底层                                                                             |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `autostart.isEnabled / enable / disable`                   | `@tauri-apps/plugin-autostart`                                                   |
 | `pickDirectory({ defaultPath? }): Promise<string \| null>` | `@tauri-apps/plugin-dialog` 的 `open({ directory: true })`，默认路径为用户主目录 |
-| `confirm(message, options)` | `@tauri-apps/plugin-dialog` |
+| `confirm(message, options)`                                | `@tauri-apps/plugin-dialog`                                                      |
 
 ## 3. 不变量
 
-| # | 不变量 | 验证 |
-| --- | --- | --- |
-| N1 | `@ddu/native` 不导入 React | `packages/native` 的 lint 规则 |
-| N2 | 每个设置键在 `settingsSchema` 中出现且只出现一次，键名与 `settings.json` 现有键一致 | TS 的对象字面量保证唯一；测试断言键集合等于上面列出的 12 个 |
-| N3 | Rust 读取的每个设置键都在 `settingsSchema` 中，且默认值相同 | Vitest 测试扫描 `apps/desktop/src-tauri/src/**/*.rs` 中读取 `settings.json` 的调用，抽取键与回退值，与 schema 比对。新增 Rust 读取而未登记 schema 时测试失败。例外：`screenshot_path` 没有静态默认值，Rust 在启动时（`lib.rs` 的 `setup`）若为空就写入应用数据目录，因此前端读到的永远是已写入的值，schema 默认值 `""` 只在启动前的竞态中出现 |
-| N4 | 存储格式保持 `{ value }` | 测试：`setSetting` 写入 mock store 后，原始值为 `{ value: … }` |
-| N5 | 应用的 React 代码不绕过本包 | [10 § 3](./10-workspace-layout.md#3-包职责与依赖方向) 的 lint 规则 |
+| #   | 不变量                                                                              | 验证                                                                                                                                                                                                                                                                                                                                          |
+| --- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| N1  | `@ddu/native` 不导入 React                                                          | `packages/native` 的 lint 规则                                                                                                                                                                                                                                                                                                                |
+| N2  | 每个设置键在 `settingsSchema` 中出现且只出现一次，键名与 `settings.json` 现有键一致 | TS 的对象字面量保证唯一；测试断言键集合等于上面列出的 12 个                                                                                                                                                                                                                                                                                   |
+| N3  | Rust 读取的每个设置键都在 `settingsSchema` 中，且默认值相同                         | Vitest 测试扫描 `apps/desktop/src-tauri/src/**/*.rs` 中读取 `settings.json` 的调用，抽取键与回退值，与 schema 比对。新增 Rust 读取而未登记 schema 时测试失败。例外：`screenshot_path` 没有静态默认值，Rust 在启动时（`lib.rs` 的 `setup`）若为空就写入应用数据目录，因此前端读到的永远是已写入的值，schema 默认值 `""` 只在启动前的竞态中出现 |
+| N4  | 存储格式保持 `{ value }`                                                            | 测试：`setSetting` 写入 mock store 后，原始值为 `{ value: … }`                                                                                                                                                                                                                                                                                |
+| N5  | 应用的 React 代码不绕过本包                                                         | [10 § 3](./10-workspace-layout.md#3-包职责与依赖方向) 的 lint 规则                                                                                                                                                                                                                                                                            |
 
 ## 4. 行为
 

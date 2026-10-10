@@ -19,14 +19,14 @@ Status: draft · Owner: ddu · Depends on: [10](./10-workspace-layout.md)、[12]
 ```css
 /* packages/tokens/src/brand.css — 在 index.css 中最后导入 */
 :root {
-  --primary: #cc7d24;            /* ddu 琥珀色，原 --rgb-primary: 204, 125, 36 */
+  --primary: #cc7d24; /* ddu 琥珀色，原 --rgb-primary: 204, 125, 36 */
   --primary-foreground: #ffffff;
   --ring: color-mix(in srgb, #cc7d24 45%, transparent);
-  --font-stack-product-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text",
-    "PingFang SC", "Helvetica Neue", sans-serif;
+  --font-stack-product-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
 }
 .dark {
-  --primary: #cc7d24;            /* 现状：亮暗色同一主色 */
+  --primary: #cc7d24; /* 现状：亮暗色同一主色 */
   --ring: color-mix(in srgb, #cc7d24 55%, transparent);
 }
 ```
@@ -40,23 +40,23 @@ Status: draft · Owner: ddu · Depends on: [10](./10-workspace-layout.md)、[12]
 
 迁移窗口时按此表选组件。`@ddu/ui` 按子路径导入（例如 `@ddu/ui/switch`），不从根入口导入。
 
-| 现有 Vue 组件 / 写法 | `@ddu/ui` 对应 | 说明 |
-| --- | --- | --- |
-| `components/Button.vue`（`btn-solid` 等） | `button` | `variant="primary"` 对应 `btn-solid`；`anim` 点击动画不迁移（设计系统按钮自带按压态） |
-| `components/Toggle.vue` | `switch` | 受控：`checked` + `onCheckedChange`，同时修复 Toggle 自带内部状态导致取消确认后显示不同步的问题 |
-| `components/Checkbox.vue` | `checkbox` | 支持半选状态，对应历史库的“全选” |
-| `<select class="select-settings">` | `select` | — |
-| 一排互斥按钮（截图延时 `delay-btn`） | `toggle-group`（单选） | — |
-| `<input class="input-base">` | `input`；带按钮时用 `input-group` | — |
-| `components/DirectorySelector.vue` | 应用内组合：`input-group` + `button`，调用 `@ddu/native` 的 `pickDirectory` | 含数据调用，不进 `@ddu/ui` |
-| `.liquid-glass.liquid-glass-panel` 面板 | `card` + `surface-glass` | — |
-| `<div class="h-.5px bg-border">` 分隔线 | `separator` | — |
-| 设置行（标签 + 说明 + 控件） | `field`（`Field`、`FieldLabel`、`FieldDescription`、`FieldContent`） | 设置窗口的主要布局单元 |
-| 页面分区 | `layout/section`、`layout/section-header` | — |
-| 快捷键显示 | `kbd` | 录制交互由应用实现 |
-| 错误提示（`text-red-500`） | `field` 的 `FieldError`；窗口级用 `alert` | — |
-| 原生 `confirm()`（`@tauri-apps/plugin-dialog`） | **保持原生对话框** | 与现状一致；不改用 `alert-dialog` |
-| 图标（内联 SVG） | `lucide-react` / `@ddu/iconography` | — |
+| 现有 Vue 组件 / 写法                            | `@ddu/ui` 对应                                                              | 说明                                                                                            |
+| ----------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `components/Button.vue`（`btn-solid` 等）       | `button`                                                                    | `variant="primary"` 对应 `btn-solid`；`anim` 点击动画不迁移（设计系统按钮自带按压态）           |
+| `components/Toggle.vue`                         | `switch`                                                                    | 受控：`checked` + `onCheckedChange`，同时修复 Toggle 自带内部状态导致取消确认后显示不同步的问题 |
+| `components/Checkbox.vue`                       | `checkbox`                                                                  | 支持半选状态，对应历史库的“全选”                                                                |
+| `<select class="select-settings">`              | `select`                                                                    | —                                                                                               |
+| 一排互斥按钮（截图延时 `delay-btn`）            | `toggle-group`（单选）                                                      | —                                                                                               |
+| `<input class="input-base">`                    | `input`；带按钮时用 `input-group`                                           | —                                                                                               |
+| `components/DirectorySelector.vue`              | 应用内组合：`input-group` + `button`，调用 `@ddu/native` 的 `pickDirectory` | 含数据调用，不进 `@ddu/ui`                                                                      |
+| `.liquid-glass.liquid-glass-panel` 面板         | `card` + `surface-glass`                                                    | —                                                                                               |
+| `<div class="h-.5px bg-border">` 分隔线         | `separator`                                                                 | —                                                                                               |
+| 设置行（标签 + 说明 + 控件）                    | `field`（`Field`、`FieldLabel`、`FieldDescription`、`FieldContent`）        | 设置窗口的主要布局单元                                                                          |
+| 页面分区                                        | `layout/section`、`layout/section-header`                                   | —                                                                                               |
+| 快捷键显示                                      | `kbd`                                                                       | 录制交互由应用实现                                                                              |
+| 错误提示（`text-red-500`）                      | `field` 的 `FieldError`；窗口级用 `alert`                                   | —                                                                                               |
+| 原生 `confirm()`（`@tauri-apps/plugin-dialog`） | **保持原生对话框**                                                          | 与现状一致；不改用 `alert-dialog`                                                               |
+| 图标（内联 SVG）                                | `lucide-react` / `@ddu/iconography`                                         | —                                                                                               |
 
 `@ddu/ui` 中找不到对应、且会被两个及以上窗口复用的展示组件，加到 `@ddu/ui` 并补 Storybook story；只在一个窗口里用的组合，留在该窗口目录。
 
@@ -64,25 +64,25 @@ Status: draft · Owner: ddu · Depends on: [10](./10-workspace-layout.md)、[12]
 
 设置窗口按现有六个分区还原，每个分区一张卡片，分区内每个设置项一行 `Field`：
 
-| 分区 | 设置项 | 数据来源（`@ddu/native`） |
-| --- | --- | --- |
-| 通用 | 开机自动启动 | `autostart.*` |
-| 存储 | 截图保存路径 | 设置键 `screenshot_path`、`pickDirectory` |
-| 截图 | 默认延时（分段按钮）、包含鼠标指针、文件命名模板（失焦保存） | `capture_delay`、`include_cursor`、`naming_template` |
-| 快捷键 | 全屏、区域、窗口、截图识字 | `hotkey_*`；保存后调用 `apply_shortcuts`，失败时在该行显示错误并保留输入 |
-| 历史 | 保留期限、自动清理、OCR 文字索引、清空历史 | `history_retention_days`、`history_cleanup_enabled`、`ocr_index_enabled`；`clear_ocr_index`、`list_history_items`、`delete_history_items` |
-| 诊断 | 点击“运行检查”后列出权限与平台能力 | `get_diagnostics_bundle`（返回值已包含 capabilities 与 permissions） |
+| 分区   | 设置项                                                       | 数据来源（`@ddu/native`）                                                                                                                 |
+| ------ | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 通用   | 开机自动启动                                                 | `autostart.*`                                                                                                                             |
+| 存储   | 截图保存路径                                                 | 设置键 `screenshot_path`、`pickDirectory`                                                                                                 |
+| 截图   | 默认延时（分段按钮）、包含鼠标指针、文件命名模板（失焦保存） | `capture_delay`、`include_cursor`、`naming_template`                                                                                      |
+| 快捷键 | 全屏、区域、窗口、截图识字                                   | `hotkey_*`；保存后调用 `apply_shortcuts`，失败时在该行显示错误并保留输入                                                                  |
+| 历史   | 保留期限、自动清理、OCR 文字索引、清空历史                   | `history_retention_days`、`history_cleanup_enabled`、`ocr_index_enabled`；`clear_ocr_index`、`list_history_items`、`delete_history_items` |
+| 诊断   | 点击“运行检查”后列出权限与平台能力                           | `get_diagnostics_bundle`（返回值已包含 capabilities 与 permissions）                                                                      |
 
 所有文案与现有界面完全一致。现有 `WindowState.vue`（保存/恢复窗口尺寸按钮）没有被设置窗口引用，属于死代码，不迁移。
 
 ## 6. 不变量
 
-| # | 不变量 | 验证 |
-| --- | --- | --- |
-| U1 | 品牌差异只在 `brand.css` 与 `@ddu/brand` 中 | 代码评审；复制来的模板文件若有修改，文件头必须有“ddu 修改”注释 |
-| U2 | 已迁移窗口不手写基础控件 | `apps/desktop/src/windows/**` 中不得出现原生 `<button>`、`<input>`、`<select>` 元素：lint 规则（`no-restricted-syntax` 对 JSX 元素名）或测试扫描 |
-| U3 | 亮色、暗色都可用 | `@ddu/ui` 的 Storybook 主题切换；窗口人工核对清单（[12 § 6](./12-desktop-shell.md#6-人工核对清单每个窗口)） |
-| U4 | 每个 React 入口都导入 `@ddu/styles/base.css` | 沿用模板的 `packages/styles/src/base.test.ts`，把 ddu 的入口加入 `HOST_ENTRIES` |
+| #   | 不变量                                       | 验证                                                                                                                                             |
+| --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| U1  | 品牌差异只在 `brand.css` 与 `@ddu/brand` 中  | 代码评审；复制来的模板文件若有修改，文件头必须有“ddu 修改”注释                                                                                   |
+| U2  | 已迁移窗口不手写基础控件                     | `apps/desktop/src/windows/**` 中不得出现原生 `<button>`、`<input>`、`<select>` 元素：lint 规则（`no-restricted-syntax` 对 JSX 元素名）或测试扫描 |
+| U3  | 亮色、暗色都可用                             | `@ddu/ui` 的 Storybook 主题切换；窗口人工核对清单（[12 § 6](./12-desktop-shell.md#6-人工核对清单每个窗口)）                                      |
+| U4  | 每个 React 入口都导入 `@ddu/styles/base.css` | 沿用模板的 `packages/styles/src/base.test.ts`，把 ddu 的入口加入 `HOST_ENTRIES`                                                                  |
 
 ## 7. 交叉引用
 

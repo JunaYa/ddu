@@ -26,10 +26,12 @@
 Pure, platform-independent math and shared types. This is where the coordinate-correctness guarantees live, so it is test-first and CI-runnable.
 
 **Files:**
+
 - Create: `src-tauri/src/smart_capture.rs`
 - Modify: `src-tauri/src/lib.rs` (add `mod smart_capture;` after line 10 `mod platform;`)
 
 **Interfaces:**
+
 - Consumes: nothing (only `serde`, `image` crates).
 - Produces (used by Tasks 2/3/5):
   - `pub struct LogicalRect { pub x: f64, pub y: f64, pub w: f64, pub h: f64 }` (`Copy`, `Serialize`, `PartialEq`) with `contains(x, y) -> bool`, `approx_eq(&other, eps) -> bool`, `intersects(&other) -> bool`
@@ -259,10 +261,12 @@ git commit -m "feat(smart-capture): add geometry core and session types"
 ### Task 2: mac natives — cursor, freeze, window list
 
 **Files:**
+
 - Create: `src-tauri/src/platform/mac/smart_capture.rs`
 - Modify: `src-tauri/src/platform/mac/mod.rs` (add `mod smart_capture;` + `pub use smart_capture::*;`)
 
 **Interfaces:**
+
 - Consumes: `crate::smart_capture::{LogicalRect, WindowInfo}` (Task 1).
 - Produces (used by Task 5):
   - `pub fn cursor_position_logical() -> (f64, f64)` — global logical points, top-left origin
@@ -469,9 +473,11 @@ git commit -m "feat(smart-capture): freeze screen, cursor position, window list 
 ### Task 3: mac natives — AX parent-chain hit test
 
 **Files:**
+
 - Modify: `src-tauri/src/platform/mac/smart_capture.rs` (append)
 
 **Interfaces:**
+
 - Consumes: `CGPoint`/`CGSize` from Task 2; `crate::smart_capture::ChainNode`; existing `platform::check_accessibility_permissions` (`src-tauri/src/platform/mac/screenshot.rs:228`).
 - Produces (used by Task 5): `pub fn ax_chain_at(x: f64, y: f64, max_depth: usize) -> Vec<ChainNode>` — deepest-first raw nodes (NOT deduped; the command layer dedupes after appending the window tail). Returns `vec![]` on any failure — that IS the degradation path, never an error.
 
@@ -637,6 +643,7 @@ git commit -m "feat(smart-capture): AX parent-chain hit test via ApplicationServ
 ### Task 4: Overlay window shell (Rust builder + capture page skeleton)
 
 **Files:**
+
 - Modify: `src-tauri/src/constants.rs` (add `pub const CAPTURE_WINDOW: &str = "capture";`)
 - Modify: `src-tauri/src/window.rs`
 - Modify: `src-tauri/capabilities/default.json` (windows: add `"capture"`)
@@ -644,6 +651,7 @@ git commit -m "feat(smart-capture): AX parent-chain hit test via ApplicationServ
 - Create: `capture.html`, `src/pages/capture/main.ts`, `src/pages/capture/App.vue`, `src/pages/capture/CaptureOverlay.vue` (stub)
 
 **Interfaces:**
+
 - Consumes: `constants::CAPTURE_WINDOW`.
 - Produces (used by Task 5):
   - `pub fn create_capture_window(app: &AppHandle, x: f64, y: f64, w: f64, h: f64) -> WebviewWindow` (logical monitor frame)
@@ -736,19 +744,19 @@ pub fn close_capture_window(app: &AppHandle) {
 `src/pages/capture/main.ts`:
 
 ```ts
-import { createApp } from 'vue'
-import App from './App.vue'
-import '~/styles/tokens/index.css'
-import '~/styles/global.css'
+import { createApp } from "vue";
+import App from "./App.vue";
+import "~/styles/tokens/index.css";
+import "~/styles/global.css";
 
-createApp(App).mount('#app')
+createApp(App).mount("#app");
 ```
 
 `src/pages/capture/App.vue`:
 
 ```vue
 <script setup lang="ts">
-import CaptureOverlay from './CaptureOverlay.vue'
+import CaptureOverlay from "./CaptureOverlay.vue";
 </script>
 
 <template>
@@ -759,8 +767,7 @@ import CaptureOverlay from './CaptureOverlay.vue'
 `src/pages/capture/CaptureOverlay.vue` (stub; Task 6 fills it in):
 
 ```vue
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <div class="capture-overlay" />
@@ -807,6 +814,7 @@ git commit -m "feat(smart-capture): capture overlay window shell and page scaffo
 ### Task 5: Tauri commands, session state, save pipeline
 
 **Files:**
+
 - Create: `src-tauri/src/cmd/smart_capture.rs`
 - Modify: `src-tauri/src/cmd/mod.rs` (add `mod smart_capture; pub use self::smart_capture::*;`)
 - Modify: `src-tauri/src/lib.rs` (manage state + register 6 commands)
@@ -814,6 +822,7 @@ git commit -m "feat(smart-capture): capture overlay window shell and page scaffo
 - Modify: `src-tauri/src/platform/mac/screenshot.rs` (add `set_last_capture_path`)
 
 **Interfaces:**
+
 - Consumes: Tasks 1–4 (`SmartSession`, `SmartCaptureState`, geometry fns, `platform::{cursor_position_logical, freeze_screen_at, list_windows_on_monitor, ax_chain_at, open_accessibility_preferences, check_accessibility_permissions, open_screen_capture_preferences, CaptureResult}`, `window::{create_capture_window, close_capture_window}`, `common::get_images_dir`).
 - Produces (used by Tasks 6/7):
   - Commands (frontend `invoke` names): `smart_capture_start {mode}`, `smart_capture_get_session {}` → `SessionDto`, `smart_capture_hit_test {x, y}` → `HitTestDto`, `smart_capture_finalize {x, y, w, h}`, `smart_capture_cancel {}`, `open_accessibility_preferences {}`
@@ -1072,6 +1081,7 @@ pub fn open_accessibility_preferences() {
 `src-tauri/src/cmd/mod.rs` — add `mod smart_capture;` to the mod list and `pub use self::smart_capture::*;` to the use list.
 
 `src-tauri/src/lib.rs`:
+
 - After `.plugin(tauri_plugin_positioner::init())` (line 17) add:
 
 ```rust
@@ -1106,10 +1116,12 @@ git commit -m "feat(smart-capture): session commands, hit-test and finalize pipe
 ### Task 6: Overlay interaction UI (`CaptureOverlay.vue`) + button entry swap
 
 **Files:**
+
 - Modify: `src/pages/capture/CaptureOverlay.vue` (replace stub entirely)
 - Modify: `src/components/Screenshot.vue:23-38` (swap two handlers)
 
 **Interfaces:**
+
 - Consumes: `smart_capture_get_session`, `smart_capture_hit_test`, `smart_capture_finalize`, `smart_capture_cancel`, `open_accessibility_preferences`, `smart_capture_start` (Task 5 DTO shapes).
 - Produces: the complete overlay UX (hover snap / wheel climb / drag / click / Enter / Esc / AX chip).
 
@@ -1119,187 +1131,205 @@ Replace `src/pages/capture/CaptureOverlay.vue` with:
 
 ```vue
 <script setup lang="ts">
-import { invoke } from '@tauri-apps/api/core'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { invoke } from "@tauri-apps/api/core";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
-interface Rect { x: number, y: number, w: number, h: number }
-interface ChainNode { rect: Rect, role: string, label: string }
-interface Session {
-  mode: 'auto' | 'window'
-  axAvailable: boolean
-  monitor: Rect
-  scaleFactor: number
-  snapshotDataUrl: string
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
-interface HitTest { chain: ChainNode[], appName: string }
+interface ChainNode {
+  rect: Rect;
+  role: string;
+  label: string;
+}
+interface Session {
+  mode: "auto" | "window";
+  axAvailable: boolean;
+  monitor: Rect;
+  scaleFactor: number;
+  snapshotDataUrl: string;
+}
+interface HitTest {
+  chain: ChainNode[];
+  appName: string;
+}
 
-const HIT_TEST_THROTTLE_MS = 30
-const DRAG_THRESHOLD_PX = 4
+const HIT_TEST_THROTTLE_MS = 30;
+const DRAG_THRESHOLD_PX = 4;
 
-const session = ref<Session | null>(null)
-const chain = ref<ChainNode[]>([])
-const chainIndex = ref(0)
-const appName = ref('')
-const dragging = ref(false)
-const dragStart = ref<{ x: number, y: number } | null>(null)
-const dragRect = ref<Rect | null>(null)
-const finalizing = ref(false)
+const session = ref<Session | null>(null);
+const chain = ref<ChainNode[]>([]);
+const chainIndex = ref(0);
+const appName = ref("");
+const dragging = ref(false);
+const dragStart = ref<{ x: number; y: number } | null>(null);
+const dragRect = ref<Rect | null>(null);
+const finalizing = ref(false);
 
-let hitTestInFlight = false
-let lastHitTestAt = 0
+let hitTestInFlight = false;
+let lastHitTestAt = 0;
 
 function rectEq(a?: Rect, b?: Rect) {
-  if (!a || !b) return false
-  return Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5
-    && Math.abs(a.w - b.w) < 0.5 && Math.abs(a.h - b.h) < 0.5
+  if (!a || !b) return false;
+  return (
+    Math.abs(a.x - b.x) < 0.5 &&
+    Math.abs(a.y - b.y) < 0.5 &&
+    Math.abs(a.w - b.w) < 0.5 &&
+    Math.abs(a.h - b.h) < 0.5
+  );
 }
 
 // Convert a global logical rect to overlay-local CSS pixels (1:1 with logical
 // points inside the webview).
 function toLocal(r: Rect): Rect {
-  const m = session.value!.monitor
-  return { x: r.x - m.x, y: r.y - m.y, w: r.w, h: r.h }
+  const m = session.value!.monitor;
+  return { x: r.x - m.x, y: r.y - m.y, w: r.w, h: r.h };
 }
 
 const highlight = computed<Rect | null>(() => {
-  if (dragging.value) return dragRect.value
-  const node = chain.value[chainIndex.value]
-  return node && session.value ? toLocal(node.rect) : null
-})
+  if (dragging.value) return dragRect.value;
+  const node = chain.value[chainIndex.value];
+  return node && session.value ? toLocal(node.rect) : null;
+});
 
 const label = computed(() => {
-  const r = highlight.value
-  if (!r) return ''
-  const size = `${Math.round(r.w)} × ${Math.round(r.h)}`
-  if (dragging.value) return size
-  const node = chain.value[chainIndex.value]
-  return [size, appName.value, node?.role].filter(Boolean).join(' · ')
-})
+  const r = highlight.value;
+  if (!r) return "";
+  const size = `${Math.round(r.w)} × ${Math.round(r.h)}`;
+  if (dragging.value) return size;
+  const node = chain.value[chainIndex.value];
+  return [size, appName.value, node?.role].filter(Boolean).join(" · ");
+});
 
 const veilPath = computed(() => {
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-  let d = `M0,0 H${vw} V${vh} H0 Z`
-  const r = highlight.value
-  if (r) d += ` M${r.x},${r.y} h${r.w} v${r.h} h${-r.w} Z`
-  return d
-})
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  let d = `M0,0 H${vw} V${vh} H0 Z`;
+  const r = highlight.value;
+  if (r) d += ` M${r.x},${r.y} h${r.w} v${r.h} h${-r.w} Z`;
+  return d;
+});
 
 const hudStyle = computed(() => {
-  const r = highlight.value
-  if (!r) return {}
-  const below = r.y + r.h + 8
-  const top = below + 28 > window.innerHeight ? Math.max(r.y - 34, 8) : below
-  const left = Math.min(Math.max(r.x, 8), window.innerWidth - 240)
-  return { top: `${top}px`, left: `${left}px` }
-})
+  const r = highlight.value;
+  if (!r) return {};
+  const below = r.y + r.h + 8;
+  const top = below + 28 > window.innerHeight ? Math.max(r.y - 34, 8) : below;
+  const left = Math.min(Math.max(r.x, 8), window.innerWidth - 240);
+  return { top: `${top}px`, left: `${left}px` };
+});
 
 async function onMouseMove(e: MouseEvent) {
-  if (finalizing.value || !session.value) return
+  if (finalizing.value || !session.value) return;
 
   if (dragStart.value) {
-    const dx = e.clientX - dragStart.value.x
-    const dy = e.clientY - dragStart.value.y
+    const dx = e.clientX - dragStart.value.x;
+    const dy = e.clientY - dragStart.value.y;
     if (dragging.value || Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) {
-      dragging.value = true
+      dragging.value = true;
       dragRect.value = {
         x: Math.min(dragStart.value.x, e.clientX),
         y: Math.min(dragStart.value.y, e.clientY),
         w: Math.abs(dx),
         h: Math.abs(dy),
-      }
+      };
     }
-    return
+    return;
   }
 
-  const now = performance.now()
-  if (hitTestInFlight || now - lastHitTestAt < HIT_TEST_THROTTLE_MS) return
-  hitTestInFlight = true
-  lastHitTestAt = now
+  const now = performance.now();
+  if (hitTestInFlight || now - lastHitTestAt < HIT_TEST_THROTTLE_MS) return;
+  hitTestInFlight = true;
+  lastHitTestAt = now;
   try {
-    const m = session.value.monitor
-    const res = await invoke<HitTest>('smart_capture_hit_test', { x: m.x + e.clientX, y: m.y + e.clientY })
-    const prevDeepest = chain.value[0]?.rect
-    chain.value = res.chain
-    appName.value = res.appName
+    const m = session.value.monitor;
+    const res = await invoke<HitTest>("smart_capture_hit_test", {
+      x: m.x + e.clientX,
+      y: m.y + e.clientY,
+    });
+    const prevDeepest = chain.value[0]?.rect;
+    chain.value = res.chain;
+    appName.value = res.appName;
     if (!rectEq(prevDeepest, res.chain[0]?.rect)) {
       // New element under the cursor: reset to the mode default granularity.
-      chainIndex.value = session.value.mode === 'window' ? Math.max(res.chain.length - 1, 0) : 0
+      chainIndex.value = session.value.mode === "window" ? Math.max(res.chain.length - 1, 0) : 0;
+    } else {
+      chainIndex.value = Math.min(chainIndex.value, Math.max(res.chain.length - 1, 0));
     }
-    else {
-      chainIndex.value = Math.min(chainIndex.value, Math.max(res.chain.length - 1, 0))
-    }
-  }
-  catch {
+  } catch {
     // Session gone (finalize/cancel raced): ignore.
-  }
-  finally {
-    hitTestInFlight = false
+  } finally {
+    hitTestInFlight = false;
   }
 }
 
 function onWheel(e: WheelEvent) {
-  if (dragging.value || !chain.value.length) return
-  if (e.deltaY < 0) chainIndex.value = Math.min(chainIndex.value + 1, chain.value.length - 1)
-  else chainIndex.value = Math.max(chainIndex.value - 1, 0)
+  if (dragging.value || !chain.value.length) return;
+  if (e.deltaY < 0) chainIndex.value = Math.min(chainIndex.value + 1, chain.value.length - 1);
+  else chainIndex.value = Math.max(chainIndex.value - 1, 0);
 }
 
 function onMouseDown(e: MouseEvent) {
-  if (e.button === 0) dragStart.value = { x: e.clientX, y: e.clientY }
+  if (e.button === 0) dragStart.value = { x: e.clientX, y: e.clientY };
 }
 
 async function onMouseUp() {
-  if (finalizing.value || !session.value) return
+  if (finalizing.value || !session.value) return;
   if (dragging.value && dragRect.value) {
-    const m = session.value.monitor
-    await finalize({ x: m.x + dragRect.value.x, y: m.y + dragRect.value.y, w: dragRect.value.w, h: dragRect.value.h })
+    const m = session.value.monitor;
+    await finalize({
+      x: m.x + dragRect.value.x,
+      y: m.y + dragRect.value.y,
+      w: dragRect.value.w,
+      h: dragRect.value.h,
+    });
+  } else {
+    const node = chain.value[chainIndex.value];
+    if (node) await finalize(node.rect);
   }
-  else {
-    const node = chain.value[chainIndex.value]
-    if (node) await finalize(node.rect)
-  }
-  dragStart.value = null
-  dragging.value = false
+  dragStart.value = null;
+  dragging.value = false;
 }
 
 async function finalize(rect: Rect) {
-  finalizing.value = true
+  finalizing.value = true;
   try {
     // Fire-and-forget: Rust closes this window as part of finalize.
-    await invoke('smart_capture_finalize', { x: rect.x, y: rect.y, w: rect.w, h: rect.h })
-  }
-  catch (err) {
-    console.error('finalize failed:', err)
+    await invoke("smart_capture_finalize", { x: rect.x, y: rect.y, w: rect.w, h: rect.h });
+  } catch (err) {
+    console.error("finalize failed:", err);
   }
 }
 
 function onKeyDown(e: KeyboardEvent) {
-  if (e.key === 'Escape') invoke('smart_capture_cancel')
-  if (e.key === 'Enter') {
-    const node = chain.value[chainIndex.value]
-    if (node) finalize(node.rect)
+  if (e.key === "Escape") invoke("smart_capture_cancel");
+  if (e.key === "Enter") {
+    const node = chain.value[chainIndex.value];
+    if (node) finalize(node.rect);
   }
 }
 
 function openAxPrefs() {
-  invoke('open_accessibility_preferences')
+  invoke("open_accessibility_preferences");
 }
 
 onMounted(async () => {
-  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener("keydown", onKeyDown);
   try {
-    session.value = await invoke<Session>('smart_capture_get_session')
-  }
-  catch (err) {
+    session.value = await invoke<Session>("smart_capture_get_session");
+  } catch (err) {
     // No session (stale overlay): bail out cleanly.
-    console.error('no capture session:', err)
-    invoke('smart_capture_cancel')
+    console.error("no capture session:", err);
+    invoke("smart_capture_cancel");
   }
-})
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeyDown)
-})
+  window.removeEventListener("keydown", onKeyDown);
+});
 </script>
 
 <template>
@@ -1311,7 +1341,7 @@ onBeforeUnmount(() => {
     @wheel.prevent="onWheel"
     @contextmenu.prevent
   >
-    <img v-if="session" :src="session.snapshotDataUrl" class="snapshot" draggable="false" alt="">
+    <img v-if="session" :src="session.snapshotDataUrl" class="snapshot" draggable="false" alt="" />
     <svg v-if="session" class="veil">
       <path :d="veilPath" fill="rgba(0, 0, 0, 0.35)" fill-rule="evenodd" />
       <rect
@@ -1386,12 +1416,12 @@ In `src/components/Screenshot.vue`, replace the bodies of `capture_select` (line
 ```ts
 // capture select — smart snapping overlay (auto granularity)
 async function capture_select() {
-  await invoke('smart_capture_start', { mode: 'auto' })
+  await invoke("smart_capture_start", { mode: "auto" });
 }
 
 // capture window — same overlay, initial granularity locked to windows
 async function capture_window() {
-  await invoke('smart_capture_start', { mode: 'window' })
+  await invoke("smart_capture_start", { mode: "window" });
 }
 ```
 
@@ -1405,13 +1435,14 @@ Expected: PASS.
 - [ ] **Step 4: Manual smoke test (dev app)**
 
 Run: `pnpm dev:desktop`, click "Capture Select" in the main window:
+
 - Overlay covers the cursor's monitor with a frozen snapshot + dark veil.
 - Hovering highlights modules (AX granted) or whole windows; label shows `W × H · App · Role`.
 - Scroll up expands highlight toward the window; scroll down goes deeper.
 - Drag > 4px draws a manual rect; release captures it; preview floater appears; the file lands in history.
 - Click captures the highlighted rect. Enter same. Esc cancels.
 - "Capture Window" starts window-level highlighted.
-Expected: all behaviors above; note anything off before committing.
+  Expected: all behaviors above; note anything off before committing.
 
 - [ ] **Step 5: Commit**
 
@@ -1425,6 +1456,7 @@ git commit -m "feat(smart-capture): overlay interaction UI with snap, climb and 
 ### Task 7: Route hotkeys + tray menu; delete the osascript window hack
 
 **Files:**
+
 - Modify: `src-tauri/src/global_shortcut.rs:159-172` (Region/Window arms)
 - Modify: `src-tauri/src/menu.rs:157-201` (two arms + local `handle_capture_result` removal)
 - Modify: `src-tauri/src/platform/mac/screenshot.rs:138-170` (delete `capture_window`)
@@ -1432,6 +1464,7 @@ git commit -m "feat(smart-capture): overlay interaction UI with snap, climb and 
 - Modify: `src-tauri/src/lib.rs:90` (drop `cmd::capture_window,` from `invoke_handler`)
 
 **Interfaces:**
+
 - Consumes: `cmd::start_smart_capture` (Task 5), `global_shortcut::post_capture_flow` (Task 5).
 - Produces: ⌘⇧S / ⌘⇧W / tray items all route into smart capture. `capture_select`, `capture_delayed`, `capture_screen` commands remain untouched (per spec Key Decision 4 + R6: `capture_select` stays as the `screencapture`-CLI fallback path; only the osascript window hack is deleted).
 
@@ -1467,6 +1500,7 @@ In `src-tauri/src/global_shortcut.rs`, add `use crate::cmd;` to the imports, the
 - [ ] **Step 2: Reroute the tray menu**
 
 In `src-tauri/src/menu.rs`:
+
 - The select arm (around line 194) becomes:
 
 ```rust

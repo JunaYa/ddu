@@ -17,13 +17,13 @@ ddu 计划以 `/Users/arjun/Code/web/vp-monorepo`（下称“模板”，提交 
 
 ## 验证结果
 
-| # | 假设 | 结果 | 证据 / 处理 |
-|---|------|------|-------------|
-| S1 | 全局 `vp` 0.2.1 能驱动模板（要求 ≥ 1.1.0） | ✅ 成立 | 全局 CLI 委托给项目内 `vite-plus` 1.1.0；`vp install` 用模板指定的 pnpm 12.10.1 完成。无需升级全局工具。 |
-| S2 | 同一个 Vite+ 多页面构建中 Vue 页面与 React 页面共存 | ✅ 成立 | `plugins: [vue(), UnoCSS(), react({ exclude: /\.vue$/ }), tailwindcss()]` + `build.rollupOptions.input` 两个入口，`vp build` 产出两套独立 JS/CSS（legacy 1.1 kB CSS，React 310 kB CSS）。`@vitejs/plugin-vue` 6.0.9 的 peer 接受 Vite 8。 |
-| S3 | Tailwind v4 与 UnoCSS 共存且样式不互相泄漏 | ✅ 成立（需一行配置） | Tailwind v4 默认扫描整个应用目录；在 React 入口 CSS 中加 `@source not "./legacy";` 排除 Vue 目录。UnoCSS 用 `content.pipeline.include` 限定到 legacy 目录。 |
-| S4 | 在 TypeScript 7 下对 `.vue` 做类型检查 | ❌ 不成立 → ✅ 有缓解 | `vue-tsc` 3.3.12 在 TS 7.0.2 下崩溃（`ERR_PACKAGE_PATH_NOT_EXPORTED`，TS 7 不再导出 JS API）。在 `apps/desktop` 单独固定 `typescript@5.9.3` 后 `vue-tsc --noEmit` 通过，并能捕获故意注入的类型错误。 |
-| S5 | 模板质量门禁在混合应用上可用 | ✅ 成立 | `vp check`（格式 + 类型感知 lint + 类型检查）与 `vp test` 均通过。 |
+| #   | 假设                                                | 结果                  | 证据 / 处理                                                                                                                                                                                                                               |
+| --- | --------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | 全局 `vp` 0.2.1 能驱动模板（要求 ≥ 1.1.0）          | ✅ 成立               | 全局 CLI 委托给项目内 `vite-plus` 1.1.0；`vp install` 用模板指定的 pnpm 12.10.1 完成。无需升级全局工具。                                                                                                                                  |
+| S2  | 同一个 Vite+ 多页面构建中 Vue 页面与 React 页面共存 | ✅ 成立               | `plugins: [vue(), UnoCSS(), react({ exclude: /\.vue$/ }), tailwindcss()]` + `build.rollupOptions.input` 两个入口，`vp build` 产出两套独立 JS/CSS（legacy 1.1 kB CSS，React 310 kB CSS）。`@vitejs/plugin-vue` 6.0.9 的 peer 接受 Vite 8。 |
+| S3  | Tailwind v4 与 UnoCSS 共存且样式不互相泄漏          | ✅ 成立（需一行配置） | Tailwind v4 默认扫描整个应用目录；在 React 入口 CSS 中加 `@source not "./legacy";` 排除 Vue 目录。UnoCSS 用 `content.pipeline.include` 限定到 legacy 目录。                                                                               |
+| S4  | 在 TypeScript 7 下对 `.vue` 做类型检查              | ❌ 不成立 → ✅ 有缓解 | `vue-tsc` 3.3.12 在 TS 7.0.2 下崩溃（`ERR_PACKAGE_PATH_NOT_EXPORTED`，TS 7 不再导出 JS API）。在 `apps/desktop` 单独固定 `typescript@5.9.3` 后 `vue-tsc --noEmit` 通过，并能捕获故意注入的类型错误。                                      |
+| S5  | 模板质量门禁在混合应用上可用                        | ✅ 成立               | `vp check`（格式 + 类型感知 lint + 类型检查）与 `vp test` 均通过。                                                                                                                                                                        |
 
 ## 对设计的约束
 

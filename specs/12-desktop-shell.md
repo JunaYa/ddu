@@ -10,13 +10,13 @@ Status: draft · Owner: ddu · Depends on: [10](./10-workspace-layout.md)、[11]
 
 ddu 的 5 个窗口各自是独立的 webview，生命周期、尺寸、置顶策略都不同（预览浮窗 140×140 透明置顶，截图遮罩全屏无边框）。因此**不**引入前端路由，继续沿用“每个窗口一个 HTML 入口”的多页面构建，窗口之间通过 Rust 命令与事件通信。理由见 [99 D6](./99-key-decisions.md#d6)。
 
-| 窗口 label | HTML 入口 | 迁移后的 React 目录 | 现状（迁移前） |
-| --- | --- | --- | --- |
-| `main` | `main.html` | `src/windows/main/` | 历史库（SnapVault） |
-| `setting` | `setting.html` | `src/windows/setting/` | 设置 |
-| `preview` | `preview.html` | `src/windows/preview/` | 截图后浮窗 + 编辑器（fabric.js） |
-| `startup` | `startup.html` | `src/windows/startup/` | 首次启动权限引导 |
-| `capture` | `capture.html` | `src/windows/capture/` | 智能截图遮罩 |
+| 窗口 label | HTML 入口      | 迁移后的 React 目录    | 现状（迁移前）                   |
+| ---------- | -------------- | ---------------------- | -------------------------------- |
+| `main`     | `main.html`    | `src/windows/main/`    | 历史库（SnapVault）              |
+| `setting`  | `setting.html` | `src/windows/setting/` | 设置                             |
+| `preview`  | `preview.html` | `src/windows/preview/` | 截图后浮窗 + 编辑器（fabric.js） |
+| `startup`  | `startup.html` | `src/windows/startup/` | 首次启动权限引导                 |
+| `capture`  | `capture.html` | `src/windows/capture/` | 智能截图遮罩                     |
 
 label、HTML 文件名、目录名三者一致（[00 § 7](./00-prd-react-migration.md#7-命名约定绑定)）。Rust 侧 `WebviewUrl::App("/<label>.html")` 不需要因迁移而改动：**迁移一个窗口时 HTML 文件名不变，只改它加载的脚本**。
 
@@ -35,12 +35,12 @@ mountWindow(<SettingWindow />);
 
 `mountWindow` 是共享外壳，统一提供：
 
-| 关注点 | 做法 |
-| --- | --- |
-| 数据层 | `QueryClientProvider`，客户端来自 `@ddu/hooks` 的 `createQueryClient()`。桌面端关闭 `refetchOnWindowFocus`：窗口频繁显示/隐藏，聚焦时重新拉取没有意义 |
-| 主题 | 跟随系统：监听 `prefers-color-scheme`，切换 `<html>` 上的 `.dark` 类（模板 token 的暗色机制）。不提供手动切换，与现状一致 |
-| 错误边界 | 顶层 `ErrorBoundary`：渲染错误时显示“窗口出错，可关闭后重开”的兜底界面并 `console.error`，不让整个 webview 白屏 |
-| 严格模式 | `StrictMode` 开启。窗口里的原生订阅（`on`、`onSettingChange`）必须在 effect 清理函数中取消，否则 StrictMode 双调用会暴露泄漏 |
+| 关注点   | 做法                                                                                                                                                  |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 数据层   | `QueryClientProvider`，客户端来自 `@ddu/hooks` 的 `createQueryClient()`。桌面端关闭 `refetchOnWindowFocus`：窗口频繁显示/隐藏，聚焦时重新拉取没有意义 |
+| 主题     | 跟随系统：监听 `prefers-color-scheme`，切换 `<html>` 上的 `.dark` 类（模板 token 的暗色机制）。不提供手动切换，与现状一致                             |
+| 错误边界 | 顶层 `ErrorBoundary`：渲染错误时显示“窗口出错，可关闭后重开”的兜底界面并 `console.error`，不让整个 webview 白屏                                       |
+| 严格模式 | `StrictMode` 开启。窗口里的原生订阅（`on`、`onSettingChange`）必须在 effect 清理函数中取消，否则 StrictMode 双调用会暴露泄漏                          |
 
 透明窗口（`preview`、`capture`）在迁移时再决定是否需要外壳的变体（例如不设置 `body` 背景），不在本轮设计。
 
@@ -82,11 +82,11 @@ build: { rollupOptions: { input: { main, setting, preview, startup, capture } } 
 
 ## 7. 不变量
 
-| # | 不变量 | 验证 |
-| --- | --- | --- |
-| S1 | 窗口 label 与 HTML 入口一一对应 | `apps/desktop` 中的测试：`@ddu/native` 的 `WINDOW` 每个值都有对应的 `<label>.html`，且出现在 `build.rollupOptions.input` 中 |
-| S2 | 每个 HTML 入口只加载一种框架 | 同一个测试：入口脚本路径要么在 `src/legacy/` 下，要么在 `src/windows/` 下 |
-| S3 | React 窗口的样式不包含 UnoCSS，legacy 样式不包含 Tailwind | `@source not` 与 UnoCSS 限定配置；构建产物中 legacy CSS 不含 `--tw-` 前缀变量（测试检查） |
+| #   | 不变量                                                    | 验证                                                                                                                        |
+| --- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| S1  | 窗口 label 与 HTML 入口一一对应                           | `apps/desktop` 中的测试：`@ddu/native` 的 `WINDOW` 每个值都有对应的 `<label>.html`，且出现在 `build.rollupOptions.input` 中 |
+| S2  | 每个 HTML 入口只加载一种框架                              | 同一个测试：入口脚本路径要么在 `src/legacy/` 下，要么在 `src/windows/` 下                                                   |
+| S3  | React 窗口的样式不包含 UnoCSS，legacy 样式不包含 Tailwind | `@source not` 与 UnoCSS 限定配置；构建产物中 legacy CSS 不含 `--tw-` 前缀变量（测试检查）                                   |
 
 ## 8. 交叉引用
 

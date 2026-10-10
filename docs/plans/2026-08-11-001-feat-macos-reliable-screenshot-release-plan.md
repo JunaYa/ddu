@@ -311,13 +311,13 @@ Release work adds external Apple credentials but must keep them out of the repos
 
 ## Verification Contract
 
-| Gate | Applies to | Done signal |
-| --- | --- | --- |
-| `pnpm build:web` | U1-U8 | Type checking and production frontend build pass. |
-| Frontend test script introduced by U1 | U1-U8 | Preview, editor, history, settings, locale, and accessibility state scenarios pass. |
-| `cargo test --manifest-path src-tauri/Cargo.toml` | U1-U8 | Pure Rust capture, history, permissions, path, and storage policy tests pass. |
-| macOS permission and clipboard smoke | U2, U5, U8 | All capture modes, clipboard retry, and TCC recovery work on a clean user profile. |
-| macOS release-artifact smoke | U7, U8 | Signed, notarized, stapled DMG installs and runs through Gatekeeper. |
+| Gate                                              | Applies to | Done signal                                                                         |
+| ------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------- |
+| `pnpm build:web`                                  | U1-U8      | Type checking and production frontend build pass.                                   |
+| Frontend test script introduced by U1             | U1-U8      | Preview, editor, history, settings, locale, and accessibility state scenarios pass. |
+| `cargo test --manifest-path src-tauri/Cargo.toml` | U1-U8      | Pure Rust capture, history, permissions, path, and storage policy tests pass.       |
+| macOS permission and clipboard smoke              | U2, U5, U8 | All capture modes, clipboard retry, and TCC recovery work on a clean user profile.  |
+| macOS release-artifact smoke                      | U7, U8     | Signed, notarized, stapled DMG installs and runs through Gatekeeper.                |
 
 ---
 

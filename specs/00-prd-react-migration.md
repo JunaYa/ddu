@@ -32,14 +32,14 @@ export function IncludeCursor() {
 
 ## 3. 目标
 
-| #  | 目标 | 度量 |
-| -- | ---- | ---- |
-| G1 | 与 vp-monorepo 同构的 monorepo 与工具链 | 仓库根执行 `vp run ready`（fmt + lint + test + build）全绿；`vp run desktop#dev` 能打开应用 |
-| G2 | 原生调用有唯一类型化入口 | `apps/` 下 `invoke(`、`listen(`、`new LazyStore(` 的直接调用数为 0（lint 规则强制），全部经由 `@ddu/native` |
-| G3 | 设置项有单一事实来源 | 每个设置键在 `@ddu/native` 的 schema 中定义恰好一次（键、类型、默认值）；Rust 读取的键名与之一致，由测试校验 |
-| G4 | 窗口逐个迁移，每一步都可发布 | 每个迁移步骤结束时：`vp run ready` 全绿，`.app` 可打包，已迁移窗口功能与迁移前等价（人工核对清单通过） |
-| G5 | UI 使用统一设计系统 | 已迁移窗口中不出现手写的按钮/开关/输入框组件，全部来自 `@ddu/ui`；亮/暗色跟随系统 |
-| G6 | 迁移不影响用户已有授权和数据 | 迁移后升级安装：屏幕录制/辅助功能授权仍有效（bundle identifier 不变）；`settings.json`、截图目录、OCR 索引原样可读 |
+| #   | 目标                                    | 度量                                                                                                               |
+| --- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| G1  | 与 vp-monorepo 同构的 monorepo 与工具链 | 仓库根执行 `vp run ready`（fmt + lint + test + build）全绿；`vp run desktop#dev` 能打开应用                        |
+| G2  | 原生调用有唯一类型化入口                | `apps/` 下 `invoke(`、`listen(`、`new LazyStore(` 的直接调用数为 0（lint 规则强制），全部经由 `@ddu/native`        |
+| G3  | 设置项有单一事实来源                    | 每个设置键在 `@ddu/native` 的 schema 中定义恰好一次（键、类型、默认值）；Rust 读取的键名与之一致，由测试校验       |
+| G4  | 窗口逐个迁移，每一步都可发布            | 每个迁移步骤结束时：`vp run ready` 全绿，`.app` 可打包，已迁移窗口功能与迁移前等价（人工核对清单通过）             |
+| G5  | UI 使用统一设计系统                     | 已迁移窗口中不出现手写的按钮/开关/输入框组件，全部来自 `@ddu/ui`；亮/暗色跟随系统                                  |
+| G6  | 迁移不影响用户已有授权和数据            | 迁移后升级安装：屏幕录制/辅助功能授权仍有效（bundle identifier 不变）；`settings.json`、截图目录、OCR 索引原样可读 |
 
 ## 4. 非目标
 
@@ -64,13 +64,13 @@ export function IncludeCursor() {
 
 ## 7. 命名约定（绑定）
 
-| 对象 | 规则 | 示例 |
-| ---- | ---- | ---- |
-| 共享包 | `@ddu/<name>`，位于 `packages/*`，`private: true` | `@ddu/ui`、`@ddu/native` |
-| 应用 | 裸名，位于 `apps/*` | `desktop` |
-| 任务引用 | 包用全名、应用用裸名 | `vp run @ddu/ui#storybook`、`vp run desktop#dev` |
-| 窗口 | Tauri label = HTML 入口名 = `apps/desktop/src/windows/<label>/` 目录名 | `setting` → `setting.html` → `src/windows/setting/` |
-| 原生命令 | Rust 端 `snake_case` 不变；TS 端 `@ddu/native` 导出同名 `camelCase` 函数 | `perform_ocr` → `performOcr()` |
-| 设置键 | `snake_case`，与 `settings.json` 中现有键完全一致，不得重命名 | `include_cursor` |
-| 迁移期旧代码 | `apps/desktop/src/legacy/`，只出不进 | `src/legacy/pages/preview/` |
-| 产品标识 | 保持不变：productName `Ddu`、identifier `com.ddu.app`、crate `ddu` | — |
+| 对象         | 规则                                                                     | 示例                                                |
+| ------------ | ------------------------------------------------------------------------ | --------------------------------------------------- |
+| 共享包       | `@ddu/<name>`，位于 `packages/*`，`private: true`                        | `@ddu/ui`、`@ddu/native`                            |
+| 应用         | 裸名，位于 `apps/*`                                                      | `desktop`                                           |
+| 任务引用     | 包用全名、应用用裸名                                                     | `vp run @ddu/ui#storybook`、`vp run desktop#dev`    |
+| 窗口         | Tauri label = HTML 入口名 = `apps/desktop/src/windows/<label>/` 目录名   | `setting` → `setting.html` → `src/windows/setting/` |
+| 原生命令     | Rust 端 `snake_case` 不变；TS 端 `@ddu/native` 导出同名 `camelCase` 函数 | `perform_ocr` → `performOcr()`                      |
+| 设置键       | `snake_case`，与 `settings.json` 中现有键完全一致，不得重命名            | `include_cursor`                                    |
+| 迁移期旧代码 | `apps/desktop/src/legacy/`，只出不进                                     | `src/legacy/pages/preview/`                         |
+| 产品标识     | 保持不变：productName `Ddu`、identifier `com.ddu.app`、crate `ddu`       | —                                                   |
