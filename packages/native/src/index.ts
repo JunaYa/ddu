@@ -8,6 +8,15 @@ export type {
   PlatformCapability,
 } from "./commands/types.ts";
 export { on, type CapturePrepared, type EventMap } from "./events.ts";
+export {
+  fileTimes,
+  type FileTimes,
+  imageDataUrl,
+  indexHistoryItems,
+  mimeTypeOf,
+  openCombinedImage,
+  searchHistoryText,
+} from "./history.ts";
 export { appVersion, permissionStatus, requestPermission, restartApp } from "./permissions.ts";
 export { autostart, confirm, pickDirectory } from "./plugins.ts";
 export {

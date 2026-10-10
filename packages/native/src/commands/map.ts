@@ -19,6 +19,14 @@ export interface CommandMap {
   /** Resolves to whether the permission is granted afterwards. */
   permission_request: { args: { kind: PermissionKind }; result: boolean };
   restart_app: { args: NoArgs; result: void };
+  /** File names (history item ids) whose indexed OCR text contains `query`. */
+  search_history_text: { args: { query: string }; result: string[] };
+  /** OCR and index screenshots; resolves to how many were indexed. */
+  ocr_index_items: { args: { paths: string[] }; result: number };
+  /** The image file's bytes, base64-encoded (path must be in the images directory). */
+  get_image_base64: { args: { path: string }; result: string };
+  /** Save a composed PNG (base64) as a new capture and open it in the preview. */
+  open_combined_image: { args: { base64: string }; result: void };
 }
 
 export type CommandName = keyof CommandMap;
