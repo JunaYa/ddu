@@ -132,16 +132,13 @@ function mimeFor(path: string): string {
   return 'image/png'
 }
 
-function loadImageEl(path: string): Promise<HTMLImageElement> {
+async function loadImageEl(path: string): Promise<HTMLImageElement> {
+  const b64 = await invoke<string>('get_image_base64', { path })
   return new Promise((resolve, reject) => {
-    invoke<string>('get_image_base64', { path })
-      .then((b64) => {
-        const img = new Image()
-        img.onload = () => resolve(img)
-        img.onerror = () => reject(new Error('image decode failed'))
-        img.src = `data:${mimeFor(path)};base64,${b64}`
-      })
-      .catch(reject)
+    const img = new Image()
+    img.addEventListener('load', () => resolve(img), { once: true })
+    img.addEventListener('error', () => reject(new Error('image decode failed')), { once: true })
+    img.src = `data:${mimeFor(path)};base64,${b64}`
   })
 }
 

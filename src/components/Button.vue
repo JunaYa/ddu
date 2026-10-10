@@ -4,7 +4,6 @@ import { ref } from 'vue'
 const props = defineProps<{
   className?: string
   anim?: boolean
-  onClick?: () => void
 }>()
 
 const emit = defineEmits<{
@@ -13,7 +12,7 @@ const emit = defineEmits<{
 
 const animate = ref(false)
 
-function onClick() {
+function handleClick() {
   emit('click')
   if (props.anim) {
     animate.value = true
@@ -22,7 +21,7 @@ function onClick() {
 </script>
 
 <template>
-  <button :class="`liquid-glass-control ${animate ? 'animate' : ''} ${props.className}`" type="button" @animationend="animate = false" @click="onClick">
+  <button :class="`liquid-glass-control ${animate ? 'animate' : ''} ${props.className}`" type="button" @animationend="animate = false" @click="handleClick">
     <slot />
   </button>
 </template>
