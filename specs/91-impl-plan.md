@@ -83,7 +83,7 @@
 
 | 阶段          | 窗口      | 特有任务                                                                                                                                          |
 | ------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Phase 4（M2） | `startup` | 登记权限相关命令 `permission_status`/`permission_request`/`permission_open_settings`/`restart_app`                                                |
+| Phase 4（M2） | `startup` | 登记权限相关命令 `permission_status`/`permission_request`/`restart_app`（窗口未用到 `permission_open_settings`，不登记）                          |
 | Phase 5（M3） | `main`    | `virtual-masonry` 替换 CSS 多列；搜索去抖与乱序响应保护保留；单张删除改走后端 `delete_history_items`（现为前端直接删除文件，会绕过 OCR 索引清理） |
 | Phase 6（M4） | `capture` | 透明全屏窗口的外壳变体；命中测试节流与拖拽阈值保留；遮罩出现耗时对比                                                                              |
 | Phase 7（M5） | `preview` | 开始前单独设计 fabric.js 在 React 中的集成（命令式画布、生命周期、撤销栈）；导出结果逐像素对比测试                                                |

@@ -10,3 +10,9 @@ test("createQueryClient does not refetch when a window regains focus", () => {
   expect(queries?.refetchOnWindowFocus).toBe(false);
   expect(queries?.retry).toBe(2);
 });
+
+test("createQueryClient never pauses local IPC when the machine is offline", () => {
+  const defaults = createQueryClient().getDefaultOptions();
+  expect(defaults.queries?.networkMode).toBe("always");
+  expect(defaults.mutations?.networkMode).toBe("always");
+});

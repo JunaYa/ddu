@@ -9,7 +9,7 @@ import { Badge } from "@ddu/ui/badge";
 import { Button } from "@ddu/ui/button";
 import { Field, FieldContent, FieldDescription, FieldError, FieldTitle } from "@ddu/ui/field";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import logo from "./logo.png";
 
 /** Re-read while the user flips switches in System Settings. */
@@ -24,11 +24,20 @@ export function StartupWindow() {
   });
   // React Query pauses the interval while the window is hidden (it hides
   // instead of closing), as the Vue page did with `document.hidden`.
+  // No retries: the poll itself re-reads every second.
   const status = useQuery({
     queryKey: ["permission-status"],
     queryFn: permissionStatus,
     refetchInterval: POLL_MS,
+    retry: false,
   });
+  // React Query clears the error on every poll while there is no data; keep
+  // the last one until a read succeeds so it neither flickers nor re-announces.
+  const [statusError, setStatusError] = useState<Error | null>(null);
+  useEffect(() => {
+    if (status.error) setStatusError(status.error);
+    else if (status.data) setStatusError(null);
+  }, [status.error, status.data]);
   // macOS only applies a fresh Screen Recording grant to a relaunched
   // process, so once the user has been sent to System Settings we offer one.
   const [screenRecordingRequested, setScreenRecordingRequested] = useState(false);
@@ -48,6 +57,9 @@ export function StartupWindow() {
     <main className="flex h-screen flex-col overflow-y-auto bg-background/60 p-6">
       <img src={logo} alt="Ddu" className="mx-auto mb-2 size-14 drop-shadow-[0_0_1em_#747bff]" />
       <p className="text-center text-sm text-muted-foreground">Ddu 版本: V{version.data ?? ""}</p>
+      {version.error && (
+        <FieldError className="text-center">无法读取版本：{version.error.message}</FieldError>
+      )}
 
       {status.data && (
         <div className="mt-4 flex flex-col gap-3">
@@ -60,8 +72,10 @@ export function StartupWindow() {
             onRequest={() => request.mutate("screenRecording")}
           />
           {!screenRecordingGranted && screenRecordingRequested && (
-            <div role="status" className="flex items-center justify-between gap-3">
-              <span className="text-xs text-warning">在系统设置中开启后，重启应用生效</span>
+            <div className="flex items-center justify-between gap-3">
+              <span role="status" className="text-xs text-warning">
+                在系统设置中开启后，重启应用生效
+              </span>
               <Button
                 variant="primary"
                 disabled={restart.isPending}
@@ -82,8 +96,8 @@ export function StartupWindow() {
         </div>
       )}
 
-      {status.error && (
-        <FieldError className="mt-4">无法读取权限状态：{status.error.message}</FieldError>
+      {statusError && (
+        <FieldError className="mt-4">无法读取权限状态：{statusError.message}</FieldError>
       )}
       {request.error && <FieldError className="mt-2">授权失败：{request.error.message}</FieldError>}
       {restart.error && <FieldError className="mt-2">重启失败：{restart.error.message}</FieldError>}
