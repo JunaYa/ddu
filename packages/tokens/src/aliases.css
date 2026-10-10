@@ -1,0 +1,67 @@
+/* aliases — 29 variables */
+
+/* Tailwind CSS v4 @theme inline */
+@theme inline {
+  --duration-fast: var(--duration-fast);
+  --duration-instant: var(--duration-instant);
+  --duration-normal: var(--duration-normal);
+  --duration-slow: var(--duration-slow);
+  --duration-slower: var(--duration-slower);
+  --surface-light-1: var(--surface-light-1);
+  --surface-light-2: var(--surface-light-2);
+  --surface-light-3: var(--surface-light-3);
+  --surface-light-4: var(--surface-light-4);
+  --surface-light-5: var(--surface-light-5);
+  --surface-light-6: var(--surface-light-6);
+  --surface-light-7: var(--surface-light-7);
+  --surface-light-8: var(--surface-light-8);
+  --surface-light-9: var(--surface-light-9);
+  --surface-light-10: var(--surface-light-10);
+  --surface-light-11: var(--surface-light-11);
+  --surface-light-12: var(--surface-light-12);
+  --surface-dark-1: var(--surface-dark-1);
+  --surface-dark-2: var(--surface-dark-2);
+  --surface-dark-3: var(--surface-dark-3);
+  --surface-dark-4: var(--surface-dark-4);
+  --surface-dark-5: var(--surface-dark-5);
+  --surface-dark-6: var(--surface-dark-6);
+  --surface-dark-7: var(--surface-dark-7);
+  --surface-dark-8: var(--surface-dark-8);
+  --surface-dark-9: var(--surface-dark-9);
+  --surface-dark-10: var(--surface-dark-10);
+  --surface-dark-11: var(--surface-dark-11);
+  --surface-dark-12: var(--surface-dark-12);
+}
+
+:root,
+:host {
+  --duration-fast: var(--duration-150);
+  --duration-instant: var(--duration-none);
+  --duration-normal: var(--duration-250);
+  --duration-slow: var(--duration-500);
+  --duration-slower: var(--duration-1000);
+  --surface-light-1: var(--color-n2-light-1);
+  --surface-light-2: var(--color-n2-light-2);
+  --surface-light-3: var(--color-n2-light-3);
+  --surface-light-4: var(--color-n2-light-4);
+  --surface-light-5: var(--color-n2-light-5);
+  --surface-light-6: var(--color-n2-light-6);
+  --surface-light-7: var(--color-n2-light-7);
+  --surface-light-8: var(--color-n2-light-8);
+  --surface-light-9: var(--color-n2-light-9);
+  --surface-light-10: var(--color-n2-light-10);
+  --surface-light-11: var(--color-n2-light-11);
+  --surface-light-12: var(--color-n2-light-12);
+  --surface-dark-1: var(--color-n2-dark-1);
+  --surface-dark-2: var(--color-n2-dark-2);
+  --surface-dark-3: var(--color-n2-dark-3);
+  --surface-dark-4: var(--color-n2-dark-4);
+  --surface-dark-5: var(--color-n2-dark-5);
+  --surface-dark-6: var(--color-n2-dark-6);
+  --surface-dark-7: var(--color-n2-dark-7);
+  --surface-dark-8: var(--color-n2-dark-8);
+  --surface-dark-9: var(--color-n2-dark-9);
+  --surface-dark-10: var(--color-n2-dark-10);
+  --surface-dark-11: var(--color-n2-dark-11);
+  --surface-dark-12: var(--color-n2-dark-12);
+}

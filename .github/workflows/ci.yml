@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Single task-graph-driven job. Affected-only comes from the vp task cache:
+  # unchanged targets replay instead of re-running. The cache is a speed
+  # optimization, never a correctness gate — on any miss (first PR, fork PR,
+  # eviction) every task executes and must still pass (R16 / AE6).
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: "26"
+          cache: true # pnpm store only — NOT the vp task cache (restored below)
+
+      - run: vp install # hooks activate here too
+
+      # Restore the vp task cache AFTER install (pnpm install prunes node_modules).
+      # main writes the cache (sha-suffixed key, unique per run to dodge the
+      # actions/cache immutable-key trap); PRs restore via the version-prefixed
+      # restore-keys. The vite-plus version is in the prefix so a cache-schema
+      # bump (0.1.19 / 0.1.23 precedent) doesn't restore an incompatible cache.
+      - id: vp-version
+        run: echo "v=$(vp --version | grep -oE 'vite-plus[[:space:]]+v[0-9.]+' | grep -oE '[0-9.]+' | head -1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v6
+        with:
+          path: node_modules/.vite/task-cache
+          key: vp-task-${{ runner.os }}-vp${{ steps.vp-version.outputs.v }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            vp-task-${{ runner.os }}-vp${{ steps.vp-version.outputs.v }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            vp-task-${{ runner.os }}-vp${{ steps.vp-version.outputs.v }}-
+
+      - name: Check (per-package, cached/affected + root config)
+        run: |
+          vp run -r check
+          vp run -w check
+      - name: Test (cached/affected)
+        run: vp run -r test
+      - name: Build (cached/affected)
+        run: vp run -r build
+
+      - name: License gate + third-party notices
+        run: vp run license:gate
+      - name: Third-party notices in sync
+        run: |
+          if ! git diff --exit-code -- THIRD_PARTY_NOTICES.txt; then
+            echo "::error::THIRD_PARTY_NOTICES.txt is stale. Run 'vp run license:gate' and commit."
+            exit 1
+          fi
+
+      - name: Dependency audit (high/critical only)
+        # `--` forwards the flags to the package manager; vp pm does not accept
+        # them directly. Exemptions live in auditConfig.ignoreCves (pnpm-workspace.yaml) — see docs/conventions.md.
+        run: vp pm audit -- --prod --audit-level high
+
+      # Only trunk writes the task cache, so PRs always restore a main-built cache.
+      - if: github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v6
+        with:
+          path: node_modules/.vite/task-cache
+          key: vp-task-${{ runner.os }}-vp${{ steps.vp-version.outputs.v }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+
+  # Desktop (Tauri) gets its own lane with the Rust toolchain, so PRs that
+  # don't touch apps/desktop never pay the Rust cost. ddu's Rust code only
+  # compiles on macOS (specs/99 D11), so this lane runs on a macOS runner.
+  desktop:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: changes
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            desktop:
+              - 'apps/desktop/**'
+              - 'packages/**'
+              - 'pnpm-lock.yaml'
+
+      - if: steps.changes.outputs.desktop == 'true'
+        uses: dtolnay/rust-toolchain@stable
+      - if: steps.changes.outputs.desktop == 'true'
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+      - if: steps.changes.outputs.desktop == 'true'
+        uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: "26"
+          cache: true
+      - if: steps.changes.outputs.desktop == 'true'
+        run: vp install
+      # Frontend dist must exist first: Tauri's generate_context! resolves
+      # frontendDist (../dist) at macro-expansion time, so cargo needs it.
+      - if: steps.changes.outputs.desktop == 'true'
+        run: vp run desktop#build
+      - if: steps.changes.outputs.desktop == 'true'
+        run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
+      - if: steps.changes.outputs.desktop == 'true'
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib

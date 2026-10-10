@@ -1,0 +1,23 @@
+{
+  "name": "@ddu/tokens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design-token CSS source of truth for ddu.",
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    "./css": "./src/index.css",
+    "./css/*": "./src/*"
+  },
+  "scripts": {
+    "check": "vp check",
+    "test": "vp test --passWithNoTests"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

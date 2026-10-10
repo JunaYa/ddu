@@ -1,0 +1,10 @@
+/* @ddu/tokens — design-token CSS entry.
+ * Consumed by apps via `@import "@ddu/tokens/css"`. Import order matters:
+ * primitives feed aliases/semantics, which feed effects/typography/radius. */
+@import "./primitives.css";
+@import "./aliases.css";
+@import "./semantics.css";
+@import "./effects.css";
+@import "./typography-fluid.css";
+@import "./radius.css";
+@import "./home-widgets.css";

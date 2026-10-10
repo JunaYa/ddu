@@ -1,0 +1,74 @@
+{
+  "name": "desktop",
+  "version": "0.1.9",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:frontend": "vp dev",
+    "build": "vue-tsc --noEmit && vp build",
+    "check:legacy": "vue-tsc --noEmit",
+    "preview": "vp preview",
+    "test": "vp test",
+    "check": "vp check",
+    "release:check-macos": "sh scripts/check-macos-release-env.sh"
+  },
+  "dependencies": {
+    "@ddu/hooks": "workspace:*",
+    "@ddu/styles": "workspace:*",
+    "@ddu/ui": "workspace:*",
+    "@ddu/utils": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "@tauri-apps/api": "catalog:",
+    "@tauri-apps/plugin-autostart": "catalog:",
+    "@tauri-apps/plugin-clipboard-manager": "catalog:",
+    "@tauri-apps/plugin-dialog": "catalog:",
+    "@tauri-apps/plugin-fs": "catalog:",
+    "@tauri-apps/plugin-global-shortcut": "catalog:",
+    "@tauri-apps/plugin-os": "catalog:",
+    "@tauri-apps/plugin-positioner": "catalog:",
+    "@tauri-apps/plugin-shell": "catalog:",
+    "@tauri-apps/plugin-store": "catalog:",
+    "@tauri-apps/plugin-window-state": "catalog:",
+    "@vueuse/core": "14.3.0",
+    "fabric": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "vue": "3.5.34"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@tauri-apps/cli": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@unocss/preset-mini": "66.7.0",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitejs/plugin-vue": "6.0.7",
+    "jsdom": "catalog:",
+    "typescript": "5.9.3",
+    "unocss": "66.7.0",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vue-tsc": "3.3.1"
+  },
+  "dmg": {
+    "background": "./images/",
+    "windowSize": {
+      "width": 200,
+      "height": 150
+    },
+    "windowPosition": {
+      "x": 400,
+      "y": 400
+    },
+    "appPosition": {
+      "x": 180,
+      "y": 220
+    },
+    "applicationFolderPosition": {
+      "x": 480,
+      "y": 220
+    }
+  }
+}

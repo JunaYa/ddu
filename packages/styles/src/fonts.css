@@ -1,0 +1,22 @@
+/* Product font-family stacks (shared by every host).
+ *
+ * Two aliases per family: the "<Name> Variable" face @fontsource-variable
+ * registers, then the plain "<Name>" a Google Fonts <link> would register. Web
+ * and the extension both self-host via @fontsource-variable now (PI-1366), so
+ * the first alias is what resolves in the product today; the plain name is kept
+ * so a host that has not self-hosted yet — apps/desktop and apps/storybook
+ * declare these stacks but ship no font files at all — still matches if one is
+ * ever loaded, instead of silently dropping to the generic fallback. They are
+ * the same typeface either way, so whichever alias a given host ships wins and
+ * the rendered font matches across surfaces. Declared on :root AND :host so the
+ * values also cross into the extension's shadow-DOM panels. */
+:root,
+:host {
+  --font-stack-product-sans:
+    "Manrope Variable", "Manrope", "Noto Sans SC Variable", "Noto Sans SC", sans-serif, system-ui;
+  --font-stack-product-serif:
+    "Lora Variable", "Lora", "Noto Serif SC Variable", "Noto Serif SC", serif;
+  --font-stack-product-mono:
+    "Geist Mono Variable", "Geist Mono", "Noto Sans SC Variable", "Noto Sans SC", ui-monospace,
+    "SFMono-Regular", "Menlo", "Monaco", monospace;
+}

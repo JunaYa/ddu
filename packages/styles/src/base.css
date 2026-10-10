@@ -1,0 +1,38 @@
+/* @ddu/styles — the shared host CSS baseline.
+ *
+ * Every host that renders shared product UI components (web, extension,
+ * desktop, and the canonical Storybook app) imports THIS file as `@ddu/styles/base.css`.
+ * It composes the host-agnostic core from `./baseline.css` (Tailwind plugins,
+ * light/dark variants, border-reset base layer, @theme primitives) and adds the
+ * @ddu/ui-host layers on top: the shared @source scan, tw-shimmer, the design
+ * tokens, font-family stacks, shared @utility layers, the coarse variant, and
+ * the body background/foreground rule. The marketing website consumes
+ * `./baseline.css` directly instead, so it can diverge on tokens/fonts.
+ *
+ * Font FILES are delivered per host (web via a Google Fonts <link>; the extension
+ * self-hosts @font-face), so this file only declares the family *stacks*. */
+
+@import "./baseline.css";
+
+@import "tw-shimmer";
+
+/* @source paths are resolved relative to THIS stylesheet, so they stay correct
+   for every consumer regardless of where the host entry lives. The shared
+   components live outside any app source tree, so Tailwind needs them explicitly. */
+@source "../../ui/src";
+@source "../../brand/src/react.tsx";
+@source "../../iconography/src";
+
+@import "@ddu/tokens/css";
+@import "./fonts.css";
+@import "./utils/scroll-bar.css";
+@import "./utils/scroll-mask.css";
+@import "./utils/glass.css";
+
+@custom-variant coarse (@media (pointer: coarse));
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}

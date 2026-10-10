@@ -1,0 +1,7 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M199.293 100L100 199.293L0.707031 100L100 0.707031L199.293 100Z" stroke="white"/>
+<path d="M179.293 100L100 179.293L20.707 100L100 20.707L179.293 100Z" stroke="white"/>
+<path d="M159.293 100L100 159.293L40.707 100L100 40.707L159.293 100Z" stroke="white"/>
+<path d="M139.293 100L100 139.293L60.707 100L100 60.707L139.293 100Z" stroke="white"/>
+<path d="M95 85L100 80L105 85M85 95L80 100L85 105M115 95L120 100L115 105M95 115L100 120L105 115" stroke="white" stroke-linejoin="round"/>
+</svg>

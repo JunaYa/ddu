@@ -1,0 +1,41 @@
+{
+  "name": "@ddu/iconography",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared placeholder marks, illustrations, social icons, and product icon aliases.",
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    "./icons": "./src/icons/index.ts",
+    "./line-art": "./src/line-art/index.ts",
+    "./line-graphics": "./src/line-graphics/index.ts",
+    "./social": "./src/social/index.ts",
+    "./tools": "./src/tools/index.ts",
+    "./brand": "./src/brand/index.ts"
+  },
+  "scripts": {
+    "check": "vp check",
+    "test": "vp test --passWithNoTests"
+  },
+  "dependencies": {
+    "@ddu/brand": "workspace:*",
+    "@iconify/react": "catalog:",
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "tailwind-merge": "catalog:"
+  },
+  "devDependencies": {
+    "@storybook/react-vite": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  }
+}

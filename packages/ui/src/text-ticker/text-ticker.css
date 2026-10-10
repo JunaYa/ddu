@@ -1,0 +1,37 @@
+.pi-text-ticker-mask-x {
+  --pi-text-ticker-mask-size: 1rem;
+
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--pi-text-ticker-mask-size),
+    black calc(100% - var(--pi-text-ticker-mask-size)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--pi-text-ticker-mask-size),
+    black calc(100% - var(--pi-text-ticker-mask-size)),
+    transparent
+  );
+}
+
+.pi-text-ticker-marquee {
+  animation: pi-text-ticker-marquee var(--duration, 24s) linear infinite;
+}
+
+@keyframes pi-text-ticker-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-100% - var(--gap)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pi-text-ticker-marquee {
+    animation: none;
+  }
+}

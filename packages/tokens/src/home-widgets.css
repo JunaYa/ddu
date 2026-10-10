@@ -1,0 +1,42 @@
+/* Home widget semantic tokens.
+ *
+ * These vars sit above primitives/semantics and below implementation classes.
+ * They name product-design decisions that need to travel to native/RN without
+ * forcing every renderer to share the same CSS utility names.
+ */
+
+:root,
+:host {
+  --home-widget-daily-digest-artwork-aspect: 300 / 400;
+  --home-widget-daily-digest-artwork-large-aspect: 400 / 533;
+  --home-widget-daily-digest-artwork-large-active-max-height: 120px;
+  --home-widget-daily-digest-artwork-large-max-height: 148px;
+  --home-widget-daily-digest-artwork-radius: var(--radius-2xl);
+  --home-widget-daily-digest-control-icon-size: var(--spacing-6);
+  --home-widget-daily-digest-control-size: var(--spacing-10);
+  --home-widget-daily-digest-meta-compact-font-size: var(--text-xs);
+  --home-widget-daily-digest-meta-compact-line-height: var(--text-xs--line-height);
+  --home-widget-daily-digest-meta-font-size: var(--text-sm);
+  --home-widget-daily-digest-meta-line-height: var(--text-sm--line-height);
+  --home-widget-daily-digest-progress-height: var(--spacing-2);
+  --home-widget-daily-digest-title-font-size: var(--text-sm);
+  --home-widget-daily-digest-title-large-font-size: var(--text-base);
+  --home-widget-daily-digest-title-large-line-height: var(--text-base--line-height);
+  --home-widget-daily-digest-title-line-height: var(--text-sm--line-height);
+  --home-widget-metric-label-sm: var(--typography-xs-font-size);
+  --home-widget-metric-label-xs: var(--typography-xs-font-size);
+  --home-widget-metric-value-sm: var(--typography-base-font-size);
+  --home-widget-metric-value-xs: var(--typography-sm-font-size);
+  --home-widget-usage-badge: var(--text-xs);
+  --home-widget-usage-badge-compact: calc(var(--text-xs) - 1px);
+  --home-widget-usage-title: var(--text-sm);
+  --home-widget-usage-title-compact: var(--text-xs);
+}
+
+@media (max-width: 767px) {
+  :root,
+  :host {
+    --home-widget-daily-digest-meta-compact-font-size: var(--typography-mobile-xs-font-size);
+    --home-widget-daily-digest-meta-compact-line-height: var(--typography-mobile-xs-line-height);
+  }
+}

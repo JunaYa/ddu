@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# AI agent worktrees
+.claude/worktrees/
+
+# license gate transient
+.licenses.json
+THIRD_PARTY_NOTICES.txt.new
+
+# Storybook static build
+storybook-static

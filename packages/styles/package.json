@@ -1,0 +1,32 @@
+{
+  "name": "@ddu/styles",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared host CSS baseline and Tailwind source scanning for ddu windows and Storybook.",
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    "./base.css": "./src/base.css",
+    "./baseline.css": "./src/baseline.css",
+    "./utils/scroll-bar.css": "./src/utils/scroll-bar.css",
+    "./utils/scroll-mask.css": "./src/utils/scroll-mask.css"
+  },
+  "scripts": {
+    "check": "vp check",
+    "test": "vp test --passWithNoTests"
+  },
+  "dependencies": {
+    "@ddu/iconography": "workspace:*",
+    "@ddu/tokens": "workspace:*",
+    "tailwindcss": "catalog:",
+    "tw-animate-css": "catalog:",
+    "tw-shimmer": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

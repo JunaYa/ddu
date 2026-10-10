@@ -1,88 +1,43 @@
-import path from 'node:path'
-import vue from '@vitejs/plugin-vue'
-import UnoCSS from 'unocss/vite'
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from "vite-plus";
 
-const host = process.env.TAURI_DEV_HOST
-
-function injectUnoDevStyles() {
-  return {
-    name: 'ddu:inject-uno-dev-styles',
-    apply: 'serve' as const,
-    transformIndexHtml() {
-      return [
-        {
-          tag: 'script',
-          attrs: {
-            type: 'module',
-            src: '/__uno.css',
-          },
-          injectTo: 'head' as const,
-        },
-      ]
-    },
-  }
-}
-
-// https://vitejs.dev/config/
-export default defineConfig(async () => ({
-  plugins: [
-    injectUnoDevStyles(),
-    vue(),
-    UnoCSS({
-      mode: 'dist-chunk',
-    }),
-  ],
-
-  resolve: {
-    alias: {
-      '~': path.resolve(__dirname, 'src'),
+export default defineConfig({
+  staged: {
+    "*": "vp check --fix",
+  },
+  fmt: {
+    // Legacy Vue code is frozen until it is deleted (specs/12 § 4); reformatting
+    // it would only add churn to the window-by-window migration diffs.
+    ignorePatterns: ["apps/desktop/src/legacy/**", "**/src-tauri/**", ".agents/**", ".claude/**"],
+  },
+  lint: {
+    options: { typeAware: true, typeCheck: true },
+    // Template default rule set (correctness); stricter categories would flag
+    // the unmodified design-system packages copied from the template (D2).
+    // Legacy Vue windows are type-checked by vue-tsc (`desktop#check:legacy`)
+    // and are not linted; they only shrink until Phase 8 deletes them.
+    ignorePatterns: ["apps/desktop/src/legacy/**", "**/src-tauri/**", "**/dist/**"],
+    rules: {
+      // Packages are consumed only through their `exports` entries; deep imports
+      // into a package's src bypass that boundary (specs/10 § 3).
+      "no-restricted-imports": ["error", { patterns: ["@ddu/*/src/*", "@ddu/*/src/**"] }],
+      // `_`-prefixed names are intentionally unused (e.g. required callback params).
+      "no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
+      ],
     },
   },
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent vite from obscuring rust errors
-  clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
-  server: {
-    port: 1420,
-    strictPort: true,
-    host: host || false,
-    hmr: host
-      ? {
-          protocol: 'ws',
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      // 3. tell vite to ignore watching `src-tauri`
-      ignored: ['**/src-tauri/**'],
-    },
-  },
-  build: {
-    rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, './main.html'),
-        setting: path.resolve(__dirname, './setting.html'),
-        preview: path.resolve(__dirname, './preview.html'),
-        startup: path.resolve(__dirname, './startup.html'),
-        capture: path.resolve(__dirname, './capture.html'),
-      },
-      onwarn(warning, warn) {
-        if (
-          warning.code === 'INVALID_ANNOTATION'
-          && warning.id?.includes('/node_modules/')
-        ) {
-          return
-        }
-
-        warn(warning)
+  run: {
+    cache: true,
+    tasks: {
+      // The license gate evaluation is time-sensitive (exemption expiry checks
+      // the clock, which is NOT a cache input). Caching it would let an expired
+      // exemption replay green — so this task must never be cached.
+      "license:check": {
+        command:
+          "node tools/license-gate/src/index.ts .licenses.json tools/license-gate/license-exceptions.json",
+        cache: false,
       },
     },
   },
-  test: {
-    environment: 'jsdom',
-    include: ['src/**/*.test.ts'],
-  },
-}))
+});

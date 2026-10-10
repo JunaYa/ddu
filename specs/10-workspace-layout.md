@@ -51,13 +51,13 @@ ddu/
 @ddu/brand, @ddu/iconography ─→ @ddu/ui ─────┘
 ```
 
-| 包 | 负责 | 不得依赖 |
-| --- | --- | --- |
-| `@ddu/utils` | 纯函数（格式化文件大小、OCR 文本合并等，从 `src/lib`、`src/utils` 迁入） | 任何 `@tauri-apps/*`、React |
-| `@ddu/native` | 对 Tauri 的**唯一**入口：类型化命令、事件、设置 schema 与读写、窗口 label 表。见 [11](./11-native-bridge.md) | React、`@ddu/ui`、`@ddu/hooks` |
-| `@ddu/hooks` | 把 `@ddu/native` 包装成 React hooks（React Query 缓存、设置订阅、事件订阅） | `@ddu/ui` |
-| `@ddu/ui` | 纯展示组件，数据通过 props 传入 | `@ddu/native`、`@ddu/hooks`、`@tauri-apps/*` |
-| `desktop` | 组合：窗口入口、页面、窗口间流程 | 包的内部路径（`@ddu/*/src/**`） |
+| 包            | 负责                                                                                                         | 不得依赖                                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| `@ddu/utils`  | 纯函数（格式化文件大小、OCR 文本合并等，从 `src/lib`、`src/utils` 迁入）                                     | 任何 `@tauri-apps/*`、React                  |
+| `@ddu/native` | 对 Tauri 的**唯一**入口：类型化命令、事件、设置 schema 与读写、窗口 label 表。见 [11](./11-native-bridge.md) | React、`@ddu/ui`、`@ddu/hooks`               |
+| `@ddu/hooks`  | 把 `@ddu/native` 包装成 React hooks（React Query 缓存、设置订阅、事件订阅）                                  | `@ddu/ui`                                    |
+| `@ddu/ui`     | 纯展示组件，数据通过 props 传入                                                                              | `@ddu/native`、`@ddu/hooks`、`@tauri-apps/*` |
+| `desktop`     | 组合：窗口入口、页面、窗口间流程                                                                             | 包的内部路径（`@ddu/*/src/**`）              |
 
 与模板约定（`vp-monorepo/docs/conventions.md`）的对应关系：`@ddu/native` 占据模板中 `@pi/sdk` 的位置（框架无关的契约 + 客户端），其余规则原样继承。
 
@@ -65,11 +65,11 @@ ddu/
 
 ### 强制手段
 
-| 规则 | 机制 |
-| --- | --- |
-| 禁止深层导入 `@ddu/*/src/**` | 根 `vite.config.ts` 的 oxlint `no-restricted-imports`（沿用模板） |
+| 规则                                                                                                                   | 机制                                                                                                                                |
+| ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 禁止深层导入 `@ddu/*/src/**`                                                                                           | 根 `vite.config.ts` 的 oxlint `no-restricted-imports`（沿用模板）                                                                   |
 | 应用中禁止直接使用 `@tauri-apps/api/core` 的 `invoke`、`@tauri-apps/api/event` 的 `listen`、`@tauri-apps/plugin-store` | 同一条 `no-restricted-imports`，对 `apps/desktop/src/windows/**` 与 `apps/desktop/src/shared/**` 生效；`src/legacy/**` 豁免直至删除 |
-| `@ddu/ui` 不得导入数据层 | `packages/ui` 的 `no-restricted-imports` 覆盖配置 |
+| `@ddu/ui` 不得导入数据层                                                                                               | `packages/ui` 的 `no-restricted-imports` 覆盖配置                                                                                   |
 
 ## 4. 工具链
 
@@ -83,26 +83,28 @@ ddu/
 
 ### 常用命令
 
-| 命令 | 作用 |
-| --- | --- |
-| `vp install` | 安装依赖并激活 git 钩子 |
-| `vp run ready` | fmt + lint + 全部测试 + 全部构建（合并前必须全绿） |
-| `vp run desktop#dev` | 启动 Tauri 开发模式（`beforeDevCommand` 调 `vp run desktop#dev:frontend`） |
-| `vp run desktop#build:native` | 暂存 PDFium 后打包 `.app`（原 `pnpm build:desktop:adhoc`） |
-| `vp run desktop#check:legacy` | 迁移期：`vue-tsc --noEmit` 检查 Vue 代码 |
-| `vp run @ddu/ui#storybook` | 组件 Storybook（端口 6006） |
+| 命令                                | 作用                                                                                   |
+| ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `vp install`                        | 安装依赖并激活 git 钩子                                                                |
+| `vp run ready`                      | fmt + lint + 全部测试 + 全部构建（合并前必须全绿）                                     |
+| `vp run desktop#dev`                | 启动 Tauri 开发模式（`beforeDevCommand` 调 `vp run desktop#dev:frontend`）             |
+| `vp run desktop#build:native`       | 签名打包 `.app`，未设置 `APPLE_SIGNING_IDENTITY` 时拒绝构建（原 `pnpm build:desktop`） |
+| `vp run desktop#build:native:adhoc` | 不签名打包 `.app`，屏幕录制授权不会保留（原 `pnpm build:desktop:adhoc`）               |
+| `vp run desktop#build:dmg`          | 打包 DMG（原 `pnpm build:dmg`），发布前先运行 `vp run desktop#release:check-macos`     |
+| `vp run desktop#check:legacy`       | 迁移期：`vue-tsc --noEmit` 检查 Vue 代码                                               |
+| `vp run @ddu/ui#storybook`          | 组件 Storybook（端口 6006）                                                            |
 
 ## 5. Rust 侧随迁移需要调整的路径
 
 `src-tauri` 内部代码不改，以下引用路径的地方需要更新：
 
-| 位置 | 现状 | 迁移后 |
-| --- | --- | --- |
-| `tauri.conf.json` `build.frontendDist` | `../dist` | `../dist`（相对 `apps/desktop/src-tauri`，仍指向 `apps/desktop/dist`，不变） |
-| `tauri.conf.json` `beforeDevCommand` / `beforeBuildCommand` | `pnpm dev` / `pnpm build` | `vp run desktop#dev:frontend` / `""`（构建顺序由 vp 任务 `dependsOn` 表达，沿用模板） |
-| `scripts/stage-pdfium.sh` | 以仓库根为基准找 `src-tauri/` | 以 `apps/desktop` 为基准 |
-| `src-tauri/tauri.bundle.conf.json` 的调用方 | 根 `package.json` 脚本 | `apps/desktop/vite.config.ts` 的 `build:native` 任务 |
-| `.github/workflows/frontend.yml` | 根目录 `pnpm run lint` | 被新 CI 取代（§ 6） |
+| 位置                                                        | 现状                          | 迁移后                                                                                                |
+| ----------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `tauri.conf.json` `build.frontendDist`                      | `../dist`                     | `../dist`（相对 `apps/desktop/src-tauri`，仍指向 `apps/desktop/dist`，不变）                          |
+| `tauri.conf.json` `beforeDevCommand` / `beforeBuildCommand` | `pnpm dev` / `pnpm build`     | `vp run desktop#dev:frontend` / `""`（构建顺序由 vp 任务 `dependsOn` 表达，沿用模板）                 |
+| `scripts/stage-pdfium.sh`                                   | 以仓库根为基准找 `src-tauri/` | 以 `apps/desktop` 为基准                                                                              |
+| `src-tauri/tauri.bundle.conf.json` 的调用方                 | 根 `package.json` 脚本        | `apps/desktop/vite.config.ts` 的 `build:native*`、`build:dmg` 任务，以及 `scripts/build-macos-dev.sh` |
+| `.github/workflows/frontend.yml`                            | 根目录 `pnpm run lint`        | 被新 CI 取代（§ 6）                                                                                   |
 
 `productName`、`identifier`（`com.ddu.app`）、crate 名 `ddu` **保持不变**，否则 macOS 会把升级后的应用当作新应用，用户的屏幕录制授权失效（[99 D13](./99-key-decisions.md#d13)）。
 
@@ -117,12 +119,12 @@ ddu/
 
 ## 7. 不变量
 
-| # | 不变量 | 如何保证 |
-| --- | --- | --- |
-| W1 | 依赖方向只能沿 § 3 的箭头 | lint 规则；违反即 `vp check` 失败 |
-| W2 | 应用中的 React 代码不直接接触 Tauri API | lint 规则（§ 3 强制手段） |
-| W3 | 每个工作区成员至少有一个测试 | `vp run -r test` 在无测试时失败（模板行为） |
-| W4 | 产品标识不变 | `apps/desktop/src-tauri` 中的一个 Rust 测试断言 `tauri.conf.json` 的 `identifier == "com.ddu.app"` |
+| #   | 不变量                                  | 如何保证                                                                                           |
+| --- | --------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| W1  | 依赖方向只能沿 § 3 的箭头               | lint 规则；违反即 `vp check` 失败                                                                  |
+| W2  | 应用中的 React 代码不直接接触 Tauri API | lint 规则（§ 3 强制手段）                                                                          |
+| W3  | 每个工作区成员至少有一个测试            | `vp run -r test` 在无测试时失败（模板行为）                                                        |
+| W4  | 产品标识不变                            | `apps/desktop/src-tauri` 中的一个 Rust 测试断言 `tauri.conf.json` 的 `identifier == "com.ddu.app"` |
 
 ## 8. 交叉引用
 

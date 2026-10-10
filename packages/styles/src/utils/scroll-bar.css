@@ -1,0 +1,86 @@
+/* Global scrollbar styling + scrollbar-none/-reveal utilities. Tailwind is
+   provided by the baseline entry (base.css) that imports this file. */
+@layer components {
+  * {
+    scrollbar-color: color-mix(in srgb, var(--foreground), transparent 50%) var(--border);
+    scrollbar-width: thin;
+  }
+
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--border);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--foreground), transparent 50%);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--foreground), transparent 30%);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: var(--border);
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
+ * scrollbar-reveal — hover-revealed scrollbar that matches the visual
+ * style of @/components/ui/scroll-area (hidden by default, 6px thin,
+ * rounded foreground/20 thumb, fades in on hover).
+ *
+ * Use this on any raw overflow-y-auto / overflow-x-auto container where
+ * ScrollArea is the wrong tool (auto-in-auto ancestor chains, nested
+ * morphing containers, etc.) but you still want the same look and feel.
+ *
+ * Firefox: uses scrollbar-width + scrollbar-color (no transition, but
+ * the thumb color approximates the WebKit hover state).
+ * WebKit:  fully transitioned opacity-like reveal via background-color.
+ */
+@utility scrollbar-reveal {
+  scrollbar-color: transparent transparent;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 9999px;
+    /* Hide delay matches ScrollArea's delay-300 on non-hover/non-scroll */
+    transition: background-color 0.15s ease 0.3s;
+  }
+
+  &:hover {
+    scrollbar-color: color-mix(in srgb, var(--foreground), transparent 80%) transparent;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--foreground), transparent 80%);
+    /* Show immediately on hover, matches ScrollArea's delay-0 duration-100 */
+    transition: background-color 0.1s ease 0s;
+  }
+
+  &:hover::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--foreground), transparent 60%);
+  }
+}

@@ -1,0 +1,37 @@
+/* Glass surface utilities — composed from semantic tokens in tokens/semantics.css */
+
+.surface-glass {
+  background-color: color-mix(in srgb, var(--card) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-2xl);
+  -webkit-backdrop-filter: blur(var(--blur-xl)) saturate(140%);
+  backdrop-filter: blur(var(--blur-xl)) saturate(140%);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .surface-glass {
+    background-color: var(--card);
+  }
+}
+
+.surface-glass-input {
+  background-color: var(--accent);
+  border: 1px solid var(--border);
+}
+
+.surface-message-user {
+  background-color: var(--accent);
+}
+
+.border-subtle {
+  border-color: color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-panel,
+  .motion-panel * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}

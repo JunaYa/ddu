@@ -1,0 +1,148 @@
+/* @ddu/styles — host-agnostic Tailwind baseline.
+ *
+ * The token-FREE core shared by every host: the Tailwind plugin set (where a
+ * silent drift drops classes, since Tailwind v4 emits nothing for unknown
+ * utilities), the light/dark variants, the border-reset base layer, and the
+ * @theme primitives. Hosts import this, then layer their own tokens/fonts on
+ * top — the product hosts via base.css, the marketing website directly — so
+ * each can diverge on tokens while sharing this drift-prone core.
+ *
+ * Deliberately excludes the shared content-scan directives, the shimmer plugin,
+ * glass, the design tokens, fonts, the coarse variant, and the body rule: those
+ * are @ddu/ui-host-specific or intentionally per-host and live in base.css (or
+ * each host's own entry). */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./vendor/shadcn.css";
+
+@custom-variant light (&:not(.dark *));
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border, currentColor);
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+@theme inline {
+  --current: currentColor;
+  --util-transparent: transparent;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-caret-blink: caret-blink 1s ease-out infinite;
+  --animate-glyph-orbit-slow: glyph-orbit 42s linear infinite;
+  --animate-glyph-orbit-mid: glyph-orbit 28s linear infinite;
+  --animate-glyph-orbit-reverse: glyph-orbit-reverse 34s linear infinite;
+  --animate-glyph-orbit-fast: glyph-orbit 18s linear infinite;
+  --animate-shine: shine var(--duration) infinite linear;
+  --animate-shine-sweep: shine-sweep 3s ease-in-out infinite;
+  --animate-orbit: orbit calc(var(--duration) * 1s) linear infinite;
+  --animate-radial: radial var(--duration) infinite linear reverse;
+  --animate-repeating-linear: repeating-linear var(--duration) infinite linear;
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes glyph-orbit {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes glyph-orbit-reverse {
+  to {
+    rotate: -360deg;
+  }
+}
+
+@keyframes shine {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  to {
+    background-position: 0% 0%;
+  }
+}
+
+@keyframes shine-sweep {
+  0% {
+    transform: translateX(-200%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes orbit {
+  0% {
+    transform: rotate(calc(var(--angle) * 1deg)) translateX(calc(var(--radius) * 1px))
+      rotate(calc(var(--angle) * -1deg));
+  }
+  100% {
+    transform: rotate(calc(var(--angle) * 1deg + 360deg)) translateX(calc(var(--radius) * 1px))
+      rotate(calc((var(--angle) * -1deg) - 360deg));
+  }
+}
+
+@keyframes radial {
+  0% {
+    background-position: -200% -200%;
+    background-size: 200% 200%;
+  }
+  50% {
+    background-position: 0% 0%;
+    background-size: 300% 300%;
+  }
+  100% {
+    background-position: 200% 200%;
+    background-size: 200% 200%;
+  }
+}
+
+@keyframes repeating-linear {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: -200% 0%;
+  }
+}

@@ -1,0 +1,120 @@
+/* semantics — 36 variables */
+
+/* Tailwind CSS v4 @theme inline */
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-background: var(--background);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-dark: var(--dark);
+  --color-foreground: var(--foreground);
+  --color-input: var(--input);
+  --color-light: var(--light);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-destructive: var(--destructive);
+}
+
+:root,
+:host {
+  --background: var(--surface-light-2);
+  --foreground: var(--surface-light-12);
+  --card: var(--surface-light-1);
+  --card-foreground: var(--surface-light-12);
+  --popover: var(--surface-light-1);
+  --popover-foreground: var(--surface-light-12);
+  --primary: var(--color-b1-500);
+  --primary-foreground: var(--surface-light-1);
+  --secondary: var(--surface-light-3);
+  --secondary-foreground: var(--surface-light-11);
+  --muted: var(--surface-light-3);
+  --muted-foreground: var(--surface-light-10);
+  --accent: color-mix(in srgb, var(--surface-light-4), transparent 60%);
+  --accent-foreground: var(--surface-light-12);
+  --destructive: var(--color-danger-500);
+  --success: var(--color-success-500);
+  --warning: var(--color-warning-500);
+  --info: var(--color-info-500);
+  --border: var(--surface-light-4);
+  --input: var(--surface-light-5);
+  --ring: var(--surface-light-6);
+  --chart-1: var(--color-b1-500);
+  --chart-2: var(--color-b2-500);
+  --chart-3: var(--color-b3-500);
+  --chart-4: var(--color-b4-500);
+  --chart-5: var(--color-b5-500);
+  --sidebar: var(--surface-light-3);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --light: var(--surface-light-1);
+  --dark: var(--surface-dark-1);
+}
+
+.dark {
+  --background: var(--surface-dark-1);
+  --foreground: var(--surface-dark-12);
+  --card: var(--surface-dark-2);
+  --card-foreground: var(--surface-dark-12);
+  --popover: var(--surface-dark-4);
+  --popover-foreground: var(--surface-dark-12);
+  --primary: var(--color-b2-500);
+  --primary-foreground: var(--surface-dark-12);
+  --secondary: var(--surface-dark-3);
+  --secondary-foreground: var(--surface-dark-11);
+  --muted: var(--surface-dark-3);
+  --muted-foreground: var(--surface-dark-10);
+  --accent: color-mix(in srgb, var(--surface-dark-6), transparent 60%);
+  --accent-foreground: var(--surface-dark-12);
+  --destructive: var(--color-danger-500);
+  --success: var(--color-success-500);
+  --warning: var(--color-warning-500);
+  --info: var(--color-info-500);
+  --border: var(--surface-dark-6);
+  --input: var(--surface-dark-7);
+  --ring: var(--surface-dark-8);
+  --chart-1: var(--color-b1-500);
+  --chart-2: var(--color-b2-500);
+  --chart-3: var(--color-b3-500);
+  --chart-4: var(--color-b4-500);
+  --chart-5: var(--color-b5-500);
+  --sidebar: var(--surface-dark-3);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --light: var(--surface-light-1);
+  --dark: var(--surface-dark-1);
+}

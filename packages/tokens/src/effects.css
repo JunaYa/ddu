@@ -1,0 +1,23 @@
+/* Effects — shadows and blurs */
+/* Shadows override Tailwind's defaults so values match Figma tokens */
+/* Usage: shadow-md shadow-black/5 → md spread at 5% opacity */
+
+@theme inline {
+  /* Shadows — Tailwind scale, customizable to match Figma */
+  --shadow-2xs: 0px 1px rgb(0 0 0 / 0.05);
+  --shadow-xs: 0px 1px 2px 0px rgb(0 0 0 / 0.05), 0px 1px 3px 0px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0px 1px 3px 0px rgb(0 0 0 / 0.04), 0px 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0px 4px 6px -2px rgb(0 0 0 / 0.05), 0px 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0px 8px 10px -3px rgb(0 0 0 / 0.04), 0px 20px 25px -5px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0px 10px 15px -3px rgb(0 0 0 / 0.04), 0px 25px 50px -12px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0px 12px 20px -4px rgb(0 0 0 / 0.04), 0px 30px 60px -18px rgb(0 0 0 / 0.12);
+
+  /* Blurs */
+  --blur-xs: 4px;
+  --blur-sm: 8px;
+  --blur-md: 12px;
+  --blur-lg: 16px;
+  --blur-xl: 24px;
+  --blur-2xl: 40px;
+  --blur-3xl: 64px;
+}

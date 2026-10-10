@@ -1,0 +1,26 @@
+@theme inline {
+  /* Tailwind default: `rounded` class (matches md) */
+  --radius: calc((var(--corner-radius) - 2px) * var(--radius-multiplier));
+
+  /* Lower Scale */
+  --radius-2xs: calc((var(--corner-radius) - 8px) * var(--radius-multiplier));
+  --radius-xs: calc((var(--corner-radius) - 6px) * var(--radius-multiplier));
+  --radius-sm: calc((var(--corner-radius) - 4px) * var(--radius-multiplier));
+  --radius-md: calc((var(--corner-radius) - 2px) * var(--radius-multiplier));
+
+  /* The Anchor */
+  --radius-lg: calc(var(--corner-radius) * var(--radius-multiplier));
+
+  /* Upper Scale */
+  --radius-xl: calc((var(--corner-radius) + 4px) * var(--radius-multiplier));
+  --radius-2xl: calc((var(--corner-radius) + 8px) * var(--radius-multiplier));
+  --radius-3xl: calc((var(--corner-radius) + 12px) * var(--radius-multiplier));
+  --radius-4xl: calc((var(--corner-radius) + 16px) * var(--radius-multiplier));
+  --radius-full: calc(9999px * var(--radius-multiplier));
+}
+
+:root,
+:host {
+  --corner-radius: 10px;
+  --radius-multiplier: 1;
+}

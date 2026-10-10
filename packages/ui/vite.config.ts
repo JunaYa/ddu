@@ -1,0 +1,127 @@
+import { defineConfig } from "vite-plus";
+
+export default defineConfig({
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./vitest.setup.ts"],
+    // Vitest v4 compatibility: preserve mock call history.
+    // Remove after tests no longer rely on calls from setup or earlier tests.
+    // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+    // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
+    clearMocks: false,
+  },
+  pack: {
+    tsconfig: "tsconfig.build.json",
+    entry: {
+      index: "src/index.ts",
+      "ascii-loader": "src/ascii-loaders/index.tsx",
+      button: "src/button/button.tsx",
+      alert: "src/alert/alert.tsx",
+      card: "src/card/card.tsx",
+      checkbox: "src/checkbox/checkbox.tsx",
+      input: "src/input/input.tsx",
+      label: "src/label/label.tsx",
+      popover: "src/popover/popover.tsx",
+      progress: "src/progress/progress.tsx",
+      separator: "src/separator/separator.tsx",
+      tabs: "src/tabs/tabs.tsx",
+      textarea: "src/textarea/textarea.tsx",
+      "lib/utils": "src/lib/utils.ts",
+      "lib/scroll-area-restoration": "src/lib/scroll-area-restoration.ts",
+      "animated-border": "src/animated-border/animated-border.tsx",
+      "aspect-ratio": "src/aspect-ratio/aspect-ratio.tsx",
+      avatar: "src/avatar/avatar.tsx",
+      badge: "src/badge/badge.tsx",
+      breadcrumb: "src/breadcrumb/breadcrumb.tsx",
+      calendar: "src/calendar/calendar.tsx",
+      chart: "src/chart/chart.tsx",
+      collapsible: "src/collapsible/collapsible.tsx",
+      "context-menu": "src/context-menu/context-menu.tsx",
+      drawer: "src/drawer/drawer.tsx",
+      "drop-overlay": "src/drop-overlay/drop-overlay.tsx",
+      "dropdown-menu": "src/dropdown-menu/dropdown-menu.tsx",
+      empty: "src/empty/empty.tsx",
+      frame: "src/frame/frame.tsx",
+      "hover-card": "src/hover-card/hover-card.tsx",
+      "input-otp": "src/input-otp/input-otp.tsx",
+      kbd: "src/kbd/kbd.tsx",
+      "load-more-trigger": "src/load-more-trigger/load-more-trigger.tsx",
+      "navigation-menu": "src/navigation-menu/navigation-menu.tsx",
+      "photo-swipe": "src/photo-swipe/photo-swipe.tsx",
+      "progressive-blur": "src/progressive-blur/progressive-blur.tsx",
+      "radio-group": "src/radio-group/radio-group.tsx",
+      resizable: "src/resizable/resizable.tsx",
+      select: "src/select/select.tsx",
+      skeleton: "src/skeleton/skeleton.tsx",
+      slider: "src/slider/slider.tsx",
+      switch: "src/switch/switch.tsx",
+      table: "src/table/table.tsx",
+      "motion-drag-features": "src/motion/motion-drag-features.tsx",
+      "motion-features": "src/motion/motion-features.tsx",
+      "text-shimmer": "src/text-shimmer/text-shimmer.tsx",
+      "text-ticker": "src/text-ticker/text-ticker.tsx",
+      toggle: "src/toggle/toggle.tsx",
+      tooltip: "src/tooltip/tooltip.tsx",
+      "upsell-card": "src/upsell-card/upsell-card.tsx",
+      video: "src/video/video.tsx",
+      "virtual-masonry": "src/virtual-masonry/virtual-masonry.tsx",
+      icons: "src/icons/icons.tsx",
+      "icon-svgs": "src/icon-svgs/icon-svgs.ts",
+      "file-icons": "src/file-icons/file-icons.tsx",
+      "icon-label": "src/icon-label/icon-label.tsx",
+      "alert-banner": "src/alert-banner/alert-banner.tsx",
+      "status-indicator": "src/status-indicator/status-indicator.tsx",
+      "alert-dialog": "src/alert-dialog/alert-dialog.tsx",
+      "button.group": "src/button/button.group.tsx",
+      carousel: "src/carousel/carousel.tsx",
+      field: "src/field/field.tsx",
+      "input-group": "src/input-group/input-group.tsx",
+      menubar: "src/menubar/menubar.tsx",
+      pagination: "src/pagination/pagination.tsx",
+      "toggle-group": "src/toggle-group/toggle-group.tsx",
+      "scroll-area": "src/scroll-area/scroll-area.tsx",
+      autocomplete: "src/autocomplete/autocomplete.tsx",
+      command: "src/command/command.tsx",
+      sheet: "src/sheet/sheet.tsx",
+      dialog: "src/dialog/dialog.tsx",
+      form: "src/form/form.tsx",
+      "connected-panel": "src/connected-panel/connected-panel.tsx",
+      "expandable-textarea": "src/expandable-textarea/expandable-textarea.tsx",
+      "scrollable-tabs": "src/scrollable-tabs/scrollable-tabs.tsx",
+      "segment-control": "src/segment-control/segment-control.tsx",
+      layout: "src/layout/index.ts",
+      "layout/container": "src/layout/container.tsx",
+      "layout/page": "src/layout/page.tsx",
+      "layout/section": "src/layout/section.tsx",
+      "layout/section-header": "src/layout/section-header.tsx",
+      stack: "src/stack.tsx",
+      accordion: "src/accordion/index.ts",
+    },
+    deps: {
+      // tsdown <0.23 compatibility: resolve external dependency subpaths.
+      // Remove to preserve subpath imports as written (the new default).
+      // https://tsdown.dev/options/dependencies#deps-resolvedepsubpath
+      resolveDepSubpath: true,
+    },
+    dts: { generator: "tsgo" },
+    // Entry-only devExports: consumers resolve src in dev (cross-package HMR),
+    // dist mapping goes to publishConfig, deep imports stay unresolvable (R19).
+    // react/react-dom are peers and externalized from the bundle by default.
+    exports: { devExports: true },
+  },
+  run: {
+    tasks: {
+      // Storybook runs its own CLI (not a vp built-in), so it is wired as
+      // config tasks — same external-CLI-as-task pattern as WXT/Tauri (R27).
+      // Invoke as `vp run @ddu/ui#storybook` / `#build-storybook`.
+      storybook: { command: "storybook dev -p 6006 --no-open", cache: false },
+      "build-storybook": {
+        command: "storybook build",
+        cache: {
+          output: ["storybook-static/**"],
+        },
+      },
+    },
+  },
+});
