@@ -1,12 +1,12 @@
 import { expect, test } from "vite-plus/test";
-import { createQueryClient } from "../src/query-client.ts";
+import { createQueryClient } from "../src/index.ts";
 
 test("createQueryClient returns an independent client per call", () => {
   expect(createQueryClient()).not.toBe(createQueryClient());
 });
 
-test("createQueryClient applies the shared query defaults", () => {
+test("createQueryClient does not refetch when a window regains focus", () => {
   const queries = createQueryClient().getDefaultOptions().queries;
-  expect(queries?.staleTime).toBe(5 * 60 * 1000);
+  expect(queries?.refetchOnWindowFocus).toBe(false);
   expect(queries?.retry).toBe(2);
 });

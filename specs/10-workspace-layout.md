@@ -65,11 +65,11 @@ ddu/
 
 ### 强制手段
 
-| 规则                                                                                                                   | 机制                                                                                                                                |
-| ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| 禁止深层导入 `@ddu/*/src/**`                                                                                           | 根 `vite.config.ts` 的 oxlint `no-restricted-imports`（沿用模板）                                                                   |
-| 应用中禁止直接使用 `@tauri-apps/api/core` 的 `invoke`、`@tauri-apps/api/event` 的 `listen`、`@tauri-apps/plugin-store` | 同一条 `no-restricted-imports`，对 `apps/desktop/src/windows/**` 与 `apps/desktop/src/shared/**` 生效；`src/legacy/**` 豁免直至删除 |
-| `@ddu/ui` 不得导入数据层                                                                                               | `packages/ui` 的 `no-restricted-imports` 覆盖配置                                                                                   |
+| 规则                                                                                                                   | 机制                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 禁止深层导入 `@ddu/*/src/**`                                                                                           | 根 `vite.config.ts` 的 oxlint `no-restricted-imports`（沿用模板）                                                                                                 |
+| 应用的 React 代码（`src/windows/**`、`src/shared/**`）禁止导入任何 `@tauri-apps/*` 包；插件也一律经 `@ddu/native` 包装 | 根 `vite.config.ts` 中 `lint.overrides` 的 `no-restricted-imports`（覆盖配置须重复深层导入禁令，因为 override 会替换整条规则的选项）；`src/legacy/**` 不参与 lint |
+| `@ddu/ui` 不得导入数据层                                                                                               | `packages/ui` 的 `no-restricted-imports` 覆盖配置                                                                                                                 |
 
 ## 4. 工具链
 

@@ -152,7 +152,7 @@ export function currentWindowLabel(): WindowLabel;
 ## 4. 行为
 
 - **测试方式**：用 `@tauri-apps/api/mocks` 的 `mockIPC` 拦截命令和插件调用，不需要真实的 Tauri 运行时。本包的单元测试覆盖：参数透传、`NativeError` 包装、设置的校验与默认值回退、`{ value }` 存储格式。
-- **跨窗口的设置同步**：`onSettingChange` 基于 plugin-store 的 `onKeyChange`。store 由 Rust 侧持有，变更理应广播到所有窗口，但**尚未实测**；Phase 1 的人工核对清单包含“在设置窗口改快捷键后，其他窗口读到新值”（[91](./91-impl-plan.md)）。
+- **跨窗口的设置同步**：`onSettingChange` 基于 plugin-store 的 `onKeyChange`。已从插件源码确认可跨窗口工作：同一路径的 store 在全应用只有一个资源 ID（`tauri-plugin-store` 2.4.3 `store.rs` 的 `build_inner` 按路径复用），变更事件 `store://change` 通过 `app.emit` 广播到所有窗口，Rust 侧的写入同样会触发。Phase 3 的人工核对仍包含“在设置窗口改快捷键后，其他窗口读到新值”。
 - **并发写入**：plugin-store 在 Rust 侧串行处理写入；同一键的并发 `setSetting` 以后写者为准，不做合并。
 - **线程与取消**：不适用，所有调用都是单次异步 IPC；`on`/`onSettingChange` 返回的取消函数必须在组件卸载时调用（由 `@ddu/hooks` 负责）。
 

@@ -7,7 +7,7 @@
 - **已就绪**：设计规格 [10](./10-workspace-layout.md)–[13](./13-design-system.md)。四项关键假设已实测（[研究备忘](../docs/research/2026-10-10-react-monorepo-spikes.md)）：Vue/React 同构建共存、样式隔离、TS 5.9 下 `vue-tsc`、全局 `vp` 委托。
 - **未实测、在执行中验证**：
   - Node 26 下 `tauri dev` 的行为（Phase 1.6 首次运行时确认）；
-  - plugin-store 的 `onKeyChange` 跨窗口广播（Phase 3 人工核对）。
+  - plugin-store 的 `onKeyChange` 跨窗口广播：已在 Phase 2 从插件源码确认（[11 § 4](./11-native-bridge.md#4-行为)），Phase 3 人工核对。
 - **阻塞项**：无。
 
 ## 1. 为什么依赖顺序不同于功能顺序

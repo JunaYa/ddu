@@ -20,7 +20,7 @@ ddu 成为一个 Vite+ monorepo：Rust 后端不变，前端使用与 vp-monorep
 ```tsx
 // apps/desktop/src/windows/setting/capture-section.tsx
 import { Switch } from "@ddu/ui/switch";
-import { useSetting } from "@ddu/hooks/settings";
+import { useSetting } from "@ddu/hooks";
 
 export function IncludeCursor() {
   const [includeCursor, setIncludeCursor] = useSetting("include_cursor");

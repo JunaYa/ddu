@@ -29,6 +29,10 @@
 @import "./utils/scroll-mask.css";
 @import "./utils/glass.css";
 
+/* ddu 修改: ddu's brand layer goes last so it overrides the template's
+   semantic colours and font stacks (specs/13 § 3). */
+@import "@ddu/tokens/css/brand.css";
+
 @custom-variant coarse (@media (pointer: coarse));
 
 @layer base {

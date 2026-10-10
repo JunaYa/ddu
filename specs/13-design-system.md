@@ -17,7 +17,7 @@ Status: draft · Owner: ddu · Depends on: [10](./10-workspace-layout.md)、[12]
 模板的 token 是三层 CSS 变量：primitives（原始色板）→ semantics（`--primary`、`--background` 等 shadcn 语义名，含 `.dark` 覆盖）→ Tailwind `@theme`。ddu 只在 semantics 之上加**一个**覆盖文件：
 
 ```css
-/* packages/tokens/src/brand.css — 在 index.css 中最后导入 */
+/* packages/tokens/src/brand.css — 由 @ddu/styles/base.css 最后导入 */
 :root {
   --primary: #cc7d24; /* ddu 琥珀色，原 --rgb-primary: 204, 125, 36 */
   --primary-foreground: #ffffff;
@@ -31,6 +31,7 @@ Status: draft · Owner: ddu · Depends on: [10](./10-workspace-layout.md)、[12]
 }
 ```
 
+- **导入位置**：`brand.css` 不放进 token 入口 `index.css`，而是由 `@ddu/styles/base.css` 最后导入。原因是模板的 `fonts.css` 在 token 之后才定义字体栈，放进 `index.css` 会被它覆盖；同时 `@ddu/styles` 的一致性测试禁止各宿主自行导入 `@ddu/tokens/css`。这样应用和 Storybook 都能显示 ddu 品牌。
 - **字体**：模板只声明了 Manrope、Lora 等字体栈，并未附带字体文件。ddu 是 macOS 原生工具，改用系统字体栈，与现状一致。
 - **毛玻璃质感**：现有的 `.liquid-glass*` 类不迁移。面板改用模板的 `surface-glass` 工具类（`@ddu/styles/utils/glass.css`），它基于语义 token，自动适配暗色，并在不支持 `backdrop-filter` 时回退为实色。视觉上是近似，不追求与现状像素一致（[00 § 4](./00-prd-react-migration.md#4-非目标)）。
 - **圆角**：沿用模板的 `--corner-radius: 10px`，现有 8px 面板会略圆。

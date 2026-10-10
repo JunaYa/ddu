@@ -1,0 +1,18 @@
+/* ddu brand layer (specs/13 § 3). The only place ddu's identity overrides the
+ * template tokens: amber accent and the macOS system font stack. Imported last
+ * by @ddu/styles/base.css so it wins over semantics.css and fonts.css. */
+
+:root {
+  --primary: #cc7d24;
+  --primary-foreground: #ffffff;
+  --ring: color-mix(in srgb, #cc7d24 45%, transparent);
+  --font-stack-product-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+}
+
+.dark {
+  /* Same accent in both appearances, as before the migration. */
+  --primary: #cc7d24;
+  --primary-foreground: #ffffff;
+  --ring: color-mix(in srgb, #cc7d24 55%, transparent);
+}

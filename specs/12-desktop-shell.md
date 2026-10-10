@@ -35,12 +35,13 @@ mountWindow(<SettingWindow />);
 
 `mountWindow` 是共享外壳，统一提供：
 
-| 关注点   | 做法                                                                                                                                                  |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 数据层   | `QueryClientProvider`，客户端来自 `@ddu/hooks` 的 `createQueryClient()`。桌面端关闭 `refetchOnWindowFocus`：窗口频繁显示/隐藏，聚焦时重新拉取没有意义 |
-| 主题     | 跟随系统：监听 `prefers-color-scheme`，切换 `<html>` 上的 `.dark` 类（模板 token 的暗色机制）。不提供手动切换，与现状一致                             |
-| 错误边界 | 顶层 `ErrorBoundary`：渲染错误时显示“窗口出错，可关闭后重开”的兜底界面并 `console.error`，不让整个 webview 白屏                                       |
-| 严格模式 | `StrictMode` 开启。窗口里的原生订阅（`on`、`onSettingChange`）必须在 effect 清理函数中取消，否则 StrictMode 双调用会暴露泄漏                          |
+| 关注点   | 做法                                                                                                                                                                         |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 数据层   | `QueryClientProvider`，客户端来自 `@ddu/hooks` 的 `createQueryClient()`。桌面端关闭 `refetchOnWindowFocus`：窗口频繁显示/隐藏，聚焦时重新拉取没有意义                        |
+| 主题     | 跟随系统：监听 `prefers-color-scheme`，切换 `<html>` 上的 `.dark` 类（模板 token 的暗色机制）。不提供手动切换，与现状一致                                                    |
+| 错误边界 | 顶层 `ErrorBoundary`：渲染错误时显示“窗口出错，可关闭后重开”的兜底界面并 `console.error`，不让整个 webview 白屏                                                              |
+| 加载     | `Suspense` 边界（fallback 为空）：`useSetting` 在读到存储值之前挂起，组件拿到的永远是真实值而不是占位默认值，避免开关先显示默认值再跳变；本地 IPC 只需几毫秒，不显示加载动画 |
+| 严格模式 | `StrictMode` 开启。窗口里的原生订阅（`on`、`onSettingChange`）必须在 effect 清理函数中取消，否则 StrictMode 双调用会暴露泄漏                                                 |
 
 透明窗口（`preview`、`capture`）在迁移时再决定是否需要外壳的变体（例如不设置 `body` 背景），不在本轮设计。
 

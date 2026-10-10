@@ -24,6 +24,9 @@
     "test": "vp test",
     "check": "vp check"
   },
+  "dependencies": {
+    "@ddu/native": "workspace:*"
+  },
   "devDependencies": {
     "@tanstack/react-query": "catalog:",
     "@testing-library/react": "catalog:",

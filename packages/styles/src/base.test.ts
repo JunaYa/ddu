@@ -20,9 +20,8 @@ function read(path: string): string {
 }
 
 /** CSS entries that layer on the shared baseline via base.css.
- *  ddu 修改: ddu has no web/extension apps; the desktop React entry
- *  (apps/desktop/src/styles.css) joins with the first React window (specs/91 2.6). */
-const HOST_ENTRIES = ["packages/ui/.storybook/preview.css"] as const;
+ *  ddu 修改: ddu's only app is apps/desktop (no web/extension). */
+const HOST_ENTRIES = ["apps/desktop/src/styles.css", "packages/ui/.storybook/preview.css"] as const;
 
 /** Layers that must live ONLY in base.css / baseline.css.
  *  Matched as BARE substrings (not `"marker"`), on purpose: this set mixes

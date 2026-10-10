@@ -1,5 +1,7 @@
 import { defineConfig } from "vite-plus";
 
+const DEEP_IMPORTS = ["@ddu/*/src/*", "@ddu/*/src/**"];
+
 export default defineConfig({
   staged: {
     "*": "vp check --fix",
@@ -19,13 +21,59 @@ export default defineConfig({
     rules: {
       // Packages are consumed only through their `exports` entries; deep imports
       // into a package's src bypass that boundary (specs/10 § 3).
-      "no-restricted-imports": ["error", { patterns: ["@ddu/*/src/*", "@ddu/*/src/**"] }],
+      "no-restricted-imports": ["error", { patterns: DEEP_IMPORTS }],
       // `_`-prefixed names are intentionally unused (e.g. required callback params).
       "no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
       ],
     },
+    // Overrides replace a rule's options, so each repeats the deep-import ban.
+    overrides: [
+      {
+        // React windows reach Tauri only through @ddu/native (W2/N5).
+        files: ["apps/desktop/src/windows/**", "apps/desktop/src/shared/**"],
+        rules: {
+          "no-restricted-imports": [
+            "error",
+            {
+              patterns: [
+                ...DEEP_IMPORTS,
+                {
+                  group: ["@tauri-apps/*", "@tauri-apps/**"],
+                  message: "Use @ddu/native (specs/11).",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        // The design system takes data as props (specs/10 § 3).
+        files: ["packages/ui/**"],
+        rules: {
+          "no-restricted-imports": [
+            "error",
+            {
+              patterns: [
+                ...DEEP_IMPORTS,
+                {
+                  group: [
+                    "@tauri-apps/*",
+                    "@tauri-apps/**",
+                    "@ddu/native",
+                    "@ddu/native/*",
+                    "@ddu/hooks",
+                    "@ddu/hooks/*",
+                  ],
+                  message: "@ddu/ui is presentational; pass data in as props.",
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ],
   },
   run: {
     cache: true,

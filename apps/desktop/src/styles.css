@@ -1,0 +1,5 @@
+@import "@ddu/styles/base.css";
+
+/* Legacy Vue windows are styled by UnoCSS; keep Tailwind from scanning them
+   (specs/12 § 4). Removed with the last Vue window. */
+@source not "./legacy";

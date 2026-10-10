@@ -1,9 +1,10 @@
 import { QueryClient } from "@tanstack/react-query";
 
 /**
- * Default QueryClient configuration shared by every UI app. This is the
- * landing spot for pi-hero's `lib/query-client` during migration — apps mount
- * the returned client in a single `QueryClientProvider`.
+ * QueryClient for a ddu window. Data comes from local IPC, not a network:
+ * windows are shown and hidden constantly, so refetching on focus would only
+ * re-read unchanged state; live changes arrive through native subscriptions
+ * (e.g. `useSetting`) instead.
  */
 export function createQueryClient(): QueryClient {
   return new QueryClient({
@@ -12,7 +13,7 @@ export function createQueryClient(): QueryClient {
         staleTime: 5 * 60 * 1000,
         gcTime: 10 * 60 * 1000,
         retry: 2,
-        refetchOnWindowFocus: true,
+        refetchOnWindowFocus: false,
       },
     },
   });
