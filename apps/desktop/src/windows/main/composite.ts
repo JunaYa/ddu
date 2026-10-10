@@ -78,5 +78,8 @@ export async function composeImages(sources: string[], layout: CompositeLayout):
   composite.placements.forEach((p, i) =>
     context.drawImage(images[i]!, p.x, p.y, p.width, p.height),
   );
-  return canvas.toDataURL("image/png").split(",")[1] ?? "";
+  const base64 = canvas.toDataURL("image/png").split(",")[1];
+  // An unusable canvas exports "data:,"; never save that as an empty image.
+  if (!base64) throw new Error("the combined image could not be encoded");
+  return base64;
 }

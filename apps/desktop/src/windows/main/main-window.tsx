@@ -6,11 +6,12 @@ import {
   indexHistoryItems,
   openCombinedImage,
 } from "@ddu/native";
+import { Alert, AlertDescription } from "@ddu/ui/alert";
 import { Empty, EmptyDescription } from "@ddu/ui/empty";
 import { VirtualMasonry } from "@ddu/ui/virtual-masonry";
 import type { RenderComponentProps } from "@ddu/ui/virtual-masonry";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createContext, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { composeImages, type CompositeLayout } from "./composite.ts";
 import emptyImage from "./empty.png";
 import { historyKeys, useDebouncedValue, useHistoryItems, useTextSearch } from "./history-data.ts";
@@ -21,10 +22,12 @@ import { type DisplayMode, Toolbar } from "./toolbar.tsx";
 const SEARCH_DEBOUNCE_MS = 200;
 
 /** Lets masonry cells (rendered by masonic) reach the window's delete action. */
-const DeleteContext = createContext<(item: HistoryItem) => void>(() => {});
+const DeleteContext = createContext<((item: HistoryItem) => void) | null>(null);
 
 function MasonryCell({ data }: RenderComponentProps<HistoryItem>) {
-  return <HistoryCard item={data} onDelete={useContext(DeleteContext)} />;
+  const onDelete = useContext(DeleteContext);
+  if (!onDelete) throw new Error("MasonryCell rendered outside DeleteContext");
+  return <HistoryCard item={data} onDelete={onDelete} />;
 }
 
 const capturedAt = (item: HistoryItem) =>
@@ -37,7 +40,8 @@ export function MainWindow() {
   const history = useHistoryItems();
 
   const [query, setQuery] = useState("");
-  const matches = useTextSearch(useDebouncedValue(query, SEARCH_DEBOUNCE_MS));
+  const search = useTextSearch(useDebouncedValue(query, SEARCH_DEBOUNCE_MS));
+  const matches = search.matches;
   const [ascending, setAscending] = useState(false);
   const [display, setDisplay] = useState<DisplayMode>("grid");
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
@@ -77,14 +81,20 @@ export function MainWindow() {
   const removeItems = useMutation({
     mutationFn: async ({ items, message }: { items: HistoryItem[]; message: string }) => {
       if (!(await confirm(message, { title: "确认删除", kind: "warning" }))) return;
-      await deleteHistoryItems(items.map((item) => item.full_path));
+      const moved = await deleteHistoryItems(items.map((item) => item.full_path));
       setSelected(new Set());
       await refresh();
+      // Rust skips files it cannot move and only reports how many it did.
+      if (moved < items.length) throw new Error(`只移动了 ${moved} / ${items.length} 张截图`);
     },
   });
 
-  const deleteOne = (item: HistoryItem) =>
-    removeItems.mutate({ items: [item], message: "是否确认将该截图移到废纸篓？" });
+  const { mutate: remove } = removeItems;
+  // Stable, so masonry cards do not all re-render on every keystroke.
+  const deleteOne = useCallback(
+    (item: HistoryItem) => remove({ items: [item], message: "是否确认将该截图移到废纸篓？" }),
+    [remove],
+  );
 
   const index = useMutation({
     mutationFn: async (items: HistoryItem[]) => {
@@ -105,6 +115,8 @@ export function MainWindow() {
       const sources = await Promise.all(items.map((item) => imageDataUrl(item.full_path)));
       await openCombinedImage(await composeImages(sources, layout));
     },
+    // The combined image is saved as a new capture.
+    onSuccess: refresh,
   });
 
   const searching = query.trim().length > 0;
@@ -139,13 +151,18 @@ export function MainWindow() {
         onCombine={(layout) => combine.mutate({ items: selectedItems, layout })}
         combining={combine.isPending}
       />
-      {(history.error ?? removeItems.error ?? combine.error) && (
-        <p role="alert" className="mb-4 text-sm text-destructive">
-          {history.error ? `无法读取截图历史：${history.error.message}` : null}
-          {removeItems.error ? `删除失败：${removeItems.error.message}` : null}
-          {combine.error ? `拼合失败：${combine.error.message}` : null}
-        </p>
-      )}
+      {[
+        history.error && `无法读取截图历史：${history.error.message}`,
+        search.error && `搜索失败：${search.error.message}`,
+        removeItems.error && `删除失败：${removeItems.error.message}`,
+        combine.error && `拼合失败：${combine.error.message}`,
+      ]
+        .filter((message): message is string => Boolean(message))
+        .map((message) => (
+          <Alert key={message} variant="error" className="mb-4">
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
+        ))}
 
       {visible.length > 0 ? (
         display === "grid" ? (

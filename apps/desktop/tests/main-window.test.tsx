@@ -1,14 +1,51 @@
 import type { HistoryItem } from "@ddu/native";
 import { mockNative, type MockNativeOptions, resetNativeMock } from "@ddu/native/testing";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, expect, test } from "vite-plus/test";
+import { afterEach, expect, test, vi } from "vite-plus/test";
 import { WindowShell } from "../src/shared/mount-window.tsx";
 import { MainWindow } from "../src/windows/main/main-window.tsx";
+
+// Canvas drawing is unavailable in jsdom; record what would be combined instead.
+const composed = vi.hoisted(() => ({ calls: [] as Array<{ sources: string[]; layout: string }> }));
+vi.mock("../src/windows/main/composite.ts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/windows/main/composite.ts")>()),
+  composeImages: async (sources: string[], layout: string) => {
+    composed.calls.push({ sources, layout });
+    return "COMBINED";
+  },
+}));
 
 afterEach(() => {
   cleanup();
   resetNativeMock();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  composed.calls.length = 0;
+  delete (HTMLElement.prototype as { offsetHeight?: number }).offsetHeight;
+  delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight;
 });
+
+/** Give the masonry grid a real size so it renders cards in jsdom. */
+function stubLayout() {
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe(target: Element) {
+        const entry = {
+          target,
+          contentRect: { width: 900, height: 800 },
+        } as unknown as ResizeObserverEntry;
+        this.callback([entry], this as unknown as ResizeObserver);
+      }
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  for (const prop of ["offsetHeight", "clientHeight"]) {
+    Object.defineProperty(HTMLElement.prototype, prop, { configurable: true, get: () => 800 });
+  }
+}
 
 function item(name: string, capturedAt: string, size = 1234): HistoryItem {
   return {
@@ -94,7 +131,10 @@ test("searching filters to indexed matches and clears the selection", async () =
   setup();
   await showList();
   await waitFor(() => expect(rowNames()).toHaveLength(2));
-  fireEvent.click(screen.getByRole("checkbox", { name: "选择 screenshot_1.png" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "选择 screenshot_2.png" }));
+  expect(
+    screen.getByRole("checkbox", { name: "选择 screenshot_2.png" }).getAttribute("aria-checked"),
+  ).toBe("true");
 
   fireEvent.change(screen.getByRole("searchbox"), { target: { value: "error" } });
   await waitFor(() => expect(rowNames()).toEqual(["选择 screenshot_2.png"]));
@@ -197,4 +237,103 @@ test("a history load failure is shown", async () => {
     },
   });
   expect(await screen.findByText(/无法读取截图历史/, undefined, { timeout: 5000 })).toBeTruthy();
+});
+
+test("grid view (the default) deletes a card through the backend", async () => {
+  stubLayout();
+  const { mock, answerNextDialog } = setup();
+  answerNextDialog("Ok");
+  fireEvent.click(await screen.findByRole("button", { name: "删除 screenshot_2.png" }));
+  await waitFor(() =>
+    expect(called(mock, "delete_history_items")).toEqual([
+      ["delete_history_items", { paths: [NEW.full_path] }],
+    ]),
+  );
+});
+
+test("combining sends the selected images, in display order, and refreshes the list", async () => {
+  const { mock } = setup();
+  await showList();
+  await waitFor(() => expect(rowNames()).toHaveLength(2));
+  fireEvent.click(screen.getByText("全部"));
+  const listsBefore = called(mock, "list_history_items").length;
+  fireEvent.click(screen.getByRole("button", { name: "竖排" }));
+
+  await waitFor(() =>
+    expect(called(mock, "open_combined_image")).toEqual([
+      ["open_combined_image", { base64: "COMBINED" }],
+    ]),
+  );
+  expect(composed.calls).toEqual([
+    { sources: ["data:image/png;base64,QUJD", "data:image/png;base64,QUJD"], layout: "vertical" },
+  ]);
+  const fetched = called(mock, "get_image_base64").map(
+    ([, args]) => (args as { path: string }).path,
+  );
+  expect(fetched.slice(-2)).toEqual([NEW.full_path, OLD.full_path]);
+  await waitFor(() =>
+    expect(called(mock, "list_history_items").length).toBeGreaterThan(listsBefore),
+  );
+});
+
+test("indexing refreshes the active search, and a failure is reported", async () => {
+  let fail = false;
+  const { mock } = setup({
+    commands: {
+      ocr_index_items: ({ paths }) => {
+        if (fail) throw "OCR engine unavailable";
+        return paths.length;
+      },
+    },
+  });
+  await showList();
+  fireEvent.change(screen.getByRole("searchbox"), { target: { value: "error" } });
+  await waitFor(() => expect(rowNames()).toEqual(["选择 screenshot_2.png"]));
+  const searchesBefore = called(mock, "search_history_text").length;
+
+  fireEvent.click(screen.getByText("全部"));
+  fireEvent.click(screen.getByRole("button", { name: "建立文字索引" }));
+  expect(await screen.findByText("已为 1 张截图建立文字索引")).toBeTruthy();
+  await waitFor(() =>
+    expect(called(mock, "search_history_text").length).toBeGreaterThan(searchesBefore),
+  );
+
+  fail = true;
+  fireEvent.click(screen.getByRole("button", { name: "建立文字索引" }));
+  expect(await screen.findByText("建立索引失败: OCR engine unavailable")).toBeTruthy();
+});
+
+test("a delete the backend could only partly do is reported", async () => {
+  const { answerNextDialog } = setup({ commands: { delete_history_items: () => 0 } });
+  await showList();
+  answerNextDialog("Ok");
+  fireEvent.click(await screen.findByRole("button", { name: "删除 screenshot_1.png" }));
+  expect(await screen.findByText("删除失败：只移动了 0 / 1 张截图")).toBeTruthy();
+});
+
+test("a failed search is reported and keeps the full list", async () => {
+  setup({
+    commands: {
+      search_history_text: () => {
+        throw "index unreadable";
+      },
+    },
+  });
+  await showList();
+  await waitFor(() => expect(rowNames()).toHaveLength(2));
+  fireEvent.change(screen.getByRole("searchbox"), { target: { value: "error" } });
+  expect(await screen.findByText(/搜索失败/, undefined, { timeout: 5000 })).toBeTruthy();
+  expect(rowNames()).toHaveLength(2);
+});
+
+test("typing quickly searches only the settled query", async () => {
+  const { mock } = setup();
+  await showList();
+  const box = await screen.findByRole("searchbox");
+  for (const value of ["e", "er", "err", "erro", "error"])
+    fireEvent.change(box, { target: { value } });
+  await waitFor(() => expect(rowNames()).toEqual(["选择 screenshot_2.png"]));
+  expect(
+    called(mock, "search_history_text").map(([, args]) => (args as { query: string }).query),
+  ).toEqual(["error"]);
 });

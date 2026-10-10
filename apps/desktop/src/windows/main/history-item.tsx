@@ -3,6 +3,7 @@ import { Button } from "@ddu/ui/button";
 import { Card } from "@ddu/ui/card";
 import { Checkbox } from "@ddu/ui/checkbox";
 import { Trash2 } from "lucide-react";
+import { memo } from "react";
 import { FileInfo } from "./file-info.tsx";
 import { Thumbnail } from "./thumbnail.tsx";
 
@@ -26,7 +27,7 @@ function DeleteButton({ item, onDelete, className }: ItemProps & { className?: s
 }
 
 /** Grid view card: full-width thumbnail, delete on hover, labelled file info. */
-export function HistoryCard({ item, onDelete }: ItemProps) {
+export const HistoryCard = memo(function HistoryCard({ item, onDelete }: ItemProps) {
   return (
     <Card className="group surface-glass relative gap-2 p-2">
       <Thumbnail path={item.full_path} className="h-auto w-full" />
@@ -38,7 +39,7 @@ export function HistoryCard({ item, onDelete }: ItemProps) {
       <FileInfo item={item} labelled />
     </Card>
   );
-}
+});
 
 /** List view row: selection, small thumbnail, inline file info, delete. */
 export function HistoryRow({
