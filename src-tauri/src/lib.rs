@@ -6,6 +6,7 @@ mod cmd;
 mod common;
 mod constants;
 mod global_shortcut;
+mod lifecycle;
 mod menu;
 mod placement;
 mod platform;
@@ -190,8 +191,9 @@ pub fn run() {
             cmd::get_diagnostics_bundle,
             global_shortcut::apply_shortcuts,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_, event| lifecycle::handle_run_event(event));
 }
 
 /// The startup/permission-guide window shows only when the `first_run` marker
