@@ -1,8 +1,13 @@
+export { cancelCapture, captureSession, finalizeCapture, hitTest } from "./capture.ts";
 export { call, NativeError } from "./commands/call.ts";
 export type { CommandArgs, CommandMap, CommandName, CommandResult } from "./commands/map.ts";
 export type {
+  CaptureSession,
+  ChainNode,
   DiagnosticsBundle,
   HistoryItem,
+  HitTest,
+  LogicalRect,
   PermissionKind,
   PermissionStatus,
   PlatformCapability,

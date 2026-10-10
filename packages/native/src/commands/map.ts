@@ -1,4 +1,11 @@
-import type { DiagnosticsBundle, HistoryItem, PermissionKind, PermissionStatus } from "./types.ts";
+import type {
+  CaptureSession,
+  DiagnosticsBundle,
+  HistoryItem,
+  HitTest,
+  PermissionKind,
+  PermissionStatus,
+} from "./types.ts";
 
 /** Marker for commands that take no arguments. */
 export type NoArgs = Record<string, never>;
@@ -25,6 +32,13 @@ export interface CommandMap {
   ocr_index_items: { args: { paths: string[] }; result: number };
   /** The image file's bytes, base64-encoded (path must be in the images directory). */
   get_image_base64: { args: { path: string }; result: string };
+  /** The frozen screen and mode for the capture overlay; rejects when no session is active. */
+  smart_capture_get_session: { args: NoArgs; result: CaptureSession };
+  /** UI elements under a global logical point. */
+  smart_capture_hit_test: { args: { x: number; y: number }; result: HitTest };
+  /** Capture a global logical rect; Rust closes the overlay whatever happens. */
+  smart_capture_finalize: { args: { x: number; y: number; w: number; h: number }; result: void };
+  smart_capture_cancel: { args: NoArgs; result: void };
   /** Save a composed PNG (base64) as a new capture and open it in the preview. */
   open_combined_image: { args: { base64: string }; result: void };
 }
