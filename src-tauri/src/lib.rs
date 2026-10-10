@@ -7,6 +7,7 @@ mod common;
 mod constants;
 mod global_shortcut;
 mod menu;
+mod placement;
 mod platform;
 mod smart_capture;
 mod window;

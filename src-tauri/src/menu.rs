@@ -173,7 +173,7 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
         MenuID::CAPTURE_SCREEN => {
             info!("Capture Screen");
             let result = tauri::async_runtime::block_on(platform::capture_screen(app, "images".to_string()));
-            crate::global_shortcut::post_capture_flow(app, result);
+            crate::global_shortcut::post_capture_flow(app, result, None);
         }
         MenuID::CAPTURE_SELECT => {
             info!("Capture Select");

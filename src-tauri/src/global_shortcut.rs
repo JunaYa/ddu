@@ -90,11 +90,17 @@ mod tests {
 
 /// Shared post-capture UX: hide the main window, pop the preview floater and
 /// hand it the capture payload. Used by hotkeys, the tray menu and smart
-/// capture's finalize.
-pub fn post_capture_flow(app: &AppHandle, result: Result<platform::CaptureResult, String>) {
+/// capture's finalize. `anchor` is the captured area in global logical points
+/// (the floater opens beside it); `None` means the display under the cursor,
+/// which is what full-screen capture grabs.
+pub fn post_capture_flow(
+    app: &AppHandle,
+    result: Result<platform::CaptureResult, String>,
+    anchor: Option<crate::smart_capture::LogicalRect>,
+) {
     if let Ok(capture) = result {
         window::hide_main_window(app);
-        let window = window::show_preview_window(app);
+        let window = window::show_preview_window(app, anchor);
         let app_handle = app.clone();
         let image_path = capture.full_path.clone();
         // Text captures put OCR text on the clipboard (done by the preview),
@@ -264,7 +270,7 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                     return;
                 }
             };
-            post_capture_flow(app, result);
+            post_capture_flow(app, result, None);
         })
         .build()
 }

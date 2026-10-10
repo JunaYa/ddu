@@ -273,7 +273,7 @@ pub async fn smart_capture_finalize(
 
     match result {
         Ok(capture) => {
-            post_capture_flow(&app, Ok(capture));
+            post_capture_flow(&app, Ok(capture), Some(LogicalRect { x, y, w, h }));
             Ok(())
         }
         Err(e) => {

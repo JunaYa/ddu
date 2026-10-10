@@ -1,74 +1,23 @@
-use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
+use tauri::{AppHandle, Manager, WebviewWindow};
 use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 #[cfg(target_os = "macos")]
 use tauri::window::{Effect, EffectState, EffectsBuilder};
 use tracing::info;
 
 use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW, STARTUP_WINDOW, CAPTURE_WINDOW};
+use crate::placement;
 use crate::platform;
 
-pub fn find_monitor(window: &WebviewWindow) -> Option<Monitor> {
-    if let Ok(Some(mon)) = window.primary_monitor() {
-        Some(mon)
-    } else if let Ok(Some(mon)) = window.current_monitor() {
-        Some(mon)
-    } else if let Ok(mut monitors) = window.available_monitors() {
-        if monitors.is_empty() {
-            None
-        } else {
-            monitors.pop()
-        }
-    } else {
-        None
-    }
-}
-
-pub fn center_position(window: &WebviewWindow) {
-    let window_size = match window.inner_size() {
-        Ok(size) => size,
-        // Nothing to do if the window is not created yet.
-        Err(_) => return,
+/// Move an app window (main, settings, startup) onto the display under the
+/// cursor, horizontally centered near the top. Call before `show()` so it
+/// never flashes on the display it was last on.
+pub fn place_on_cursor_screen(window: &WebviewWindow) {
+    let (Some(screen), Some(frame)) = (placement::cursor_screen(window), placement::window_frame(window)) else {
+        info!("Unable to detect the cursor's display.");
+        return;
     };
-
-    if let Some(monitor) = find_monitor(window) {
-        let screen_position = monitor.position();
-        let screen_size = monitor.size();
-
-        let y = (120f64 * monitor.scale_factor()) as i32;
-        let x =
-            screen_position.x + ((screen_size.width as i32 / 2) - (window_size.width as i32 / 2));
-        let new_position = PhysicalPosition { x, y };
-
-        let _ = window.set_position(tauri::Position::Physical(new_position));
-    } else {
-        info!("Unable to detect any monitors.");
-    }
-}
-
-pub fn bottom_right_position(window: &WebviewWindow) {
-    let window_size = match window.inner_size() {
-        Ok(size) => size,
-        // Nothing to do if the window is not created yet.
-        Err(_) => return,
-    };
-
-    if let Some(monitor) = find_monitor(window) {
-        let screen_size = monitor.size();
-
-        let y = (screen_size.height as f64
-            - monitor.scale_factor()
-            - window_size.height as f64
-            - 128.0) as i32;
-        let x =
-            (screen_size.width as f64 - monitor.scale_factor() - window_size.width as f64 - 128.0)
-                as i32;
-
-        let new_position = PhysicalPosition { x, y };
-
-        let _ = window.set_position(tauri::Position::Physical(new_position));
-    } else {
-        info!("Unable to detect any monitors.");
-    }
+    let (x, y) = placement::place_top_center((frame.w, frame.h), screen.work_area);
+    let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
 }
 
 #[cfg(target_os = "macos")]
@@ -132,6 +81,8 @@ pub fn get_main_window(app: &AppHandle) -> WebviewWindow {
         let win_builder =
             WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("/main.html".into()))
                 .title("ddu")
+                // Shown by platform::show_* once placed on the right display.
+                .visible(false)
                 .title_bar_style(TitleBarStyle::Transparent)
                 .transparent(true)
                 .skip_taskbar(true)
@@ -151,6 +102,8 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
         let win_builder =
             WebviewWindowBuilder::new(app, SETTING_WINDOW, WebviewUrl::App("/setting.html".into()))
                 .title("Setting")
+                // Shown by platform::show_* once placed on the right display.
+                .visible(false)
                 .minimizable(false)
                 .maximizable(false)
                 .resizable(true)
@@ -175,7 +128,8 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
                 .title("preview")
                 .decorations(false)
                 .transparent(true)
-                .visible(true)
+                // Shown by platform::show_* once placed on the right display.
+                .visible(false)
                 .skip_taskbar(true)
                 .shadow(false)
                 .resizable(false)
@@ -201,7 +155,8 @@ pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
                 .title("Startup")
                 .decorations(true)
                 .transparent(true)
-                .visible(true)
+                // Shown by platform::show_* once placed on the right display.
+                .visible(false)
                 .skip_taskbar(false)
                 .shadow(true)
                 .resizable(false)
@@ -214,9 +169,14 @@ pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
     }
 }
 
-pub fn show_preview_window(app: &AppHandle) -> WebviewWindow {
+/// `anchor` is the captured area in global logical points; the floater opens
+/// beside it on the same display. `None` uses the display under the cursor.
+pub fn show_preview_window(
+    app: &AppHandle,
+    anchor: Option<crate::smart_capture::LogicalRect>,
+) -> WebviewWindow {
     let window = get_preview_window(app);
-    platform::show_preview_window(&window);
+    platform::show_preview_window(&window, anchor);
     window
 }
 
