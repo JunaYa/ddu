@@ -1,7 +1,7 @@
 import { useSetting } from "@ddu/hooks";
 import { applyShortcuts, type SettingKey, settingsSchema } from "@ddu/native";
 import { Button } from "@ddu/ui/button";
-import { Field, FieldError, FieldLabel } from "@ddu/ui/field";
+import { Field, FieldContent, FieldError, FieldTitle } from "@ddu/ui/field";
 import { Kbd } from "@ddu/ui/kbd";
 import { RotateCcw } from "lucide-react";
 import { useEffect, useEffectEvent, useState } from "react";
@@ -18,18 +18,34 @@ const SHORTCUTS: ReadonlyArray<{ key: HotkeyKey; label: string }> = [
 ];
 
 export function ShortcutsSection() {
+  // One recorder at a time: starting another row hands the keyboard to it.
+  const [recording, setRecording] = useState<HotkeyKey | null>(null);
   return (
     <SettingCard title="Shortcuts">
       {SHORTCUTS.map(({ key, label }) => (
-        <ShortcutRow key={key} settingKey={key} label={label} />
+        <ShortcutRow
+          key={key}
+          settingKey={key}
+          label={label}
+          recording={recording === key}
+          onRecord={() => setRecording(key)}
+          onDone={() => setRecording((current) => (current === key ? null : current))}
+        />
       ))}
     </SettingCard>
   );
 }
 
-function ShortcutRow({ settingKey, label }: { settingKey: HotkeyKey; label: string }) {
+interface ShortcutRowProps {
+  settingKey: HotkeyKey;
+  label: string;
+  recording: boolean;
+  onRecord: () => void;
+  onDone: () => void;
+}
+
+function ShortcutRow({ settingKey, label, recording, onRecord, onDone }: ShortcutRowProps) {
   const [combo, setCombo, status] = useSetting(settingKey);
-  const [recording, setRecording] = useState(false);
   const [pressed, setPressed] = useState<string | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
 
@@ -46,10 +62,16 @@ function ShortcutRow({ settingKey, label }: { settingKey: HotkeyKey; label: stri
   }
 
   // The key listeners outlive renders; they always call the latest `save`.
-  const commit = useEffectEvent((next: string) => void save(next));
+  const commit = useEffectEvent((next: string) => {
+    onDone();
+    void save(next);
+  });
 
   useEffect(() => {
-    if (!recording) return;
+    if (!recording) {
+      setPressed(null);
+      return;
+    }
     let latest: string | null = null;
     const onKeyDown = (event: KeyboardEvent) => {
       event.preventDefault();
@@ -61,10 +83,7 @@ function ShortcutRow({ settingKey, label }: { settingKey: HotkeyKey; label: stri
       }
     };
     const onKeyUp = () => {
-      if (!latest) return;
-      setRecording(false);
-      setPressed(null);
-      commit(latest);
+      if (latest) commit(latest);
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
@@ -79,11 +98,13 @@ function ShortcutRow({ settingKey, label }: { settingKey: HotkeyKey; label: stri
   return (
     <>
       <Field orientation="horizontal">
-        <FieldLabel>{label}</FieldLabel>
+        <FieldContent>
+          <FieldTitle>{label}</FieldTitle>
+        </FieldContent>
         <Button
           variant="outline"
           aria-label={`${label}: ${recording ? "recording" : combo}`}
-          onClick={() => setRecording(true)}
+          onClick={onRecord}
         >
           {recording ? (pressed ?? "Press keys...") : <Kbd>{combo}</Kbd>}
         </Button>
@@ -97,6 +118,9 @@ function ShortcutRow({ settingKey, label }: { settingKey: HotkeyKey; label: stri
           <RotateCcw />
         </Button>
       </Field>
+      <span className="sr-only" aria-live="polite">
+        {recording ? (pressed ?? "Press keys...") : ""}
+      </span>
       {error && <FieldError className="text-right">{error}</FieldError>}
     </>
   );

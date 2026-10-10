@@ -1,5 +1,5 @@
 import { mockNative, type MockNativeOptions, resetNativeMock } from "@ddu/native/testing";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, expect, test } from "vite-plus/test";
 import { WindowShell } from "../src/shared/mount-window.tsx";
 import { SettingWindow } from "../src/windows/setting/setting-window.tsx";
@@ -174,6 +174,10 @@ test("history: confirming clears the index, then turns it off", async () => {
 
   await waitFor(() => expect(mock.settings.get("ocr_index_enabled")).toEqual({ value: false }));
   expect(called(mock, "clear_ocr_index")).toHaveLength(1);
+  const order = mock.calls.map(([cmd, args]) =>
+    cmd === "plugin:store|set" ? `set:${(args as { key: string }).key}` : cmd,
+  );
+  expect(order.indexOf("clear_ocr_index")).toBeLessThan(order.indexOf("set:ocr_index_enabled"));
 });
 
 test("history: clearing history moves every capture to the Trash after confirming", async () => {
@@ -211,4 +215,120 @@ test("diagnostics: a failed check shows the error", async () => {
   });
   fireEvent.click(await screen.findByRole("button", { name: "运行检查" }));
   expect(await screen.findByText("无法读取本机诊断信息。")).toBeTruthy();
+});
+
+test("shortcuts: only the last row clicked records", async () => {
+  const { mock } = setup();
+  fireEvent.click(await screen.findByRole("button", { name: "Region Capture: CmdOrCtrl+Shift+S" }));
+  fireEvent.click(screen.getByRole("button", { name: "Window Capture: CmdOrCtrl+Shift+W" }));
+  fireEvent.keyDown(window, { key: "k", metaKey: true });
+  fireEvent.keyUp(window, { key: "k" });
+
+  await waitFor(() => expect(mock.settings.get("hotkey_window")).toEqual({ value: "CmdOrCtrl+K" }));
+  expect(mock.settings.has("hotkey_region")).toBe(false);
+  await waitFor(() => expect(called(mock, "apply_shortcuts")).toHaveLength(1));
+});
+
+test("shortcuts: releasing only modifiers does not commit", async () => {
+  const { mock } = setup();
+  fireEvent.click(await screen.findByRole("button", { name: "Region Capture: CmdOrCtrl+Shift+S" }));
+  fireEvent.keyDown(window, { key: "Meta", metaKey: true });
+  fireEvent.keyUp(window, { key: "Meta" });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(mock.settings.has("hotkey_region")).toBe(false);
+  expect(screen.getByRole("button", { name: "Region Capture: recording" })).toBeTruthy();
+});
+
+test("shortcuts: a later successful apply clears the error", async () => {
+  let reject = true;
+  setup({
+    commands: {
+      apply_shortcuts: () => {
+        if (reject) throw "taken";
+      },
+    },
+  });
+  fireEvent.click(await screen.findByRole("button", { name: "Region Capture: CmdOrCtrl+Shift+S" }));
+  fireEvent.keyDown(window, { key: "q", metaKey: true });
+  fireEvent.keyUp(window, { key: "q" });
+  expect(await screen.findByText("taken")).toBeTruthy();
+
+  reject = false;
+  fireEvent.click(screen.getByRole("button", { name: "Reset Region Capture to default" }));
+  await waitFor(() => expect(screen.queryByText("taken")).toBeNull());
+});
+
+test("history: retention and cleanup are written", async () => {
+  const { mock } = setup();
+  fireEvent.click(await screen.findByRole("switch", { name: /自动清理过期截图/ }));
+  fireEvent.click(screen.getByRole("combobox", { name: "保留期限" }));
+  const option = await screen.findByRole("option", { name: "90 days" });
+  // Base UI commits a selection on the pointer-up of a full click sequence.
+  fireEvent.pointerDown(option);
+  fireEvent.mouseDown(option);
+  fireEvent.pointerUp(option);
+  fireEvent.mouseUp(option);
+  fireEvent.click(option);
+  await waitFor(() => {
+    expect(mock.settings.get("history_cleanup_enabled")).toEqual({ value: true });
+    expect(mock.settings.get("history_retention_days")).toEqual({ value: 90 });
+  });
+});
+
+test("history: re-enabling the OCR index writes true without asking", async () => {
+  const { mock } = setup({ settings: { ocr_index_enabled: { value: false } } });
+  fireEvent.click(await screen.findByRole("switch", { name: /截图文字索引/ }));
+  await waitFor(() => expect(mock.settings.get("ocr_index_enabled")).toEqual({ value: true }));
+  expect(called(mock, "plugin:dialog|message")).toHaveLength(0);
+});
+
+test("history: cancelling clear-history touches nothing", async () => {
+  const { mock, answerNextDialog } = setup();
+  answerNextDialog("Cancel");
+  fireEvent.click(await screen.findByRole("button", { name: "移到废纸篓" }));
+  await waitFor(() => expect(called(mock, "plugin:dialog|message")).toHaveLength(1));
+  expect(called(mock, "list_history_items")).toHaveLength(0);
+  expect(called(mock, "delete_history_items")).toHaveLength(0);
+});
+
+test("general: an autostart failure stays inside its section", async () => {
+  setup({
+    plugins: {
+      "plugin:autostart|is_enabled": () => {
+        throw "plugin unavailable";
+      },
+    },
+  });
+  expect(await screen.findByText(/无法读取开机启动状态/)).toBeTruthy();
+  expect(screen.queryByRole("switch", { name: "开机自动启动" })).toBeNull();
+  expect(screen.getByRole("switch", { name: "Include Cursor" })).toBeTruthy();
+});
+
+test("storage: cancelling the picker keeps the path; a picker error is shown", async () => {
+  let fail = false;
+  const { mock } = setup({
+    settings: { screenshot_path: { value: "/Users/me/Desktop" } },
+    plugins: {
+      "plugin:dialog|open": () => {
+        if (fail) throw "dialog unavailable";
+        return null;
+      },
+    },
+  });
+  fireEvent.click(await screen.findByRole("button", { name: "选择目录" }));
+  await waitFor(() => expect(called(mock, "plugin:dialog|open")).toHaveLength(1));
+  expect(mock.settings.get("screenshot_path")).toEqual({ value: "/Users/me/Desktop" });
+
+  fail = true;
+  fireEvent.click(await screen.findByRole("button", { name: "选择目录" }));
+  expect(await screen.findByText(/选择目录失败/)).toBeTruthy();
+});
+
+test("capture: the naming field follows changes from elsewhere and shows the default for empty", async () => {
+  const { mock } = setup({ settings: { naming_template: { value: "" } } });
+  const naming = await screen.findByRole("textbox", { name: "File Naming" });
+  expect((naming as HTMLInputElement).value).toBe("{date}_{time}_{mode}");
+
+  await act(() => mock.externalWrite("naming_template", { value: "{mode}" }));
+  await waitFor(() => expect((naming as HTMLInputElement).value).toBe("{mode}"));
 });

@@ -1,7 +1,7 @@
 import { autostart } from "@ddu/native";
 import { Field, FieldError, FieldLabel } from "@ddu/ui/field";
 import { Switch } from "@ddu/ui/switch";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId } from "react";
 import { SettingCard } from "../setting-card.tsx";
 
@@ -10,10 +10,8 @@ const autostartKey = ["autostart"] as const;
 export function GeneralSection() {
   const id = useId();
   const queryClient = useQueryClient();
-  const { data: enabled } = useSuspenseQuery({
-    queryKey: autostartKey,
-    queryFn: autostart.isEnabled,
-  });
+  // Not suspending: if the plugin fails, only this toggle is affected, not the window.
+  const state = useQuery({ queryKey: autostartKey, queryFn: autostart.isEnabled, retry: false });
   const toggle = useMutation({
     mutationFn: async (on: boolean) => {
       await (on ? autostart.enable() : autostart.disable());
@@ -26,14 +24,17 @@ export function GeneralSection() {
     <SettingCard>
       <Field orientation="horizontal">
         <FieldLabel htmlFor={id}>开机自动启动</FieldLabel>
-        <Switch
-          id={id}
-          checked={enabled}
-          loading={toggle.isPending}
-          disabled={toggle.isPending}
-          onCheckedChange={(on) => toggle.mutate(on)}
-        />
+        {/* Hidden until the current state is known, as before the migration. */}
+        {state.data !== undefined && (
+          <Switch
+            id={id}
+            checked={state.data}
+            loading={toggle.isPending}
+            onCheckedChange={(on) => toggle.mutate(on)}
+          />
+        )}
       </Field>
+      {state.error && <FieldError>无法读取开机启动状态：{state.error.message}</FieldError>}
       {toggle.error && <FieldError>无法修改开机启动：{toggle.error.message}</FieldError>}
     </SettingCard>
   );

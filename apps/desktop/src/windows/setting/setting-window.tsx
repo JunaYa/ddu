@@ -8,7 +8,7 @@ import { StorageSection } from "./sections/storage.tsx";
 /** The settings window: one card per section, in the pre-migration order (specs/13 § 5). */
 export function SettingWindow() {
   return (
-    <main className="flex min-h-screen flex-col gap-4 overflow-y-auto bg-background/60 p-4">
+    <main className="flex h-screen flex-col gap-4 overflow-y-auto bg-background/60 p-4">
       <GeneralSection />
       <StorageSection />
       <CaptureSection />

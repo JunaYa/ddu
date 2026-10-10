@@ -1,7 +1,14 @@
 import { useSetting } from "@ddu/hooks";
 import { clearOcrIndex, confirm, deleteHistoryItems, listHistoryItems } from "@ddu/native";
 import { Button } from "@ddu/ui/button";
-import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@ddu/ui/field";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldTitle,
+} from "@ddu/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ddu/ui/select";
 import { Switch } from "@ddu/ui/switch";
 import { useMutation } from "@tanstack/react-query";
@@ -16,6 +23,7 @@ const RETENTION_OPTIONS: Record<string, string> = {
 };
 
 export function HistorySection() {
+  const retentionId = useId();
   const cleanupId = useId();
   const ocrId = useId();
   const [retentionDays, setRetentionDays, retentionStatus] = useSetting("history_retention_days");
@@ -52,7 +60,7 @@ export function HistorySection() {
   return (
     <SettingCard title="截图历史">
       <Field orientation="horizontal">
-        <FieldLabel>保留期限</FieldLabel>
+        <FieldLabel htmlFor={retentionId}>保留期限</FieldLabel>
         <Select
           items={RETENTION_OPTIONS}
           value={String(retentionDays)}
@@ -60,7 +68,7 @@ export function HistorySection() {
             if (value !== null) void setRetentionDays(Number(value));
           }}
         >
-          <SelectTrigger className="w-36" aria-label="保留期限">
+          <SelectTrigger id={retentionId} className="w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -94,7 +102,9 @@ export function HistorySection() {
         />
       </Field>
       <Field orientation="horizontal">
-        <FieldLabel>清空全部历史</FieldLabel>
+        <FieldContent>
+          <FieldTitle>清空全部历史</FieldTitle>
+        </FieldContent>
         <Button
           variant="destructive-muted"
           disabled={clearHistory.isPending}

@@ -2,7 +2,7 @@ import { getDiagnosticsBundle } from "@ddu/native";
 import { diagnosticStatusLabel, type DiagnosticTone } from "@ddu/utils";
 import { Badge } from "@ddu/ui/badge";
 import { Button } from "@ddu/ui/button";
-import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@ddu/ui/field";
+import { Field, FieldContent, FieldDescription, FieldError, FieldTitle } from "@ddu/ui/field";
 import { useMutation } from "@tanstack/react-query";
 import { SettingCard } from "../setting-card.tsx";
 
@@ -21,7 +21,7 @@ export function DiagnosticsSection() {
     <SettingCard>
       <Field orientation="horizontal">
         <FieldContent>
-          <FieldLabel>本机诊断</FieldLabel>
+          <FieldTitle>本机诊断</FieldTitle>
           <FieldDescription>
             仅在此设备显示，用于检查截图能力与所需权限；不会上传任何信息。
           </FieldDescription>
