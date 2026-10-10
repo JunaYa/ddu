@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { WindowShell } from "../src/shared/mount-window.tsx";
 import { followSystemTheme } from "../src/shared/system-theme.ts";
 
 afterEach(() => {
+  cleanup();
   vi.restoreAllMocks();
   document.documentElement.classList.remove("dark");
 });

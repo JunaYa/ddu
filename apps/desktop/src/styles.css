@@ -3,3 +3,11 @@
 /* Legacy Vue windows are styled by UnoCSS; keep Tailwind from scanning them
    (specs/12 § 4). Removed with the last Vue window. */
 @source not "./legacy";
+
+/* Every ddu window is created transparent so macOS vibrancy shows through
+   (window.rs); each window paints its own translucent surface instead of the
+   opaque page background @ddu/styles sets (specs/13 § 3). */
+html,
+body {
+  background: transparent;
+}

@@ -395,6 +395,9 @@ importers:
       fabric:
         specifier: 'catalog:'
         version: 6.9.1
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.563.0(react@19.3.0)
       react:
         specifier: ^19.3.0
         version: 19.3.0

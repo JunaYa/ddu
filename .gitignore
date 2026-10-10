@@ -32,3 +32,6 @@ THIRD_PARTY_NOTICES.txt.new
 
 # Storybook static build
 storybook-static
+
+# Playwright MCP browser logs
+.playwright-mcp/

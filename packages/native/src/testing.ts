@@ -34,6 +34,16 @@ export interface NativeMock {
 const STORE_RID = 1;
 
 /**
+ * @tauri-apps/api 2.11's event mock never drops unsubscribed listeners
+ * (`_unlisten` sends `eventId`, the mock's remover reads `id`), so emitting
+ * after an unsubscribe warns about the already-unregistered callback. The
+ * warning means the unsubscribe worked; hide only that message.
+ */
+const STALE_CALLBACK = "[TAURI] Couldn't find callback id";
+/** The `console.warn` in place before `mockNative` (possibly a test's spy). */
+let previousWarn: typeof console.warn | undefined;
+
+/**
  * Replace Tauri's IPC with an in-memory fake: registered commands, a
  * `plugin:store` that behaves like the shared Rust store (one resource id,
  * app-wide `store://change` events), and Tauri's mocked event bus.
@@ -65,6 +75,11 @@ export function mockNative(options: MockNativeOptions = {}): NativeMock {
       throw `mockNative: unknown store resource ${String(args.rid)}`;
   };
 
+  const forward = (previousWarn ??= console.warn);
+  console.warn = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].startsWith(STALE_CALLBACK)) return;
+    forward(...args);
+  };
   mockWindows(options.window ?? "setting");
   mockIPC(
     async (cmd, payload) => {
@@ -119,5 +134,7 @@ export function emitNative<K extends keyof EventMap>(name: K, payload: EventMap[
 }
 
 export function resetNativeMock(): void {
+  if (previousWarn) console.warn = previousWarn;
+  previousWarn = undefined;
   clearMocks();
 }

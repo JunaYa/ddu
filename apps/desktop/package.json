@@ -32,6 +32,7 @@
     "@tauri-apps/plugin-window-state": "catalog:",
     "@vueuse/core": "14.3.0",
     "fabric": "catalog:",
+    "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "vue": "3.5.34"

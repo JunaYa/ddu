@@ -35,6 +35,7 @@ Status: draft · Owner: ddu · Depends on: [10](./10-workspace-layout.md)、[12]
 
 - **导入位置**：`brand.css` 不放进 token 入口 `index.css`，而是由 `@ddu/styles/base.css` 最后导入。原因是模板的 `fonts.css` 在 token 之后才定义字体栈，放进 `index.css` 会被它覆盖；同时 `@ddu/styles` 的一致性测试禁止各宿主自行导入 `@ddu/tokens/css`。这样应用和 Storybook 都能显示 ddu 品牌。
 - **字体**：模板只声明了 Manrope、Lora 等字体栈，并未附带字体文件。ddu 是 macOS 原生工具，改用系统字体栈，与现状一致。
+- **窗口背景**：ddu 的窗口都以透明方式创建，由 Rust 开启 macOS 原生毛玻璃（`window.rs` 的 `macos_glass_effect`）。`apps/desktop/src/styles.css` 把 `html`、`body` 设为透明，覆盖 `@ddu/styles` 的不透明页面背景，每个窗口自己画半透明底色（设置窗口为 `bg-background/60`），与迁移前 legacy 页面的做法一致。
 - **毛玻璃质感**：现有的 `.liquid-glass*` 类不迁移。面板改用模板的 `surface-glass` 工具类（`@ddu/styles/utils/glass.css`），它基于语义 token，自动适配暗色，并在不支持 `backdrop-filter` 时回退为实色。视觉上是近似，不追求与现状像素一致（[00 § 4](./00-prd-react-migration.md#4-非目标)）。
 - **圆角**：沿用模板的 `--corner-radius: 10px`，现有 8px 面板会略圆。
 - 品牌常量（`@ddu/brand` 的 `BRAND_NAME`、`BRAND_COLORS.primary`）同步改为 `Ddu`、`#cc7d24`。
