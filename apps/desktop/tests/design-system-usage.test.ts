@@ -14,11 +14,19 @@ function sources(dir: string): string[] {
   });
 }
 
+/** Windows allowed to use raw elements, with the decision that permits it. */
+const EXEMPT = new Set([
+  // specs/99 D14: the capture overlay does not load the design system.
+  "capture/capture-window.tsx",
+]);
+
 test("no raw <button>, <input>, <select> or <textarea> in React windows", () => {
-  const offenders = sources(windowsDir).flatMap((path) =>
-    [...readFileSync(path, "utf8").matchAll(/<(button|input|select|textarea)[\s>/]/g)].map(
-      (m) => `${relative(windowsDir, path)}: <${m[1]}>`,
-    ),
-  );
+  const offenders = sources(windowsDir)
+    .filter((path) => !EXEMPT.has(relative(windowsDir, path)))
+    .flatMap((path) =>
+      [...readFileSync(path, "utf8").matchAll(/<(button|input|select|textarea)[\s>/]/g)].map(
+        (m) => `${relative(windowsDir, path)}: <${m[1]}>`,
+      ),
+    );
   expect(offenders).toEqual([]);
 });

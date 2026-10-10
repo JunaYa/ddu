@@ -1,0 +1,16 @@
+/* The capture overlay is latency-critical and recreated for every capture,
+   so it does not load the design-system stylesheet (specs/99 D14): Tailwind
+   scans only this folder, plus ddu's brand tokens for the highlight colour. */
+@import "tailwindcss" source(none);
+@source "./";
+@import "@ddu/tokens/css/brand.css";
+
+/* The window is opaque (window.rs `create_capture_window`); paint it black
+   from the first frame and never let the trackpad rubber-band the frozen
+   screenshot. */
+html,
+body {
+  margin: 0;
+  background: #000;
+  overscroll-behavior: none;
+}

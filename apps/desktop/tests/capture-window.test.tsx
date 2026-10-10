@@ -2,8 +2,9 @@ import type { CaptureSession } from "@ddu/native";
 import { mockNative, type MockNativeOptions, resetNativeMock } from "@ddu/native/testing";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vite-plus/test";
-import { WindowShell } from "../src/shared/mount-window.tsx";
-import { CaptureWindow } from "../src/windows/capture/capture-window.tsx";
+import { WindowErrorBoundary } from "../src/shared/error-boundary.tsx";
+import { CaptureWindow, HIT_TEST_THROTTLE_MS } from "../src/windows/capture/capture-window.tsx";
+import { installEscapeToCancel } from "../src/windows/capture/escape-to-cancel.ts";
 
 afterEach(() => {
   cleanup();
@@ -37,11 +38,7 @@ function setup(session: Partial<CaptureSession> = {}, options: MockNativeOptions
       ...options.commands,
     },
   });
-  render(
-    <WindowShell>
-      <CaptureWindow />
-    </WindowShell>,
-  );
+  render(<CaptureWindow />);
   return mock;
 }
 
@@ -102,13 +99,33 @@ test("window mode starts at the outermost element", async () => {
   expect(await screen.findByText("600 × 400 · Finder · AXWindow")).toBeTruthy();
 });
 
-test("Escape cancels and Enter captures the highlighted element", async () => {
+test("Enter captures the highlighted element", async () => {
   const mock = setup();
   await hover();
   fireEvent.keyDown(window, { key: "Enter" });
   await waitFor(() => expect(called(mock, "smart_capture_finalize")).toHaveLength(1));
+});
+
+test("Escape cancels from outside React, and keeps working after a render crash", async () => {
+  const mock = mockNative({
+    window: "capture",
+    commands: { smart_capture_cancel: () => undefined },
+  });
+  const uninstall = installEscapeToCancel();
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  function Broken(): never {
+    throw new Error("render failed");
+  }
+  let crashed = 0;
+  render(
+    <WindowErrorBoundary onError={() => crashed++}>
+      <Broken />
+    </WindowErrorBoundary>,
+  );
+  expect(crashed).toBe(1);
   fireEvent.keyDown(window, { key: "Escape" });
   await waitFor(() => expect(called(mock, "smart_capture_cancel")).toHaveLength(1));
+  uninstall();
 });
 
 test("a missing session cancels the overlay", async () => {
@@ -146,4 +163,91 @@ test("text mode explains what the selection is for", async () => {
   expect(
     await screen.findByText("框选区域以复制文字 Select an area to copy its text"),
   ).toBeTruthy();
+});
+
+test("hit tests are throttled and never overlap", async () => {
+  let now = 1000;
+  vi.spyOn(performance, "now").mockImplementation(() => now);
+  let release: (() => void) | undefined;
+  const mock = setup(
+    {},
+    {
+      commands: {
+        smart_capture_hit_test: () =>
+          new Promise((resolve) => {
+            release = () => resolve({ chain, appName: "Finder" });
+          }),
+      },
+    },
+  );
+  await waitFor(() => expect(overlay().querySelector("img")).toBeTruthy());
+  fireEvent.mouseMove(overlay(), { clientX: 10, clientY: 10 });
+  await waitFor(() => expect(called(mock, "smart_capture_hit_test")).toHaveLength(1));
+
+  // Still in flight: dropped even though the throttle window has passed.
+  now += HIT_TEST_THROTTLE_MS + 10;
+  fireEvent.mouseMove(overlay(), { clientX: 20, clientY: 20 });
+  expect(called(mock, "smart_capture_hit_test")).toHaveLength(1);
+
+  release?.();
+  await screen.findByText("120 × 40 · Finder · AXButton");
+  // Back to the last call's timestamp + less than the window: dropped.
+  now = 1000 + HIT_TEST_THROTTLE_MS - 1;
+  fireEvent.mouseMove(overlay(), { clientX: 30, clientY: 30 });
+  expect(called(mock, "smart_capture_hit_test")).toHaveLength(1);
+  // Past the window and nothing in flight: sent.
+  now = 1000 + HIT_TEST_THROTTLE_MS;
+  fireEvent.mouseMove(overlay(), { clientX: 40, clientY: 40 });
+  await waitFor(() => expect(called(mock, "smart_capture_hit_test")).toHaveLength(2));
+});
+
+test("a press that wiggles less than the drag threshold still captures the element", async () => {
+  const mock = setup();
+  await hover();
+  fireEvent.mouseDown(overlay(), { button: 0, clientX: 50, clientY: 90 });
+  fireEvent.mouseMove(overlay(), { clientX: 53, clientY: 92 });
+  fireEvent.mouseUp(overlay(), { clientX: 53, clientY: 92 });
+  await waitFor(() =>
+    expect(called(mock, "smart_capture_finalize")[0]?.[1]).toEqual(chain[0]?.rect),
+  );
+});
+
+test("hovering the same element again keeps the wheel-chosen level", async () => {
+  setup();
+  await hover(50, 90);
+  fireEvent.wheel(overlay(), { deltaY: -1 });
+  await screen.findByText("600 × 400 · Finder · AXWindow");
+  await new Promise((resolve) => setTimeout(resolve, HIT_TEST_THROTTLE_MS + 10));
+  fireEvent.mouseMove(overlay(), { clientX: 52, clientY: 91 });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(screen.getByText("600 × 400 · Finder · AXWindow")).toBeTruthy();
+});
+
+test("the wheel never scrolls the frozen screen", async () => {
+  setup();
+  await hover();
+  const event = new WheelEvent("wheel", { deltaY: -1, bubbles: true, cancelable: true });
+  overlay().dispatchEvent(event);
+  expect(event.defaultPrevented).toBe(true);
+});
+
+test("a failed finalize leaves the overlay usable", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  let attempts = 0;
+  const mock = setup(
+    {},
+    {
+      commands: {
+        smart_capture_finalize: () => {
+          attempts++;
+          if (attempts === 1) throw "capture failed";
+        },
+      },
+    },
+  );
+  await hover();
+  fireEvent.keyDown(window, { key: "Enter" });
+  await waitFor(() => expect(called(mock, "smart_capture_finalize")).toHaveLength(1));
+  fireEvent.keyDown(window, { key: "Enter" });
+  await waitFor(() => expect(called(mock, "smart_capture_finalize")).toHaveLength(2));
 });

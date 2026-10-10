@@ -43,7 +43,7 @@ mountWindow(<SettingWindow />);
 | 加载     | `Suspense` 边界（fallback 为空）：`useSetting` 在读到存储值之前挂起，组件拿到的永远是真实值而不是占位默认值，避免开关先显示默认值再跳变；本地 IPC 只需几毫秒，不显示加载动画 |
 | 严格模式 | `StrictMode` 开启。窗口里的原生订阅（`on`、`onSettingChange`）必须在 effect 清理函数中取消，否则 StrictMode 双调用会暴露泄漏                                                 |
 
-透明窗口（`preview`、`capture`）在迁移时再决定是否需要外壳的变体（例如不设置 `body` 背景），不在本轮设计。
+外壳变体：`preview` 是透明窗口，迁移时再决定是否需要变体；`capture` 是**不透明**的全屏遮罩（`create_capture_window` 未设置 transparent），使用精简外壳（不经 `mountWindow`，无数据层、无 StrictMode、Escape 在 React 之外注册、出错即取消截图），见 [99 D14](./99-key-decisions.md#d14)。
 
 ## 4. 迁移期：Vue 与 React 共存
 

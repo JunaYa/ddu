@@ -8,15 +8,7 @@ import {
   type LogicalRect,
   requestPermission,
 } from "@ddu/native";
-import { Button } from "@ddu/ui/button";
-import {
-  type MouseEvent,
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-  type WheelEvent,
-} from "react";
+import { type MouseEvent, useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   dragSelection,
   hudLabel,
@@ -30,29 +22,55 @@ import {
 } from "./geometry.ts";
 
 /** Minimum gap between hit-test IPC calls while the mouse moves. */
-const HIT_TEST_THROTTLE_MS = 30;
+export const HIT_TEST_THROTTLE_MS = 30;
 
-/** Smart-capture overlay over the frozen screen: hover to pick UI elements, drag to select. */
+interface Gesture {
+  chain: ChainNode[];
+  chainIndex: number;
+  appName: string;
+  dragRect: LogicalRect | null;
+}
+
+const IDLE: Gesture = { chain: [], chainIndex: 0, appName: "", dragRect: null };
+
+/**
+ * Smart-capture overlay over the frozen screen: hover to pick UI elements,
+ * wheel to change the level, drag to select, Enter to capture. Escape is
+ * handled by the window shell (escape-to-cancel.ts).
+ */
 export function CaptureWindow() {
   const [session, setSession] = useState<CaptureSession | null>(null);
-  const [chain, setChain] = useState<ChainNode[]>([]);
-  const [chainIndex, setChainIndex] = useState(0);
-  const [appName, setAppName] = useState("");
-  const [dragRect, setDragRect] = useState<LogicalRect | null>(null);
+  // Gesture state lives in a ref so fast input sequences (move → up) always
+  // act on the latest values, not on the last committed render; the state
+  // copy only drives rendering.
+  const gesture = useRef<Gesture>(IDLE);
+  const [view, setView] = useState<Gesture>(IDLE);
+  const update = (next: Partial<Gesture>) => {
+    gesture.current = { ...gesture.current, ...next };
+    setView(gesture.current);
+  };
 
+  const rootRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef<Point | null>(null);
   const finalizing = useRef(false);
   const hitTestInFlight = useRef(false);
-  const lastHitTestAt = useRef(0);
+  const lastHitTestAt = useRef(Number.NEGATIVE_INFINITY);
 
   useEffect(() => {
+    let ignore = false;
     captureSession()
-      .then(setSession)
+      .then((loaded) => {
+        if (!ignore) setSession(loaded);
+      })
       .catch((error: unknown) => {
+        if (ignore) return;
         // No session (stale overlay): bail out cleanly.
         console.error("no capture session:", error);
         void cancelCapture();
       });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   async function finalize(rect: LogicalRect) {
@@ -69,19 +87,29 @@ export function CaptureWindow() {
   }
 
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      void cancelCapture();
-    }
-    if (event.key === "Enter") {
-      event.preventDefault();
-      const node = chain[chainIndex];
-      if (node) void finalize(node.rect);
-    }
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const node = gesture.current.chain[gesture.current.chainIndex];
+    if (node) void finalize(node.rect);
   });
   useEffect(() => {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // A native, non-passive listener: React's onWheel cannot preventDefault,
+  // and the frozen screenshot must not scroll or rubber-band.
+  const onWheel = useEffectEvent((event: globalThis.WheelEvent) => {
+    event.preventDefault();
+    const { dragRect, chain, chainIndex } = gesture.current;
+    if (dragRect || chain.length === 0) return;
+    update({ chainIndex: wheelChainIndex(chainIndex, event.deltaY, chain.length) });
+  });
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    root.addEventListener("wheel", onWheel, { passive: false });
+    return () => root.removeEventListener("wheel", onWheel);
   }, []);
 
   async function onMouseMove(event: MouseEvent) {
@@ -89,8 +117,8 @@ export function CaptureWindow() {
     const point = { x: event.clientX, y: event.clientY };
 
     if (dragStart.current) {
-      const rect = dragSelection(dragStart.current, point, dragRect !== null);
-      if (rect) setDragRect(rect);
+      const rect = dragSelection(dragStart.current, point, gesture.current.dragRect !== null);
+      if (rect) update({ dragRect: rect });
       return;
     }
 
@@ -100,9 +128,12 @@ export function CaptureWindow() {
     lastHitTestAt.current = now;
     try {
       const result = await hitTest(session.monitor.x + point.x, session.monitor.y + point.y);
-      setChainIndex((index) => nextChainIndex(chain, result.chain, index, session.mode));
-      setChain(result.chain);
-      setAppName(result.appName);
+      const current = gesture.current;
+      update({
+        chainIndex: nextChainIndex(current.chain, result.chain, current.chainIndex, session.mode),
+        chain: result.chain,
+        appName: result.appName,
+      });
     } catch {
       // Session gone (finalize/cancel raced): ignore.
     } finally {
@@ -116,34 +147,29 @@ export function CaptureWindow() {
 
   async function onMouseUp() {
     if (finalizing.current || !session) return;
-    const rect = dragRect;
+    const { dragRect, chain, chainIndex } = gesture.current;
     dragStart.current = null;
-    setDragRect(null);
-    if (rect) {
-      await finalize(toGlobal(rect, session.monitor));
+    update({ dragRect: null });
+    if (dragRect) {
+      await finalize(toGlobal(dragRect, session.monitor));
     } else {
       const node = chain[chainIndex];
       if (node) await finalize(node.rect);
     }
   }
 
-  function onWheel(event: WheelEvent) {
-    if (dragRect || chain.length === 0) return;
-    setChainIndex((index) => wheelChainIndex(index, event.deltaY, chain.length));
-  }
-
   const viewport = { width: window.innerWidth, height: window.innerHeight };
-  const node = chain[chainIndex];
-  const highlight = dragRect ?? (node && session ? toLocal(node.rect, session.monitor) : null);
+  const node = view.chain[view.chainIndex];
+  const highlight = view.dragRect ?? (node && session ? toLocal(node.rect, session.monitor) : null);
 
   return (
     <div
+      ref={rootRef}
       className="fixed inset-0 cursor-crosshair select-none overflow-hidden bg-black"
       data-testid="capture-overlay"
       onMouseMove={(event) => void onMouseMove(event)}
       onMouseDown={onMouseDown}
       onMouseUp={() => void onMouseUp()}
-      onWheel={onWheel}
       onContextMenu={(event) => event.preventDefault()}
     >
       {session && (
@@ -173,7 +199,7 @@ export function CaptureWindow() {
               className="pointer-events-none absolute whitespace-nowrap rounded-md bg-black/72 px-2.5 py-1 text-xs leading-[18px] text-white"
               style={hudPosition(highlight, viewport)}
             >
-              {hudLabel(highlight, dragRect !== null, appName, node?.role)}
+              {hudLabel(highlight, view.dragRect !== null, view.appName, node?.role)}
             </div>
           )}
           {session.mode === "text" && (
@@ -182,17 +208,18 @@ export function CaptureWindow() {
             </div>
           )}
           {!session.axAvailable && (
-            <Button
-              variant="overlay"
-              size="sm"
-              className="absolute bottom-4 right-4 rounded-full"
+            // A plain button: this window does not load the design system
+            // (specs/99 D14). Dark over any screenshot content, as before.
+            <button
+              type="button"
+              className="absolute bottom-4 right-4 cursor-pointer rounded-full border border-white/35 bg-black/60 px-3 py-1.5 text-xs text-white"
               onMouseDown={(event) => event.stopPropagation()}
               onMouseUp={(event) => event.stopPropagation()}
               // Shows the one-time system prompt, or opens the Accessibility pane when already denied.
               onClick={() => void requestPermission("accessibility")}
             >
               开启辅助功能可识别页面模块
-            </Button>
+            </button>
           )}
         </>
       )}
