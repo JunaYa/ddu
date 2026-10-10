@@ -7,12 +7,33 @@ mod common;
 mod constants;
 mod global_shortcut;
 mod menu;
+mod placement;
 mod platform;
 mod smart_capture;
 mod window;
 
+/// LiteParse (OCR) loads PDFium at runtime. In a bundled app it lives in
+/// Contents/Frameworks, which isn't on LiteParse's search path, so point it
+/// there. Runs before any threads start; dev builds keep the baked-in path.
+fn use_bundled_pdfium() {
+    if std::env::var_os("PDFIUM_LIB_PATH").is_some() {
+        return;
+    }
+    let Some(frameworks) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| Some(exe.parent()?.parent()?.join("Frameworks")))
+    else {
+        return;
+    };
+    if frameworks.join("libpdfium.dylib").exists() {
+        std::env::set_var("PDFIUM_LIB_PATH", frameworks);
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use_bundled_pdfium();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_positioner::init())
@@ -91,6 +112,7 @@ pub fn run() {
 
             // Enforce history retention on launch (no-op unless the user opted in).
             cmd::prune_history(app.handle());
+            cmd::prune_ocr_index_orphans(app.handle());
 
             Ok(())
         })
@@ -151,6 +173,10 @@ pub fn run() {
             cmd::save_annotated_image,
             cmd::get_image_info,
             cmd::perform_ocr,
+            cmd::copy_text,
+            cmd::ocr_index_items,
+            cmd::search_history_text,
+            cmd::clear_ocr_index,
             cmd::detect_sensitive_info,
             cmd::list_workflow_rules,
             cmd::save_workflow_rule,

@@ -51,6 +51,9 @@ image_compressor = "1.5"
 regex-lite = "0.1"
 os_info = "3"
 trash = "5.2.6"
+liteparse = { version = "2.15", default-features = false, features = [ "oar-ocr-auto-download" ] }
+# oar-ocr-core 0.8 does not build against ort rc.13 (renamed execution providers).
+ort = { version = "=2.0.0-rc.12", default-features = false }
 
 [features]
 default = [ "custom-protocol" ]

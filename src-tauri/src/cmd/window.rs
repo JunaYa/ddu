@@ -4,7 +4,7 @@ use crate::window;
 
 #[tauri::command]
 pub fn show_preview_window(app: AppHandle, path: String) -> Result<String, String> {
-    window::show_preview_window(&app);
+    window::show_preview_window(&app, None);
     Ok(path)
 }
 

@@ -9,6 +9,9 @@ const store = new LazyStore('settings.json')
 
 const retentionDays = ref(30)
 const cleanupEnabled = ref(false)
+const ocrIndexEnabled = ref(true)
+// Toggle keeps its own state; bump to re-sync it when the user cancels.
+const ocrToggleKey = ref(0)
 
 const retentionOptions = [
   { label: '7 days', value: 7 },
@@ -23,6 +26,27 @@ async function loadSettings() {
 
   const enabled = await store.get<{ value: boolean }>('history_cleanup_enabled')
   if (enabled?.value !== undefined) cleanupEnabled.value = enabled.value
+
+  const ocrIndex = await store.get<{ value: boolean }>('ocr_index_enabled')
+  if (ocrIndex?.value !== undefined) ocrIndexEnabled.value = ocrIndex.value
+}
+
+// Turning the index off deletes the text already collected (spec OCR-006).
+async function saveOcrIndexEnabled(val: boolean) {
+  if (!val) {
+    const ok = await confirm('关闭后会删除已保存的截图文字索引，历史中将无法按文字搜索。', {
+      title: '关闭文字索引',
+      kind: 'warning',
+    })
+    if (!ok) {
+      ocrToggleKey.value++
+      return
+    }
+    await invoke('clear_ocr_index')
+  }
+  ocrIndexEnabled.value = val
+  await store.set('ocr_index_enabled', { value: val })
+  await store.save()
 }
 
 async function saveRetention(val: number) {
@@ -81,6 +105,14 @@ onMounted(loadSettings)
         <div class="text-xs text-secondary">开启后会永久删除超过期限的 DDU 截图。</div>
       </div>
       <Toggle :key="`cleanup-${cleanupEnabled}`" :value="cleanupEnabled" @change="saveCleanupEnabled(!cleanupEnabled)" />
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">截图文字索引</div>
+        <div class="text-xs text-secondary">识别过文字的截图可在历史中按文字搜索；索引只保存在本机。</div>
+      </div>
+      <Toggle :key="`ocr-index-${ocrIndexEnabled}-${ocrToggleKey}`" :value="ocrIndexEnabled" @change="saveOcrIndexEnabled(!ocrIndexEnabled)" />
     </div>
 
     <div class="setting-row">

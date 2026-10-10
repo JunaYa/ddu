@@ -30,6 +30,7 @@ const shortcuts = ref<ShortcutItem[]>([
   { id: 'hotkey_fullscreen', label: 'Full Screen Capture', key: 'CmdOrCtrl+Shift+A', default: 'CmdOrCtrl+Shift+A' },
   { id: 'hotkey_region', label: 'Region Capture', key: 'CmdOrCtrl+Shift+S', default: 'CmdOrCtrl+Shift+S' },
   { id: 'hotkey_window', label: 'Window Capture', key: 'CmdOrCtrl+Shift+W', default: 'CmdOrCtrl+Shift+W' },
+  { id: 'hotkey_text', label: 'Capture Text (OCR)', key: 'CmdOrCtrl+Shift+O', default: 'CmdOrCtrl+Shift+O' },
 ])
 
 const recording = ref<string | null>(null)

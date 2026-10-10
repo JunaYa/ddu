@@ -16,6 +16,7 @@ enum MenuID {
     CAPTURE_SCREEN,
     CAPTURE_SELECT,
     CAPTURE_WINDOW,
+    CAPTURE_TEXT,
     SHOW_SETTING_WINDOW,
     SHOW_MAIN_WINDOW,
     HELP,
@@ -57,6 +58,13 @@ pub fn get_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> 
             app,
             MenuID::CAPTURE_WINDOW.to_string(),
             "Capture Window",
+            true,
+            None::<&str>,
+        )?,
+        &MenuItem::with_id(
+            app,
+            MenuID::CAPTURE_TEXT.to_string(),
+            "Capture Text",
             true,
             None::<&str>,
         )?,
@@ -165,7 +173,7 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
         MenuID::CAPTURE_SCREEN => {
             info!("Capture Screen");
             let result = tauri::async_runtime::block_on(platform::capture_screen(app, "images".to_string()));
-            crate::global_shortcut::post_capture_flow(app, result);
+            crate::global_shortcut::post_capture_flow(app, result, None);
         }
         MenuID::CAPTURE_SELECT => {
             info!("Capture Select");
@@ -184,6 +192,20 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
             let app_clone = app.clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = crate::cmd::start_smart_capture(&app_clone, "window").await {
+                    tracing::info!("smart capture failed to start: {e}");
+                }
+            });
+        }
+        MenuID::CAPTURE_TEXT => {
+            info!("Capture Text");
+            let app_clone = app.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = crate::cmd::start_smart_capture(
+                    &app_clone,
+                    crate::global_shortcut::TEXT_CAPTURE_MODE,
+                )
+                .await
+                {
                     tracing::info!("smart capture failed to start: {e}");
                 }
             });

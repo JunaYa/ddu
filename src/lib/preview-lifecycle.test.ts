@@ -7,6 +7,10 @@ describe('shouldAutoHidePreview', () => {
     expect(shouldAutoHidePreview({ hovered: false, editing: true })).toBe(false)
   })
 
+  it('waits while a preview action is running', () => {
+    expect(shouldAutoHidePreview({ hovered: false, editing: false, busy: true })).toBe(false)
+  })
+
   it('hides an untouched preview after its timeout', () => {
     expect(shouldAutoHidePreview({ hovered: false, editing: false })).toBe(true)
   })

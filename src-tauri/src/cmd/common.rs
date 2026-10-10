@@ -65,7 +65,7 @@ pub async fn open_combined_image(
     std::fs::write(&output_path, &bytes).map_err(|e| e.to_string())?;
 
     crate::window::hide_main_window(&app_handle);
-    let window = crate::window::show_preview_window(&app_handle);
+    let window = crate::window::show_preview_window(&app_handle, None);
     let payload = serde_json::json!({
         "filename": filename,
         "fullPath": output_path.to_string_lossy(),

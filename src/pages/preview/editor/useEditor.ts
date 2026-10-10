@@ -15,6 +15,13 @@ export type ToolType =
   | 'pixelate'
   | 'crop'
 
+export interface ImageRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export interface EditorStyle {
   strokeColor: string
   fillColor: string
@@ -251,6 +258,9 @@ export function useEditor() {
 
     if (tempObject) {
       tempObject.set({ selectable: true, evented: true })
+      // Sized during the drag via set(); refresh the hit box or Fabric keeps
+      // the zero-size one from mouse-down and the shape can never be selected.
+      tempObject.setCoords()
 
       if (tool === 'arrow' && drawStart) {
         const pointer = canvas.value.getScenePoint(_opt.e)
@@ -437,6 +447,34 @@ export function useEditor() {
     saveState()
   }
 
+  /** Map an image-pixel rect onto canvas coordinates (e.g. to outline OCR text). */
+  function imageRectToCanvas(rect: ImageRect): ImageRect | null {
+    if (!bgImage) return null
+    const scaleX = bgImage.scaleX || 1
+    const scaleY = bgImage.scaleY || 1
+    return {
+      x: (bgImage.left ?? 0) + rect.x * scaleX,
+      y: (bgImage.top ?? 0) + rect.y * scaleY,
+      width: rect.width * scaleX,
+      height: rect.height * scaleY,
+    }
+  }
+
+  /** The selected annotation's footprint in image pixels, clipped to the image. */
+  function selectedImageRegion(): ImageRect | null {
+    const active = canvas.value?.getActiveObject()
+    if (!active || !bgImage) return null
+    const bounds = active.getBoundingRect()
+    const scaleX = bgImage.scaleX || 1
+    const scaleY = bgImage.scaleY || 1
+    const x0 = Math.max(0, Math.floor((bounds.left - (bgImage.left ?? 0)) / scaleX))
+    const y0 = Math.max(0, Math.floor((bounds.top - (bgImage.top ?? 0)) / scaleY))
+    const x1 = Math.min(bgImage.width || 0, Math.ceil((bounds.left + bounds.width - (bgImage.left ?? 0)) / scaleX))
+    const y1 = Math.min(bgImage.height || 0, Math.ceil((bounds.top + bounds.height - (bgImage.top ?? 0)) / scaleY))
+    if (x1 <= x0 || y1 <= y0) return null
+    return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }
+  }
+
   function destroy() {
     if (canvas.value) {
       canvas.value.dispose()
@@ -463,6 +501,8 @@ export function useEditor() {
     deleteSelected,
     exportImage,
     clearAnnotations,
+    imageRectToCanvas,
+    selectedImageRegion,
     destroy,
   }
 }

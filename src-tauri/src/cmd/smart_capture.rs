@@ -258,7 +258,11 @@ pub async fn smart_capture_finalize(
             full_path: output_path.to_string_lossy().to_string(),
             width: pw,
             height: ph,
-            mode: if session.mode == "window" { "activeWindow".into() } else { "region".into() },
+            mode: match session.mode.as_str() {
+                "window" => "activeWindow".into(),
+                crate::global_shortcut::TEXT_CAPTURE_MODE => crate::global_shortcut::TEXT_CAPTURE_MODE.into(),
+                _ => "region".into(),
+            },
             captured_at: now.to_rfc3339(),
         })
     })();
@@ -269,7 +273,7 @@ pub async fn smart_capture_finalize(
 
     match result {
         Ok(capture) => {
-            post_capture_flow(&app, Ok(capture));
+            post_capture_flow(&app, Ok(capture), Some(LogicalRect { x, y, w, h }));
             Ok(())
         }
         Err(e) => {

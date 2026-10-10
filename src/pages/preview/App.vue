@@ -5,6 +5,8 @@ import { LazyStore } from '@tauri-apps/plugin-store'
 import { useElementHover } from '@vueuse/core'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Button from '~/components/Button.vue'
+import type { OcrResult } from '~/lib/ocr'
+import { joinOcrLines, ocrLines } from '~/lib/ocr'
 import { shouldAutoHidePreview } from '~/lib/preview-lifecycle'
 import PictureReview from './PictureReview.vue'
 import ImageEditor from './editor/ImageEditor.vue'
@@ -18,6 +20,17 @@ const imagePath = ref('')
 const imageSrc = ref('')
 const isEdit = ref(false)
 const copyError = ref('')
+const ocrBusy = ref(false)
+const ocrNotice = ref('')
+let ocrNoticeTimer: ReturnType<typeof setTimeout> | undefined
+
+/** Show an OCR status; results fade so they stop covering the buttons. */
+function setOcrNotice(message: string, sticky = false) {
+  clearTimeout(ocrNoticeTimer)
+  ocrNotice.value = message
+  if (!sticky)
+    ocrNoticeTimer = setTimeout(() => { ocrNotice.value = '' }, 2500)
+}
 
 const captureInfo = ref<{
   filename: string
@@ -41,7 +54,7 @@ function clearPreviewTimer() {
 
 function schedulePreviewHide() {
   clearPreviewTimer()
-  if (!imagePath.value || !shouldAutoHidePreview({ hovered: isHovered.value, editing: isEdit.value })) return
+  if (!imagePath.value || !shouldAutoHidePreview({ hovered: isHovered.value, editing: isEdit.value, busy: ocrBusy.value })) return
 
   previewTimer = setTimeout(() => {
     invoke('hide_preview_window')
@@ -75,6 +88,29 @@ async function onCopy() {
   }
 }
 
+/** Recognize the capture and put its text straight on the clipboard. */
+async function onCopyText() {
+  if (ocrBusy.value) return
+  ocrBusy.value = true
+  setOcrNotice('正在识别… Recognizing…', true)
+  try {
+    const result = await invoke<OcrResult>('perform_ocr', { path: imagePath.value })
+    const lines = ocrLines(result).map(line => line.text)
+    if (lines.length === 0) {
+      setOcrNotice('未识别到文字 No text found')
+      return
+    }
+    await invoke('copy_text', { text: joinOcrLines(lines, false) })
+    setOcrNotice(`已复制 ${lines.length} 行文字 Copied`)
+  }
+  catch (error) {
+    setOcrNotice(`识别失败: ${error}`)
+  }
+  finally {
+    ocrBusy.value = false
+  }
+}
+
 function onSave() {
   invoke('hide_preview_window')
 }
@@ -91,7 +127,7 @@ function onEditorSaved(_path: string) {
   imageSrc.value = ''
 }
 
-watch([isHovered, isEdit, imagePath], schedulePreviewHide)
+watch([isHovered, isEdit, imagePath, ocrBusy], schedulePreviewHide)
 
 onMounted(async () => {
   const val = await store.get<{ value: string }>('screenshot_path')
@@ -102,17 +138,22 @@ onMounted(async () => {
     } else {
       captureInfo.value = payload
       copyError.value = payload.copyError || ''
+      ocrNotice.value = ''
       if (payload.fullPath) {
         imagePath.value = payload.fullPath
       } else {
         imagePath.value = `${val?.value}/images/${payload.filename}`
       }
+      // "Capture text" hotkey: the backend skipped copying the image.
+      if (payload.extractText)
+        onCopyText()
     }
   })
 })
 
 onBeforeUnmount(() => {
   clearPreviewTimer()
+  clearTimeout(ocrNoticeTimer)
   unlistenImagePrepared?.()
 })
 </script>
@@ -130,16 +171,22 @@ onBeforeUnmount(() => {
     <div class="h-100vh flex select-none items-center justify-center rounded-md text-12">
       <PictureReview v-if="imagePath" :image-path="imagePath" />
     </div>
-    <div v-if="isHovered" class="absolute bottom-0 left-0 right-0 top-0 flex items-center justify-around bg-#0000002F">
+    <div v-if="isHovered" class="absolute bottom-0 left-0 right-0 top-0 grid grid-cols-2 place-content-center place-items-center gap-2 bg-#0000002F p-2">
       <Button class-name="btn-solid" :anim="true" aria-label="编辑截图 Edit screenshot" @click="onEdit">
         编辑 Edit
       </Button>
       <Button class-name="btn-solid" :anim="true" aria-label="复制截图 Copy screenshot" @click="onCopy">
         复制 Copy
       </Button>
+      <Button class-name="btn-solid" :anim="true" aria-label="提取并复制文字 Copy text" @click="onCopyText">
+        {{ ocrBusy ? '识别中…' : '文字 Text' }}
+      </Button>
       <Button class-name="btn-solid" :anim="true" aria-label="关闭预览 Close preview" @click="onSave">
         关闭 Close
       </Button>
+    </div>
+    <div v-if="ocrNotice && !copyError" class="absolute bottom-2 left-2 right-2 rounded bg-#000000B3 p-2 text-center text-xs text-white" role="status">
+      {{ ocrNotice }}
     </div>
     <div v-if="copyError" class="absolute bottom-2 left-2 right-2 rounded bg-#7f1d1d p-2 text-center text-xs text-white">
       {{ copyError }}

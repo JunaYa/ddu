@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core'
 import { confirm } from '@tauri-apps/plugin-dialog'
+import { watchDebounced } from '@vueuse/core'
 import { computed, onMounted, ref, watch } from 'vue'
 import Checkbox from '~/components/Checkbox.vue'
 import SnapVaultItem from './SnapVaultItem.vue'
@@ -22,12 +23,57 @@ const isAscending = ref(false)
 
 const deleteLoading = ref(false)
 const combining = ref(false)
+const indexing = ref(false)
+const indexNotice = ref('')
 
-const isCheckedAll = computed(() => list.value.length > 0 && list.value.every(item => item.checked))
+// Text search over the local OCR index; `null` means no search is active.
+const query = ref('')
+const matchedIds = ref<Set<string> | null>(null)
+
+const visibleList = computed(() => {
+  const ids = matchedIds.value
+  return ids ? list.value.filter(item => ids.has(item.id)) : list.value
+})
+
+const isCheckedAll = computed(() => visibleList.value.length > 0 && visibleList.value.every(item => item.checked))
 
 const hasChecked = computed(() => list.value.some(item => item.checked))
 
 const checkedCount = computed(() => list.value.filter(item => item.checked).length)
+
+let searchSeq = 0
+async function runSearch() {
+  const seq = ++searchSeq
+  const q = query.value.trim()
+  const ids = q ? new Set(await invoke<string[]>('search_history_text', { query: q })) : null
+  // Drop responses that a newer keystroke has superseded.
+  if (seq === searchSeq) matchedIds.value = ids
+}
+
+// Only visible items stay selectable, so actions never touch hidden ones.
+watch(query, () => onChangeAll(false))
+watchDebounced(query, runSearch, { debounce: 200 })
+
+/** OCR the selected screenshots so they become searchable by text. */
+async function handleIndex() {
+  const checked = list.value.filter(item => item.checked)
+  if (checked.length === 0 || indexing.value) return
+  indexing.value = true
+  indexNotice.value = `正在识别 ${checked.length} 张截图…`
+  try {
+    const count = await invoke<number>('ocr_index_items', { paths: checked.map(item => item.image) })
+    indexNotice.value = count === checked.length
+      ? `已为 ${count} 张截图建立文字索引`
+      : `已索引 ${count} / ${checked.length} 张，其余识别失败`
+    await runSearch()
+  }
+  catch (error) {
+    indexNotice.value = `建立索引失败: ${error}`
+  }
+  finally {
+    indexing.value = false
+  }
+}
 
 async function loadData() {
   // Read the history through the backend so custom save paths work and the
@@ -55,13 +101,12 @@ watch(isAscending, () => {
 })
 
 function onChangeAll(checked: boolean) {
-  list.value = list.value.map(item => ({ ...item, checked }))
+  const visible = new Set(visibleList.value.map(item => item.id))
+  list.value = list.value.map(item => ({ ...item, checked: checked && visible.has(item.id) }))
 }
 
-function onChange(index: number, checked: boolean) {
-  let newList = list.value.slice()
-  newList[index].checked = checked
-  list.value = newList
+function onChange(id: string, checked: boolean) {
+  list.value = list.value.map(item => item.id === id ? { ...item, checked } : item)
 }
 
 async function handleDelete() {
@@ -169,7 +214,17 @@ onMounted(async () => {
         SnapVault
       </div>
       <div class="flex flex-1 flex-row items-center justify-end gap-4">
-        <div>Total <span class="mx-1 text-base text-primary font-bold">{{ list.length }}</span></div>
+        <input
+          v-model="query"
+          type="search"
+          class="liquid-glass-control input-base h-8 w-56 rounded-md px-3 text-left text-sm"
+          placeholder="搜索截图文字 Search text"
+          aria-label="搜索截图中的文字 Search text in screenshots"
+        >
+        <div v-if="matchedIds">
+          Matches <span class="mx-1 text-base text-primary font-bold">{{ visibleList.length }}</span>
+        </div>
+        <div v-else>Total <span class="mx-1 text-base text-primary font-bold">{{ list.length }}</span></div>
         <div class="flex flex-row items-center justify-center">
           <span class="mx-1 text-sm text-base">Sort by Datetime</span>
           <i class="h-5 w-5 cursor-pointer text-primary" @click="isAscending = !isAscending">
@@ -189,26 +244,39 @@ onMounted(async () => {
     <div class="liquid-glass liquid-glass-toolbar my-4 flex flex-row items-center justify-start gap-4 px-3 py-2">
       <div class="flex flex-row items-center justify-center gap-2"> 
         <span>全部</span>
-        <Checkbox :checked="isCheckedAll" :some-checked="hasChecked && !isCheckedAll" :disabled="list.length === 0" @change="onChangeAll" />
+        <Checkbox :checked="isCheckedAll" :some-checked="hasChecked && !isCheckedAll" :disabled="visibleList.length === 0" @change="onChangeAll" />
       </div>
       <div v-if="hasChecked" class="liquid-glass-control h-8 w-8 flex cursor-pointer flex-row items-center justify-center gap-2 rounded-full" @click="handleDelete">
         <i class="h-6 w-6 cursor-pointer">
           <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M12 12h2v12h-2z" fill="currentColor" /><path d="M18 12h2v12h-2z" fill="currentColor" /><path d="M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z" fill="currentColor" /><path d="M12 2h8v2h-8z" fill="currentColor" /></svg>
         </i>
       </div>
+      <button
+        v-if="hasChecked"
+        class="liquid-glass-control cursor-pointer rounded-md px-3 py-1 text-sm"
+        :class="{ 'opacity-50 pointer-events-none': indexing }"
+        title="识别所选截图中的文字，以便搜索 OCR selected screenshots so they can be searched"
+        @click="handleIndex"
+      >
+        {{ indexing ? '识别中…' : '建立文字索引' }}
+      </button>
+      <span v-if="indexNotice" class="text-sm text-secondary" role="status">{{ indexNotice }}</span>
       <div v-if="checkedCount >= 2" class="flex flex-row items-center justify-center gap-2" :class="{ 'opacity-50 pointer-events-none': combining }">
         <span class="text-sm">拼合</span>
         <button class="liquid-glass-control cursor-pointer rounded-md px-3 py-1 text-sm" @click="handleCombine('vertical')">竖排</button>
         <button class="liquid-glass-control cursor-pointer rounded-md px-3 py-1 text-sm" @click="handleCombine('horizontal')">横排</button>
       </div>
     </div>
-    <div v-if="list.length > 0" class="flex flex-row items-center justify-center">
+    <div v-if="visibleList.length > 0" class="flex flex-row items-center justify-center">
       <div v-if="displayMode === 'list'" class="grid grid-cols-1 gap-4">
-        <SnapVaultItemList v-for="(item, index) in list" :key="item.id" :item="item" @remove="loadData" @change="(val: boolean) => onChange(index, val)" />
+        <SnapVaultItemList v-for="item in visibleList" :key="item.id" :item="item" @remove="loadData" @change="(val: boolean) => onChange(item.id, val)" />
       </div>
-        <div v-else class="snap-vault-masonry">
-          <SnapVaultItem v-for="item in list" :key="item.id" :item="item" @change="loadData" />
+      <div v-else class="snap-vault-masonry">
+        <SnapVaultItem v-for="item in visibleList" :key="item.id" :item="item" @change="loadData" />
       </div>
+    </div>
+    <div v-else-if="matchedIds" class="py-12 text-center text-secondary">
+      没有截图包含“{{ query.trim() }}”。只有建立过文字索引的截图可被搜索。
     </div>
     <Empty v-else />
   </div>
