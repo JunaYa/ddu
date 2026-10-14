@@ -8,7 +8,7 @@ use crate::constants::{MAIN_WINDOW, PREVIEW_WINDOW, SETTING_WINDOW, STARTUP_WIND
 use crate::placement;
 use crate::platform;
 
-/// Move an app window (main, settings, startup) onto the display under the
+/// Move a settings/startup window onto the display under the
 /// cursor, horizontally centered near the top. Call before `show()` so it
 /// never flashes on the display it was last on.
 pub fn place_on_cursor_screen(window: &WebviewWindow) {

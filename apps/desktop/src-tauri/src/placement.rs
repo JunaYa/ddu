@@ -88,7 +88,7 @@ pub fn place_beside(anchor: LogicalRect, size: (f64, f64), work: LogicalRect) ->
     (clamp_into(x, w, work.x, work.w), clamp_into(y, h, work.y, work.h))
 }
 
-/// Distance from the top of the work area for app windows (main, settings).
+/// Distance from the top of the work area for settings/startup windows.
 const TOP_MARGIN: f64 = 88.0;
 
 /// Top-left for an app window: horizontally centered near the top of `work`.
@@ -228,5 +228,19 @@ mod tests {
     #[test]
     fn centers_within_a_negative_origin_work_area() {
         assert_eq!(center_in((960.0, 540.0), rect(-1920.0, -300.0, 1920.0, 1080.0)), (-1440.0, -30.0));
+    }
+
+    #[test]
+    fn centers_home_on_the_screen_whose_menu_bar_contains_the_cursor() {
+        let screens = two_screens();
+        for (cursor, expected) in [
+            (rect(700.0, 10.0, 0.0, 0.0), (356.0, 173.0)),
+            (rect(-900.0, -290.0, 0.0, 0.0), (-1360.0, -60.0)),
+        ] {
+            let screen = screen_for(cursor, &screens).unwrap();
+            // Select using full screen bounds (including its menu bar), then
+            // center within the work area so the menu bar/Dock are excluded.
+            assert_eq!(center_in((800.0, 600.0), screen.work_area), expected);
+        }
     }
 }

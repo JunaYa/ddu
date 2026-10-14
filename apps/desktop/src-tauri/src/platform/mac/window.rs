@@ -61,7 +61,14 @@ pub fn hide_preview_window(window: &WebviewWindow) {
 }
 
 pub fn show_main_window(window: &WebviewWindow) {
-    window::place_on_cursor_screen(window);
+    // Home follows the cursor's display, including when reopening a window
+    // previously shown on another monitor. Position before showing it.
+    if let (Some(screen), Some(frame)) =
+        (placement::cursor_screen(window), placement::window_frame(window))
+    {
+        let (x, y) = placement::center_in((frame.w, frame.h), screen.work_area);
+        let _ = window.set_position(Position::Logical(LogicalPosition::new(x, y)));
+    }
     let _ = window.show();
     let _ = window.set_focus();
     let _ = window.unminimize();
