@@ -30,6 +30,7 @@ export function PermissionsSection() {
             <FieldDescription>{description}</FieldDescription>
           </FieldContent>
           <Button
+            variant="primary"
             aria-label={`管理${title}权限`}
             disabled={manage.isPending}
             onClick={() => manage.mutate(kind)}

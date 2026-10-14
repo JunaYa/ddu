@@ -88,6 +88,22 @@ pub fn place_beside(anchor: LogicalRect, size: (f64, f64), work: LogicalRect) ->
     (clamp_into(x, w, work.x, work.w), clamp_into(y, h, work.y, work.h))
 }
 
+/// Attach the permission guide below System Settings. If the display has no
+/// room below, inset it at the window's bottom so the guide remains reachable.
+/// Constrain width to the target window and keep the entire guide on-screen.
+pub fn permission_frame(anchor: LogicalRect, work: LogicalRect) -> LogicalRect {
+    let w = 580.0_f64.min(anchor.w).min(work.w);
+    let h = 230.0_f64.min(work.h);
+    let below = anchor.y + anchor.h + GAP;
+    let y = if below + h <= work.y + work.h { below } else { anchor.y + anchor.h - h - GAP };
+    LogicalRect {
+        x: clamp_into(anchor.x + (anchor.w - w) / 2.0, w, work.x, work.w),
+        y: clamp_into(y, h, work.y, work.h),
+        w,
+        h,
+    }
+}
+
 /// Distance from the top of the work area for settings/startup windows.
 const TOP_MARGIN: f64 = 88.0;
 
@@ -242,5 +258,33 @@ mod tests {
             // center within the work area so the menu bar/Dock are excluded.
             assert_eq!(center_in((800.0, 600.0), screen.work_area), expected);
         }
+    }
+}
+
+#[cfg(test)]
+mod permission_tests {
+    use super::*;
+    fn rect(x: f64, y: f64, w: f64, h: f64) -> LogicalRect { LogicalRect { x, y, w, h } }
+    #[test]
+    fn follows_settings_move_and_resize() {
+        let work = rect(0.0, 25.0, 1920.0, 1055.0);
+        assert_eq!(permission_frame(rect(100.0, 50.0, 700.0, 600.0), work), rect(160.0, 662.0, 580.0, 230.0));
+        assert_eq!(permission_frame(rect(500.0, 100.0, 500.0, 400.0), work), rect(500.0, 512.0, 500.0, 230.0));
+    }
+    #[test]
+    fn stays_at_bottom_inside_a_full_height_settings_window() {
+        let work = rect(0.0, 25.0, 1440.0, 850.0);
+        assert_eq!(permission_frame(rect(200.0, 25.0, 700.0, 850.0), work), rect(260.0, 633.0, 580.0, 230.0));
+    }
+    #[test]
+    fn follows_settings_to_a_negative_origin_display() {
+        let work = rect(-1920.0, -300.0, 1920.0, 1080.0);
+        assert_eq!(permission_frame(rect(-1500.0, -250.0, 700.0, 500.0), work), rect(-1440.0, 262.0, 580.0, 230.0));
+    }
+    #[test]
+    fn keeps_partially_offscreen_settings_guide_visible() {
+        let work = rect(0.0, 25.0, 1000.0, 700.0);
+        let frame = permission_frame(rect(900.0, 600.0, 600.0, 600.0), work);
+        assert_eq!(frame, rect(420.0, 495.0, 580.0, 230.0));
     }
 }

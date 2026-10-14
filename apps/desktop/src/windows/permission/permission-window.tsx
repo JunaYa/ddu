@@ -40,10 +40,7 @@ export function PermissionWindow() {
   return (
     <main className="flex h-screen flex-col gap-3 overflow-y-auto rounded-2xl border border-border bg-background p-4 text-foreground antialiased">
       <header className="flex items-center gap-2">
-        <div
-          data-tauri-drag-region
-          className="flex flex-1 items-center gap-2 text-sm font-semibold"
-        >
+        <div className="flex flex-1 items-center gap-2 text-sm font-semibold">
           {granted ? (
             <Check aria-hidden className="pointer-events-none size-5 shrink-0 text-foreground" />
           ) : (

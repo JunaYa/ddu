@@ -291,6 +291,7 @@ pub fn show_permission_window(app: &AppHandle, kind: &str) -> Result<(), String>
         app, "permission", WebviewUrl::App(format!("/permission.html?kind={kind}").into()),
     )
     .title("DDU · 权限授权")
+    .focused(false)
     .decorations(false)
     .resizable(false)
     .always_on_top(true)
@@ -301,12 +302,75 @@ pub fn show_permission_window(app: &AppHandle, kind: &str) -> Result<(), String>
     .visible(false)
     .inner_size(580.0, 230.0)
     .build().map_err(|e| e.to_string())?;
-    if let (Some(screen), Some(frame)) = (placement::cursor_screen(&window), placement::window_frame(&window)) {
-        let area = screen.work_area;
-        let x = area.x + (area.w - frame.w) / 2.0;
-        let y = area.y + (area.h - frame.h - 32.0).max(0.0);
-        window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)))
-            .map_err(|e| e.to_string())?;
+    #[cfg(target_os = "macos")]
+    follow_permission_settings(&window);
+    #[cfg(not(target_os = "macos"))]
+    {
+        place_on_cursor_screen(&window);
+        window.show().map_err(|e| e.to_string())?;
     }
-    window.show().map_err(|e| e.to_string())
+    Ok(())
+}
+
+/// Observe only while this specific helper exists. A replacement helper gets
+/// its own lifecycle; an old queued tick must never move the new window.
+#[cfg(target_os = "macos")]
+fn follow_permission_settings(window: &WebviewWindow) {
+    use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+    use std::time::Duration;
+    let closed = Arc::new(AtomicBool::new(false));
+    let on_close = closed.clone();
+    window.on_window_event(move |event| {
+        if matches!(event, tauri::WindowEvent::Destroyed) {
+            on_close.store(true, Ordering::Release);
+        }
+    });
+    let window = window.clone();
+    std::thread::spawn(move || {
+        let mut found_settings = false;
+        let mut attempts = 0;
+        while !closed.load(Ordering::Acquire) {
+            let (tx, rx) = std::sync::mpsc::sync_channel(1);
+            let tick_window = window.clone();
+            let tick_closed = closed.clone();
+            if window.run_on_main_thread(move || {
+                if tick_closed.load(Ordering::Acquire) { return; }
+                let anchor = platform::system_settings_frame();
+                let found = anchor.is_some();
+                // Wait for System Settings to launch before first paint. If
+                // metadata is unavailable, keep the guide usable at DDU's
+                // settings window instead of pinning it to the cursor display.
+                let anchor = anchor.or_else(|| {
+                    if !found_settings && attempts >= 20 {
+                        tick_window.app_handle().get_webview_window(SETTING_WINDOW)
+                            .or_else(|| tick_window.app_handle().get_webview_window(STARTUP_WINDOW))
+                            .and_then(|settings| placement::window_frame(&settings))
+                    } else { None }
+                });
+                if let Some(anchor) = anchor {
+                    if let Some(screen) = placement::screen_for(anchor, &placement::screens(&tick_window)) {
+                        let frame = placement::permission_frame(anchor, screen.work_area);
+                        if placement::window_frame(&tick_window) != Some(frame) {
+                            let _ = tick_window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(frame.w, frame.h)));
+                            let _ = tick_window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(frame.x, frame.y)));
+                        }
+                        if !tick_window.is_visible().unwrap_or(false) {
+                            let _ = tick_window.show();
+                        }
+                    }
+                } else if found_settings && tick_window.is_visible().unwrap_or(false) {
+                    // Don't leave an orphaned topmost panel when Settings is
+                    // minimized, closed, or moved to another Space.
+                    let _ = tick_window.hide();
+                }
+                let _ = tx.send(found);
+            }).is_err() { break; }
+            match rx.recv() {
+                Ok(found) => found_settings |= found,
+                Err(_) => break,
+            }
+            attempts += 1;
+            std::thread::sleep(Duration::from_millis(250));
+        }
+    });
 }
