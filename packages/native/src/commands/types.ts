@@ -35,7 +35,7 @@ export interface ChainNode {
 
 /** `SessionDto` in src-tauri/src/cmd/smart_capture.rs. */
 export interface CaptureSession {
-  mode: "auto" | "window" | "text";
+  mode: "auto" | "window";
   axAvailable: boolean;
   monitor: LogicalRect;
   scaleFactor: number;

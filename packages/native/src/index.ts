@@ -22,7 +22,16 @@ export {
   openCombinedImage,
   searchHistoryText,
 } from "./history.ts";
-export { appVersion, permissionStatus, requestPermission, restartApp } from "./permissions.ts";
+export {
+  appVersion,
+  permissionStatus,
+  requestPermission,
+  restartApp,
+  permissionAppPath,
+  dragPermissionApp,
+  openPermissionSettings,
+  closePermissionHelper,
+} from "./permissions.ts";
 export { autostart, confirm, pickDirectory } from "./plugins.ts";
 export {
   applyShortcuts,

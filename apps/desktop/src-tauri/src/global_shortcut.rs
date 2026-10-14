@@ -13,15 +13,12 @@ use crate::{cmd, platform, window};
 const DEFAULT_HOTKEY_FULLSCREEN: &str = "CmdOrCtrl+Shift+A";
 const DEFAULT_HOTKEY_REGION: &str = "CmdOrCtrl+Shift+S";
 const DEFAULT_HOTKEY_WINDOW: &str = "CmdOrCtrl+Shift+W";
-const DEFAULT_HOTKEY_TEXT: &str = "CmdOrCtrl+Shift+O";
 
 #[derive(Clone, Copy)]
 pub enum CaptureAction {
     FullScreen,
     Region,
     Window,
-    /// Select a region and copy its text instead of the image.
-    Text,
 }
 
 /// Runtime registry of the currently-bound capture shortcuts. `map` powers the
@@ -35,7 +32,6 @@ pub struct ShortcutRegistry {
 }
 
 fn capture_payload(capture: platform::CaptureResult, copy_error: Option<String>) -> serde_json::Value {
-    let extract_text = capture.mode == TEXT_CAPTURE_MODE;
     serde_json::json!({
         "filename": capture.filename,
         "fullPath": capture.full_path,
@@ -44,12 +40,8 @@ fn capture_payload(capture: platform::CaptureResult, copy_error: Option<String>)
         "mode": capture.mode,
         "capturedAt": capture.captured_at,
         "copyError": copy_error,
-        "extractText": extract_text,
     })
 }
-
-/// Smart-capture mode whose selection is OCR'd into the clipboard.
-pub const TEXT_CAPTURE_MODE: &str = "text";
 
 #[cfg(test)]
 mod tests {
@@ -70,21 +62,6 @@ mod tests {
 
         assert_eq!(payload["filename"], "screenshot.png");
         assert_eq!(payload["copyError"], "clipboard unavailable");
-        assert_eq!(payload["extractText"], false);
-    }
-
-    #[test]
-    fn text_captures_ask_preview_to_extract_text() {
-        let capture = platform::CaptureResult {
-            filename: "screenshot.png".to_string(),
-            full_path: "/safe/images/screenshot.png".to_string(),
-            width: 20,
-            height: 10,
-            mode: TEXT_CAPTURE_MODE.to_string(),
-            captured_at: "2026-08-11T00:00:00Z".to_string(),
-        };
-
-        assert_eq!(capture_payload(capture, None)["extractText"], true);
     }
 }
 
@@ -103,17 +80,10 @@ pub fn post_capture_flow(
         let window = window::show_preview_window(app, anchor);
         let app_handle = app.clone();
         let image_path = capture.full_path.clone();
-        // Text captures put OCR text on the clipboard (done by the preview),
-        // so don't copy the image first.
-        let copy_image = capture.mode != TEXT_CAPTURE_MODE;
         tauri::async_runtime::spawn(async move {
-            let copy_error = if copy_image {
-                crate::common::copy_picture_to_clipboard(app_handle, image_path)
-                    .await
-                    .err()
-            } else {
-                None
-            };
+            let copy_error = crate::common::copy_picture_to_clipboard(app_handle, image_path)
+                .await
+                .err();
             let payload = capture_payload(capture, copy_error);
             sleep(Duration::from_millis(500));
             let _ = window.emit("image-prepared", payload);
@@ -151,10 +121,6 @@ fn read_hotkeys(app: &AppHandle) -> Vec<(String, CaptureAction)> {
         (
             read("hotkey_window", DEFAULT_HOTKEY_WINDOW),
             CaptureAction::Window,
-        ),
-        (
-            read("hotkey_text", DEFAULT_HOTKEY_TEXT),
-            CaptureAction::Text,
         ),
     ]
 }
@@ -243,16 +209,6 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
                     let app_clone = app.clone();
                     tauri::async_runtime::spawn(async move {
                         if let Err(e) = cmd::start_smart_capture(&app_clone, "auto").await {
-                            info!("smart capture failed to start: {e}");
-                        }
-                    });
-                    return;
-                }
-                CaptureAction::Text => {
-                    info!("Capture Text Pressed!");
-                    let app_clone = app.clone();
-                    tauri::async_runtime::spawn(async move {
-                        if let Err(e) = cmd::start_smart_capture(&app_clone, TEXT_CAPTURE_MODE).await {
                             info!("smart capture failed to start: {e}");
                         }
                     });

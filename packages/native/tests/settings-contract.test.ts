@@ -150,7 +150,6 @@ describe("Rust ↔ schema settings contract", () => {
         "capture_delay",
         "hotkey_fullscreen",
         "hotkey_region",
-        "hotkey_text",
         "hotkey_window",
         "include_cursor",
       ].sort(),

@@ -9,7 +9,6 @@ export interface CapturePrepared {
   mode: string;
   capturedAt: string;
   copyError: string | null;
-  extractText: boolean;
 }
 
 /** Events Rust pushes to windows, by name. */

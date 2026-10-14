@@ -1,3 +1,4 @@
+import { PermissionsSection } from "./sections/permissions.tsx";
 import { CaptureSection } from "./sections/capture.tsx";
 import { DiagnosticsSection } from "./sections/diagnostics.tsx";
 import { GeneralSection } from "./sections/general.tsx";
@@ -10,6 +11,7 @@ export function SettingWindow() {
   return (
     <main className="flex h-screen flex-col gap-4 overflow-y-auto bg-background/60 p-4">
       <GeneralSection />
+      <PermissionsSection />
       <StorageSection />
       <CaptureSection />
       <ShortcutsSection />

@@ -66,4 +66,6 @@ tauri-plugin-positioner = { version = "2.3", features = [ "tray-icon" ] }
 tauri-plugin-window-state = "2.4"
 
 [target."cfg(target_os = \"macos\")".dependencies]
+drag = "2.1.1"
+block2 = "0.6"
 objc = "0.2"

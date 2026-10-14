@@ -153,6 +153,8 @@ pub fn run() {
             cmd::hide_setting_window,
             cmd::open_screen_capture_preferences,
             cmd::check_accessibility_permissions,
+            cmd::permission_drag_app,
+            cmd::permission_app_path,
             cmd::permission_status,
             cmd::permission_request,
             cmd::permission_open_settings,

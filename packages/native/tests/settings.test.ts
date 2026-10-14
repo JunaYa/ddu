@@ -16,7 +16,6 @@ test("the schema defines exactly the keys stored in settings.json (N2)", () => {
       "history_retention_days",
       "hotkey_fullscreen",
       "hotkey_region",
-      "hotkey_text",
       "hotkey_window",
       "include_cursor",
       "naming_template",
@@ -54,10 +53,10 @@ test("setSetting persists the value in the { value } shape (N4)", async () => {
 
 test("an empty hotkey reads as the default, as Rust treats it (global_shortcut.rs)", async () => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
-  const mock = mockNative({ settings: { hotkey_text: { value: "" } } });
-  await expect(getSetting("hotkey_text")).resolves.toBe("CmdOrCtrl+Shift+O");
-  await expect(setSetting("hotkey_text", "")).rejects.toThrow();
-  expect(mock.settings.get("hotkey_text")).toEqual({ value: "" });
+  const mock = mockNative({ settings: { hotkey_region: { value: "" } } });
+  await expect(getSetting("hotkey_region")).resolves.toBe("CmdOrCtrl+Shift+S");
+  await expect(setSetting("hotkey_region", "")).rejects.toThrow();
+  expect(mock.settings.get("hotkey_region")).toEqual({ value: "" });
 });
 
 test("setSetting rejects values outside the schema without writing", async () => {

@@ -21,7 +21,6 @@ export const settingsSchema = {
   hotkey_fullscreen: { schema: z.string().min(1), default: "CmdOrCtrl+Shift+A" },
   hotkey_region: { schema: z.string().min(1), default: "CmdOrCtrl+Shift+S" },
   hotkey_window: { schema: z.string().min(1), default: "CmdOrCtrl+Shift+W" },
-  hotkey_text: { schema: z.string().min(1), default: "CmdOrCtrl+Shift+O" },
   history_retention_days: { schema: z.number().int(), default: 30 },
   history_cleanup_enabled: { schema: z.boolean(), default: false },
   ocr_index_enabled: { schema: z.boolean(), default: true },

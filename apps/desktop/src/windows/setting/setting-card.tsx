@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 /** A settings section: a glass card whose rows are `Field`s. */
 export function SettingCard({ title, children }: { title?: string; children: ReactNode }) {
   return (
-    <Card className="surface-glass gap-3 py-4">
+    <Card className="surface-glass shrink-0 gap-3 py-4">
       {title && (
         <CardHeader className="px-4">
           <CardTitle className="text-base">{title}</CardTitle>

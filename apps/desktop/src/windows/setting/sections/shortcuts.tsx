@@ -14,7 +14,6 @@ const SHORTCUTS: ReadonlyArray<{ key: HotkeyKey; label: string }> = [
   { key: "hotkey_fullscreen", label: "Full Screen Capture" },
   { key: "hotkey_region", label: "Region Capture" },
   { key: "hotkey_window", label: "Window Capture" },
-  { key: "hotkey_text", label: "Capture Text (OCR)" },
 ];
 
 export function ShortcutsSection() {

@@ -1,3 +1,4 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getVersion } from "@tauri-apps/api/app";
 import { call } from "./commands/call.ts";
 import type { PermissionKind, PermissionStatus } from "./commands/types.ts";
@@ -16,3 +17,9 @@ export const restartApp = (): Promise<void> => call("restart_app");
 
 /** The app version from tauri.conf.json. */
 export const appVersion = (): Promise<string> => getVersion();
+
+export const permissionAppPath = (): Promise<string> => call("permission_app_path");
+export const dragPermissionApp = (): Promise<void> => call("permission_drag_app");
+export const openPermissionSettings = (kind: PermissionKind): Promise<void> =>
+  call("permission_open_settings", { kind });
+export const closePermissionHelper = (): Promise<void> => getCurrentWindow().close();

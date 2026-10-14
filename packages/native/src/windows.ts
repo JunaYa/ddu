@@ -7,6 +7,7 @@ export const WINDOW = {
   preview: "preview",
   startup: "startup",
   capture: "capture",
+  permission: "permission",
 } as const;
 
 export type WindowLabel = (typeof WINDOW)[keyof typeof WINDOW];

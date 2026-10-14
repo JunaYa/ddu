@@ -14,7 +14,7 @@ import { defineConfig } from "vite-plus";
 const host = process.env.TAURI_DEV_HOST;
 
 /** One HTML entry per Tauri window; the label is the file name (specs/12 § 2). */
-const windows = ["main", "setting", "preview", "startup", "capture"] as const;
+const windows = ["main", "setting", "preview", "startup", "capture", "permission"] as const;
 
 const isLegacyEntry = (html: string) => html.includes("/src/legacy/");
 

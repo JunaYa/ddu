@@ -14,7 +14,6 @@ const payload = {
   mode: "region",
   capturedAt: "2026-10-10T00:00:00Z",
   copyError: null,
-  extractText: false,
 };
 
 test("useNativeEvent calls the latest handler and unsubscribes on unmount", async () => {

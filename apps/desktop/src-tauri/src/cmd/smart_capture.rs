@@ -260,7 +260,6 @@ pub async fn smart_capture_finalize(
             height: ph,
             mode: match session.mode.as_str() {
                 "window" => "activeWindow".into(),
-                crate::global_shortcut::TEXT_CAPTURE_MODE => crate::global_shortcut::TEXT_CAPTURE_MODE.into(),
                 _ => "region".into(),
             },
             captured_at: now.to_rfc3339(),

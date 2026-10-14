@@ -184,7 +184,7 @@ fn open_settings_pane(kind: PermissionKind) {
 /// supports prompting) and falls back to opening the matching System Settings
 /// pane. Returns whether the permission is effective right now.
 #[tauri::command]
-pub fn permission_request(kind: String) -> Result<bool, String> {
+pub async fn permission_request(app: tauri::AppHandle, kind: String) -> Result<bool, String> {
     let kind =
         PermissionKind::parse(&kind).ok_or_else(|| format!("unknown permission kind: {kind}"))?;
 
@@ -196,19 +196,19 @@ pub fn permission_request(kind: String) -> Result<bool, String> {
                     || crate::platform::request_screen_recording_permission()
             }
             PermissionKind::Accessibility => crate::platform::request_accessibility_permission(),
-            // No prompt API without block FFI; the first real audio capture
-            // raises the system prompt instead.
-            PermissionKind::Microphone => microphone_status() == MicAuthStatus::Authorized,
+            PermissionKind::Microphone => {
+                crate::platform::request_microphone_permission();
+                microphone_status() == MicAuthStatus::Authorized
+            },
         };
-        if !granted {
-            open_settings_pane(kind);
-        }
+        crate::window::show_permission_window(&app, kind.as_str())?;
+        open_settings_pane(kind);
         Ok(granted)
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        let _ = kind;
+        let _ = (kind, app);
         Ok(true)
     }
 }
@@ -314,5 +314,60 @@ mod tests {
         assert_eq!(MicAuthStatus::from_raw(3), MicAuthStatus::Authorized);
         assert_eq!(MicAuthStatus::from_raw(-1), MicAuthStatus::Unknown);
         assert_eq!(MicAuthStatus::from_raw(42), MicAuthStatus::Unknown);
+    }
+}
+
+fn app_bundle_for_executable(executable: &std::path::Path) -> Option<std::path::PathBuf> {
+    // Only the running executable's bundle may be offered, never a different
+    // installed copy or the unbundled development binary.
+    let macos = executable.parent()?;
+    let contents = macos.parent()?;
+    let bundle = contents.parent()?;
+    (macos.file_name()? == "MacOS" && contents.file_name()? == "Contents"
+        && bundle.extension()? == "app").then(|| bundle.to_path_buf())
+}
+
+#[tauri::command]
+pub fn permission_app_path() -> Result<String, String> {
+    let executable = std::env::current_exe().map_err(|e| e.to_string())?;
+    app_bundle_for_executable(&executable)
+        .map(|p| p.to_string_lossy().into_owned())
+        .ok_or_else(|| "当前为开发进程，无法拖拽授权。请打开打包后的 DDU.app，或在系统设置中手动管理当前进程权限。".into())
+}
+
+#[tauri::command]
+pub async fn permission_drag_app(window: tauri::WebviewWindow) -> Result<(), String> {
+    if window.label() != "permission" { return Err("Only the permission helper can drag the app".into()); }
+    #[cfg(target_os = "macos")]
+    {
+        let path = permission_app_path()?;
+        let (tx, rx) = std::sync::mpsc::channel();
+        let drag_window = window.clone();
+        window.run_on_main_thread(move || {
+            let result = drag::start_drag(
+                &drag_window,
+                drag::DragItem::Files(vec![path.into()]),
+                drag::Image::Raw(include_bytes!("../../icons/128x128.png").to_vec()),
+                |_, _| {},
+                drag::Options::default(),
+            ).map_err(|e| e.to_string());
+            let _ = tx.send(result);
+        }).map_err(|e| e.to_string())?;
+        tauri::async_runtime::spawn_blocking(move || rx.recv().map_err(|e| e.to_string()))
+            .await.map_err(|e| e.to_string())??
+    }
+    #[cfg(not(target_os = "macos"))]
+    Err("Permission dragging is only supported on macOS".into())
+}
+
+#[cfg(test)]
+mod bundle_tests {
+    use super::*;
+    #[test]
+    fn only_drag_the_running_bundle() {
+        use std::path::Path;
+        assert_eq!(app_bundle_for_executable(Path::new("/Applications/DDU.app/Contents/MacOS/ddu")), Some("/Applications/DDU.app".into()));
+        assert_eq!(app_bundle_for_executable(Path::new("/tmp/target/debug/ddu")), None);
+        assert_eq!(app_bundle_for_executable(Path::new("/tmp/fake.app/ddu")), None);
     }
 }

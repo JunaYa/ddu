@@ -158,13 +158,6 @@ test("the Accessibility hint requests the permission without capturing", async (
   expect(called(mock, "smart_capture_finalize")).toHaveLength(0);
 });
 
-test("text mode explains what the selection is for", async () => {
-  setup({ mode: "text" });
-  expect(
-    await screen.findByText("框选区域以复制文字 Select an area to copy its text"),
-  ).toBeTruthy();
-});
-
 test("hit tests are throttled and never overlap", async () => {
   let now = 1000;
   vi.spyOn(performance, "now").mockImplementation(() => now);

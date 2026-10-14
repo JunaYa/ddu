@@ -281,3 +281,32 @@ pub fn close_capture_window(app: &AppHandle) {
         let _ = window.destroy();
     }
 }
+
+/// A small companion to System Settings; never takes over the settings window.
+pub fn show_permission_window(app: &AppHandle, kind: &str) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("permission") {
+        window.destroy().map_err(|e| e.to_string())?;
+    }
+    let window = WebviewWindowBuilder::new(
+        app, "permission", WebviewUrl::App(format!("/permission.html?kind={kind}").into()),
+    )
+    .title("DDU · 权限授权")
+    .decorations(false)
+    .resizable(false)
+    .always_on_top(true)
+    .visible_on_all_workspaces(true)
+    .skip_taskbar(true)
+    .accept_first_mouse(true)
+    .disable_drag_drop_handler()
+    .visible(false)
+    .inner_size(580.0, 230.0)
+    .build().map_err(|e| e.to_string())?;
+    if let (Some(screen), Some(frame)) = (placement::cursor_screen(&window), placement::window_frame(&window)) {
+        let area = screen.work_area;
+        let x = area.x + (area.w - frame.w) / 2.0;
+        let y = area.y + (area.h - frame.h - 32.0).max(0.0);
+        window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)))
+            .map_err(|e| e.to_string())?;
+    }
+    window.show().map_err(|e| e.to_string())
+}

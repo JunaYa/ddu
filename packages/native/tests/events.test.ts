@@ -13,7 +13,6 @@ const payload = {
   mode: "region",
   capturedAt: "2026-10-10T00:00:00Z",
   copyError: null,
-  extractText: false,
 };
 
 test("on delivers the payload until unsubscribed", async () => {

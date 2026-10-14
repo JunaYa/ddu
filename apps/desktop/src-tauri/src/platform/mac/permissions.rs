@@ -109,3 +109,29 @@ pub fn open_accessibility_preferences() {
 pub fn open_microphone_preferences() {
     open_privacy_pane("Privacy_Microphone");
 }
+
+/// TCC owns the consent dialog; never infer a grant from this asynchronous request.
+pub fn request_microphone_permission() {
+    use objc::{Message, runtime::{Class, Object, Sel}};
+    if microphone_auth_status_raw() != 0 { return; }
+    // Unbundled development executables may lack the usage description.
+    // Requesting microphone access in that case would terminate the process.
+    unsafe {
+        let (Some(bundle_class), Some(string_class), Some(device_class)) =
+            (Class::get("NSBundle"), Class::get("NSString"), Class::get("AVCaptureDevice")) else { return; };
+        let Ok(bundle): Result<*mut Object, _> = bundle_class.send_message(Sel::register("mainBundle"), ()) else { return; };
+        if bundle.is_null() { return; }
+        let Ok(key): Result<*mut Object, _> = string_class.send_message(
+            Sel::register("stringWithUTF8String:"), (c"NSMicrophoneUsageDescription".as_ptr(),)) else { return; };
+        let Ok(description): Result<*mut Object, _> = (&*bundle).send_message(
+            Sel::register("objectForInfoDictionaryKey:"), (key,)) else { return; };
+        if description.is_null() { return; }
+        let completion = block2::RcBlock::new(|_granted: i8| {});
+        let block_ptr = (&*completion as *const block2::Block<dyn Fn(i8)>).cast::<c_void>();
+        let result: Result<(), _> = device_class.send_message(
+            Sel::register("requestAccessForMediaType:completionHandler:"),
+            (AVMediaTypeAudio, block_ptr),
+        );
+        if let Err(error) = result { tracing::warn!("Unable to request microphone access: {error}"); }
+    }
+}

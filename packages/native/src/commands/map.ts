@@ -22,6 +22,9 @@ export interface CommandMap {
   list_history_items: { args: { path: string }; result: HistoryItem[] };
   delete_history_items: { args: { paths: string[] }; result: number };
   clear_ocr_index: { args: NoArgs; result: void };
+  permission_app_path: { args: NoArgs; result: string };
+  permission_drag_app: { args: NoArgs; result: void };
+  permission_open_settings: { args: { kind: PermissionKind }; result: void };
   permission_status: { args: NoArgs; result: PermissionStatus };
   /** Resolves to whether the permission is granted afterwards. */
   permission_request: { args: { kind: PermissionKind }; result: boolean };

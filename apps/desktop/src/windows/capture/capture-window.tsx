@@ -202,11 +202,6 @@ export function CaptureWindow() {
               {hudLabel(highlight, view.dragRect !== null, view.appName, node?.role)}
             </div>
           )}
-          {session.mode === "text" && (
-            <div className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-black/72 px-3.5 py-1.5 text-[13px] text-white">
-              框选区域以复制文字 Select an area to copy its text
-            </div>
-          )}
           {!session.axAvailable && (
             // A plain button: this window does not load the design system
             // (specs/99 D14). Dark over any screenshot content, as before.

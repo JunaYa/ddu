@@ -12,7 +12,7 @@ This README describes the current source tree. Older packaged releases may have 
 
 | Area            | Available in the current app                                                                                                                                                                                    |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Capture         | Full-screen, smart region, window, and capture-to-text; configurable global shortcuts; capture on the cursor’s display.                                                                                         |
+| Capture         | Full-screen, smart region, and window capture; configurable global shortcuts; capture on the cursor’s display.                                                                                                  |
 | Smart selection | Frozen-screen overlay, hover selection, scroll through element hierarchy, manual drag selection, Enter to confirm a highlighted target, and Escape to cancel. Element-level selection uses macOS Accessibility. |
 | Preview         | Automatic image copy, copy retry, open editor, copy recognized text, and dismiss. Idle previews hide automatically; closing windows keeps the menu-bar app running.                                             |
 | Annotation      | Arrows, lines, rectangles, ellipses, freehand drawing, highlighting, text, numbered steps, blur, pixelation, undo/redo, and saving an edited copy without overwriting the original.                             |
@@ -23,11 +23,13 @@ This README describes the current source tree. Older packaged releases may have 
 
 Scrolling capture, cloud sync/upload, and AI services are not available product features. Recording, GIF conversion, and workflow commands exist in the backend, but are not complete user-facing release workflows. The file-naming template is stored by Settings but is not yet applied by the capture backend.
 
+Settings → **Permissions** shows Accessibility, Screen Recording, and Microphone access. Click Authorize or Manage to open System Settings and a floating guide. For Accessibility and Screen Recording, drag the running DDU.app from the guide into the system list and enable its switch. Microphone access uses the system consent prompt; it cannot be granted by dragging. The guide refreshes status and offers a restart for Screen Recording. Dragging requires a bundled app; development binaries show manual guidance.
+
 ## Using DDU
 
 1. Launch the app and use its menu-bar icon to open history, settings, or capture actions.
 2. Grant **Screen Recording** when prompted. Grant **Accessibility** if you want selection of individual interface elements; window/manual-region selection provides the fallback when it is unavailable.
-3. Capture with a shortcut or the menu. Normal image captures are saved and copied to the clipboard; capture-to-text extracts and copies text instead of copying the image.
+3. Capture with a shortcut or the menu. Every capture is saved and copied to the clipboard. Use the preview’s **Text** tool to recognize and copy text from any capture.
 4. Hover over the preview for **Edit**, **Copy**, **Text**, or **Close**. In the editor, save an edited copy or copy the annotated image.
 5. Open history to revisit screenshots. For text search, first recognize the image or select history items and choose **Build text index**.
 
@@ -40,7 +42,6 @@ Closing a window does not quit DDU. Use **Quit** in its menu to exit.
 | Full screen on the cursor’s display | `⌘ ⇧ A`  |
 | Smart region                        | `⌘ ⇧ S`  |
 | Window                              | `⌘ ⇧ W`  |
-| Select a region and copy its text   | `⌘ ⇧ O`  |
 
 These bindings are configurable in Settings. In smart capture, use the scroll wheel to change the highlighted selection level, drag for a manual region, or press Escape to cancel.
 
@@ -79,7 +80,7 @@ vp run desktop#dev:frontend
 vp run @ddu/ui#storybook       # component explorer on port 6006
 ```
 
-The app has separate `main.html`, `setting.html`, `startup.html`, `capture.html`, and `preview.html` entries. Opening them in a regular browser does not provide Tauri IPC or real desktop capabilities; use the native app for end-to-end behavior and the bridge mocks for component tests.
+The app has separate `main.html`, `setting.html`, `startup.html`, `capture.html`, `permission.html`, and `preview.html` entries. Opening them in a regular browser does not provide Tauri IPC or real desktop capabilities; use the native app for end-to-end behavior and the bridge mocks for component tests.
 
 ### Check, test, and build
 
@@ -134,7 +135,7 @@ DDU uses Tauri 2 and Rust for native operations. The UI is migrating to React 19
 
 ```text
 apps/desktop/
-  src/windows/       React windows: main, setting, startup, capture
+  src/windows/       React windows: main, setting, startup, capture, permission
   src/shared/        Window mounting, theme, error boundary
   src/legacy/        Vue preview/editor and its isolated styles
   src-tauri/         Rust commands, capture engine, platform adapters, app lifecycle
