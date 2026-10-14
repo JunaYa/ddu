@@ -11,7 +11,7 @@ export const getDiagnosticsBundle = (): Promise<DiagnosticsBundle> =>
 export const listHistoryItems = (): Promise<HistoryItem[]> =>
   call("list_history_items", { path: "images" });
 
-/** Move screenshots to the Trash. Resolves to how many were moved. */
+/** Move screenshots to Trash. On failure rejects with details; some files may have moved. */
 export const deleteHistoryItems = (paths: string[]): Promise<number> =>
   call("delete_history_items", { paths });
 

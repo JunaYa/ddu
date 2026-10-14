@@ -81,11 +81,14 @@ export function MainWindow() {
   const removeItems = useMutation({
     mutationFn: async ({ items, message }: { items: HistoryItem[]; message: string }) => {
       if (!(await confirm(message, { title: "确认删除", kind: "warning" }))) return;
-      const moved = await deleteHistoryItems(items.map((item) => item.full_path));
-      setSelected(new Set());
-      await refresh();
-      // Rust skips files it cannot move and only reports how many it did.
-      if (moved < items.length) throw new Error(`只移动了 ${moved} / ${items.length} 张截图`);
+      try {
+        const moved = await deleteHistoryItems(items.map((item) => item.full_path));
+        setSelected(new Set());
+        if (moved < items.length) throw new Error(`只移动了 ${moved} / ${items.length} 张截图`);
+      } finally {
+        // A batch can move some files before failing. Re-read disk even then.
+        await refresh();
+      }
     },
   });
 

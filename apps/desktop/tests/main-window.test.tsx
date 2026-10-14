@@ -249,6 +249,31 @@ test("grid view (the default) deletes a card through the backend", async () => {
       ["delete_history_items", { paths: [NEW.full_path] }],
     ]),
   );
+  await waitFor(() =>
+    expect(screen.queryByRole("button", { name: "删除 screenshot_2.png" })).toBeNull(),
+  );
+  expect(screen.getByRole("button", { name: "删除 screenshot_1.png" })).toBeTruthy();
+  expect(screen.getByText("Total").textContent).toContain("1");
+});
+
+test("refreshes history after a partial deletion rejects with a filesystem error", async () => {
+  let items = [OLD, NEW];
+  const { answerNextDialog } = setup({
+    commands: {
+      list_history_items: () => items,
+      delete_history_items: () => {
+        items = [OLD];
+        throw "Permission denied: screenshot_1.png";
+      },
+    },
+  });
+  await showList();
+  await waitFor(() => expect(rowNames()).toHaveLength(2));
+  answerNextDialog("Ok");
+  fireEvent.click(screen.getByText("全部"));
+  fireEvent.click(screen.getByRole("button", { name: "将所选截图移到废纸篓" }));
+  expect(await screen.findByText("删除失败：Permission denied: screenshot_1.png")).toBeTruthy();
+  await waitFor(() => expect(rowNames()).toEqual(["选择 screenshot_1.png"]));
 });
 
 test("combining sends the selected images, in display order, and refreshes the list", async () => {

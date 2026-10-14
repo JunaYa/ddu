@@ -71,6 +71,28 @@ mod tests {
         assert!(!is_app_generated_image(Path::new("family-photo.png")));
         assert!(!is_app_generated_image(Path::new("screenshot_notes.txt")));
     }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn history_trash_does_not_require_finder_automation_permission() {
+        use trash::macos::{DeleteMethod, TrashContextExtMacos};
+        assert!(matches!(history_trash_context().delete_method(), DeleteMethod::NsFileManager));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    #[ignore = "moves a disposable fixture to the macOS Trash; requires filesystem access"]
+    fn native_trash_removes_the_file_from_its_original_directory() {
+        let id = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
+        let directory = std::env::temp_dir().join(format!("ddu-trash-test-{id}"));
+        fs::create_dir(&directory).unwrap();
+        let path = directory.join(format!("screenshot_trash_test_{id}.png"));
+        fs::write(&path, b"disposable DDU trash regression fixture").unwrap();
+        history_trash_context().delete(&path).unwrap();
+        assert!(!path.exists(), "trashed screenshot must disappear from history's directory");
+        assert_eq!(fs::read_dir(&directory).unwrap().count(), 0);
+        fs::remove_dir(&directory).unwrap();
+    }
 }
 
 #[tauri::command]
@@ -216,27 +238,52 @@ pub fn prune_history(app: &tauri::AppHandle) {
     }
 }
 
+fn history_trash_context() -> trash::TrashContext {
+    #[cfg(target_os = "macos")]
+    {
+        use trash::macos::{DeleteMethod, TrashContextExtMacos};
+        let mut context = trash::TrashContext::default();
+        // The default uses Finder Apple Events, which hardened builds cannot
+        // send without Automation authorization. Use the filesystem API.
+        context.set_delete_method(DeleteMethod::NsFileManager);
+        context
+    }
+    #[cfg(not(target_os = "macos"))]
+    trash::TrashContext::default()
+}
+
 #[tauri::command]
 pub async fn delete_history_items(
     app_handle: tauri::AppHandle,
     paths: Vec<String>,
 ) -> Result<u32, String> {
     let mut deleted = 0u32;
+    let mut failures = Vec::new();
+    let context = history_trash_context();
     for path in &paths {
         match crate::common::ensure_within_images_dir(&app_handle, std::path::Path::new(path)) {
             Ok(guarded) => {
-                if is_app_generated_image(&guarded) && trash::delete(&guarded).is_ok() {
-                    // The screenshot can be restored from the trash; its text
-                    // is cheap to re-index, so don't keep it around.
-                    super::ocr_index::remove(&app_handle, &guarded);
-                    deleted += 1;
+                if !is_app_generated_image(&guarded) {
+                    failures.push(format!("{}: not a DDU screenshot", path));
+                    continue;
+                }
+                match context.delete(&guarded) {
+                    Ok(()) => {
+                        super::ocr_index::remove(&app_handle, &guarded);
+                        deleted += 1;
+                    }
+                    Err(e) => failures.push(format!("{}: {}", path, e)),
                 }
             }
-            Err(e) => info!("Refusing to delete out-of-bounds path {}: {}", path, e),
+            Err(e) => failures.push(format!("{}: {}", path, e)),
         }
     }
     info!("Deleted {} history items", deleted);
-    Ok(deleted)
+    if failures.is_empty() {
+        Ok(deleted)
+    } else {
+        Err(format!("Moved {} / {} screenshots to Trash. {}", deleted, paths.len(), failures.join("; ")))
+    }
 }
 
 #[tauri::command]
