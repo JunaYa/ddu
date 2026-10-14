@@ -6,6 +6,7 @@ use image::codecs::png::{CompressionType, FilterType, PngEncoder};
 use image::ImageEncoder;
 use serde::Serialize;
 use tauri::Manager;
+use tauri_plugin_dialog::DialogExt;
 use tracing::info;
 
 use crate::common::get_images_dir;
@@ -42,6 +43,9 @@ pub struct HitTestDto {
 /// Shared by the `smart_capture_start` command, global hotkeys and the tray.
 pub async fn start_smart_capture(app: &tauri::AppHandle, mode: &str) -> Result<(), String> {
     info!("start_smart_capture: mode={mode}");
+    if super::scroll_status().active {
+        return Err("请先完成或取消当前滚动截图".into());
+    }
 
     // C1: preflight Screen Recording permission before touching xcap. xcap
     // succeeds silently without it (returns blanked frames for other apps), so
@@ -233,6 +237,26 @@ pub async fn smart_capture_finalize(
         let session = state.0.lock().unwrap().take();
         session
     };
+
+    if session.as_ref().is_some_and(|s| s.mode == "scroll") {
+        window::close_capture_window(&app);
+        let s = session.unwrap();
+        let rect = LogicalRect { x, y, w, h };
+        let result = (|| {
+            let (px, py, pw, ph) = selection_to_snapshot_pixels(
+                rect,
+                (s.monitor_rect.x, s.monitor_rect.y),
+                s.scale_factor,
+                s.snapshot.width(),
+                s.snapshot.height(),
+            ).ok_or("selection too small")?;
+            let first = image::imageops::crop_imm(&s.snapshot, px, py, pw, ph).to_image();
+            super::begin_scroll(&app, rect, s.monitor_rect, s.scale_factor, first)
+        })();
+        return result.inspect_err(|e| {
+            app.dialog().message(e.clone()).show(|_| {});
+        });
+    }
 
     let result = (|| -> Result<platform::CaptureResult, String> {
         let session = session.ok_or("no active capture session")?;

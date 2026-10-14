@@ -188,6 +188,9 @@ pub fn run() {
             cmd::start_recording,
             cmd::stop_recording,
             cmd::is_recording,
+            cmd::scroll_status,
+            cmd::scroll_cancel,
+            cmd::scroll_finish,
             cmd::convert_to_gif,
             cmd::get_platform_capabilities,
             cmd::get_diagnostics_bundle,
@@ -195,7 +198,13 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_, event| lifecycle::handle_run_event(event));
+        .run(|_, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                cmd::scroll_cancel();
+                cmd::stop_recording_on_exit();
+            }
+            lifecycle::handle_run_event(event);
+        });
 }
 
 /// The startup/permission-guide window shows only when the `first_run` marker

@@ -25,3 +25,6 @@ pub use self::window::*;
 pub use self::screenshot::*;
 pub use self::workflow::*;
 pub use self::xcreenshot::*;
+
+mod scrolling;
+pub use self::scrolling::*;

@@ -90,7 +90,7 @@ export function nextChainIndex(
   previous: ChainNode[],
   next: ChainNode[],
   currentIndex: number,
-  mode: "auto" | "window",
+  mode: "auto" | "window" | "scroll",
 ): number {
   const last = Math.max(next.length - 1, 0);
   if (!rectEq(previous[0]?.rect, next[0]?.rect)) return mode === "window" ? last : 0;

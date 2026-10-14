@@ -55,13 +55,13 @@ pub fn get_platform_capabilities() -> Vec<PlatformCapability> {
         });
         caps.push(PlatformCapability {
             key: "systemAudio".to_string(),
-            status: "limited".to_string(),
-            reason: Some("Requires additional setup on macOS".to_string()),
+            status: if super::system_audio_supported() { "available" } else { "unavailable" }.to_string(),
+            reason: Some(if super::system_audio_supported() { "设置 → 录屏：开启系统声音" } else { "此 macOS 版本的原生录屏不支持系统声音" }.to_string()),
         });
         caps.push(PlatformCapability {
             key: "scrollingCapture".to_string(),
-            status: "unavailable".to_string(),
-            reason: Some("Not yet implemented".to_string()),
+            status: "available".to_string(),
+            reason: Some("托盘 → 滚动截图：选区后手动向下滚动，停稳后自动拼接".to_string()),
         });
     }
 

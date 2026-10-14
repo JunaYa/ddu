@@ -17,6 +17,31 @@ export type NoArgs = Record<string, never>;
  * (specs/11 § 2.1); this table is the contract reviewers check against Rust.
  */
 export interface CommandMap {
+  smart_capture_start: { args: { mode: "auto" | "window" | "scroll" }; result: void };
+  scroll_status: {
+    args: NoArgs;
+    result: { active: boolean; frames: number; height: number; message: string };
+  };
+  scroll_cancel: { args: NoArgs; result: void };
+  scroll_finish: { args: NoArgs; result: void };
+  is_recording: { args: NoArgs; result: boolean };
+  start_recording: {
+    args: {
+      path: string;
+      config: {
+        mode: "fullscreen" | "region";
+        include_cursor: boolean;
+        include_audio: boolean;
+        system_audio: boolean;
+      };
+    };
+    result: string;
+  };
+  stop_recording: {
+    args: NoArgs;
+    result: { file_path: string; filename: string; duration_estimate_ms: number };
+  };
+
   apply_shortcuts: { args: NoArgs; result: void };
   get_diagnostics_bundle: { args: NoArgs; result: DiagnosticsBundle };
   list_history_items: { args: { path: string }; result: HistoryItem[] };

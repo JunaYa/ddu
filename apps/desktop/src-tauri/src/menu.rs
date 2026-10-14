@@ -6,6 +6,7 @@ use tauri::{
     tray::{TrayIcon, TrayIconBuilder, TrayIconEvent},
     AppHandle,
 };
+use tauri_plugin_dialog::DialogExt;
 use tracing::info;
 
 use crate::{platform, window};
@@ -16,6 +17,10 @@ enum MenuID {
     CAPTURE_SCREEN,
     CAPTURE_SELECT,
     CAPTURE_WINDOW,
+    CAPTURE_SCROLL,
+    FINISH_SCROLL,
+    CANCEL_SCROLL,
+    STOP_RECORDING,
     SHOW_SETTING_WINDOW,
     SHOW_MAIN_WINDOW,
     HELP,
@@ -39,6 +44,11 @@ pub fn get_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> 
     let tray = Menu::with_id(app, "tray_menu")?;
 
     tray.append_items(&[
+        &MenuItem::with_id(app, MenuID::CAPTURE_SCROLL.to_string(), "滚动截图（选区后向下滚动）", true, None::<&str>)?,
+        &MenuItem::with_id(app, MenuID::FINISH_SCROLL.to_string(), "完成滚动截图", true, None::<&str>)?,
+        &MenuItem::with_id(app, MenuID::CANCEL_SCROLL.to_string(), "取消滚动截图", true, None::<&str>)?,
+        &MenuItem::with_id(app, MenuID::STOP_RECORDING.to_string(), "停止录屏并保存", true, None::<&str>)?,
+        &PredefinedMenuItem::separator(app)?,
         &MenuItem::with_id(
             app,
             MenuID::CAPTURE_SCREEN.to_string(),
@@ -162,6 +172,24 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
     };
 
     match menu_id {
+        MenuID::CAPTURE_SCROLL | MenuID::FINISH_SCROLL | MenuID::STOP_RECORDING => {
+            let app = app.clone();
+            tauri::async_runtime::spawn(async move {
+                let result = match menu_id {
+                    MenuID::CAPTURE_SCROLL => crate::cmd::start_smart_capture(&app, "scroll").await,
+                    MenuID::FINISH_SCROLL => crate::cmd::scroll_finish(app.clone()).await,
+                    _ => crate::cmd::stop_recording().await.map(|result| {
+                        app.dialog()
+                            .message(format!("录屏已保存：{}", result.file_path))
+                            .show(|_| {});
+                    }),
+                };
+                if let Err(e) = result {
+                    app.dialog().message(e).show(|_| {});
+                }
+            });
+        }
+        MenuID::CANCEL_SCROLL => crate::cmd::scroll_cancel(),
         MenuID::CAPTURE_SCREEN => {
             info!("Capture Screen");
             let result = tauri::async_runtime::block_on(platform::capture_screen(app, "images".to_string()));

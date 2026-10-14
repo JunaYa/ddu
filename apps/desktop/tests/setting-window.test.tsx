@@ -38,6 +38,8 @@ function setup(options: MockNativeOptions = {}) {
       ...options.plugins,
     },
     commands: {
+      is_recording: () => false,
+      scroll_status: () => ({ active: false, frames: 0, height: 0, message: "" }),
       apply_shortcuts: () => undefined,
       clear_ocr_index: () => undefined,
       list_history_items: () => [],
@@ -331,4 +333,65 @@ test("capture: the naming field follows changes from elsewhere and shows the def
 
   await act(() => mock.externalWrite("naming_template", { value: "{mode}" }));
   await waitFor(() => expect((naming as HTMLInputElement).value).toBe("{mode}"));
+});
+
+test("recording sends independent audio settings and displays the saved movie", async () => {
+  let active = false;
+  const { mock } = setup({
+    commands: {
+      is_recording: () => active,
+      start_recording: () => {
+        active = true;
+        return "/tmp/recording.mov";
+      },
+      stop_recording: () => {
+        active = false;
+        return {
+          file_path: "/tmp/recording.mov",
+          filename: "recording.mov",
+          duration_estimate_ms: 1000,
+        };
+      },
+    },
+  });
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "开始录屏" }).hasAttribute("disabled")).toBe(false),
+  );
+  fireEvent.click(screen.getByRole("switch", { name: "麦克风" }));
+  fireEvent.click(screen.getByRole("button", { name: "开始录屏" }));
+  await waitFor(() => expect(called(mock, "start_recording")).toHaveLength(1));
+  expect(called(mock, "start_recording")[0]?.[1]).toMatchObject({
+    config: { system_audio: true, include_audio: true },
+  });
+  fireEvent.click(await screen.findByRole("button", { name: "停止录屏并保存" }));
+  expect(await screen.findByText("已保存：/tmp/recording.mov")).toBeTruthy();
+});
+
+test("scrolling capture offers finish and cancel while collecting", async () => {
+  const { mock } = setup({
+    commands: {
+      scroll_status: () => ({ active: true, frames: 2, height: 1200, message: "已拼接 2 段" }),
+      scroll_finish: () => undefined,
+    },
+  });
+  expect(await screen.findByText("已拼接 2 段")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "完成长图" }));
+  await waitFor(() => expect(called(mock, "scroll_finish")).toHaveLength(1));
+});
+
+test("recording errors stay visible without showing a saved result", async () => {
+  setup({
+    commands: {
+      start_recording: () => {
+        throw new Error("Microphone permission denied");
+      },
+    },
+  });
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "开始录屏" }).hasAttribute("disabled")).toBe(false),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "开始录屏" }));
+  expect(await screen.findByText(/Microphone permission denied/)).toBeTruthy();
+  expect(screen.queryByText(/^已保存：/)).toBeNull();
+  expect(screen.getByRole("button", { name: "开始录屏" })).toBeTruthy();
 });

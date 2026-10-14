@@ -36,10 +36,13 @@ export function DiagnosticsSection() {
             DDU {bundle.app_version} · {bundle.os} {bundle.os_version} · {bundle.arch}
           </p>
           <ul className="flex flex-col gap-2">
-            {[...bundle.permissions, ...bundle.capabilities].map((item) => {
+            {[...bundle.permissions, ...bundle.capabilities].map((item, index) => {
               const { label, tone } = diagnosticStatusLabel(item.status);
               return (
-                <li key={item.key} className="flex items-center justify-between gap-3">
+                <li
+                  key={`${index < bundle.permissions.length ? "permission" : "capability"}:${item.key}`}
+                  className="flex items-center justify-between gap-3"
+                >
                   <div className="min-w-0">
                     <div className="text-sm">{item.key}</div>
                     {item.reason && (

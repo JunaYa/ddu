@@ -1,3 +1,4 @@
+import { RecordingSection } from "./sections/recording.tsx";
 import { PermissionsSection } from "./sections/permissions.tsx";
 import { CaptureSection } from "./sections/capture.tsx";
 import { DiagnosticsSection } from "./sections/diagnostics.tsx";
@@ -14,6 +15,7 @@ export function SettingWindow() {
       <PermissionsSection />
       <StorageSection />
       <CaptureSection />
+      <RecordingSection />
       <ShortcutsSection />
       <HistorySection />
       <DiagnosticsSection />

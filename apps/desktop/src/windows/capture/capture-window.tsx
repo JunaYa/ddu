@@ -202,7 +202,12 @@ export function CaptureWindow() {
               {hudLabel(highlight, view.dragRect !== null, view.appName, node?.role)}
             </div>
           )}
-          {!session.axAvailable && (
+          {session.mode === "scroll" && (
+            <div className="pointer-events-none absolute bottom-4 left-4 rounded-md bg-black/80 px-3 py-2 text-sm text-white">
+              框选可滚动内容，避开固定标题栏。选区后缓慢向下滚动；在托盘完成或取消。
+            </div>
+          )}
+          {!session.axAvailable && session.mode !== "scroll" && (
             // A plain button: this window does not load the design system
             // (specs/99 D14). Dark over any screenshot content, as before.
             <button
