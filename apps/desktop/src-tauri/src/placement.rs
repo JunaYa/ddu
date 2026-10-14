@@ -288,3 +288,31 @@ mod permission_tests {
         assert_eq!(frame, rect(420.0, 495.0, 580.0, 230.0));
     }
 }
+
+/// Native windows translate across desktop coordinates; their size stays fixed.
+/// Ease-out cubic gives immediate response and settles in 240 ms without bounce.
+pub fn permission_entrance_frame(destination: LogicalRect, origin: Option<(f64, f64)>, progress: f64) -> LogicalRect {
+    let Some((x,y)) = origin else { return destination; };
+    let t = 1.0 - (1.0 - progress.clamp(0.0, 1.0)).powi(3);
+    let start_x = x - destination.w / 2.0;
+    let start_y = y - destination.h / 2.0;
+    LogicalRect { x: start_x + (destination.x - start_x)*t, y: start_y + (destination.y - start_y)*t, ..destination }
+}
+
+#[cfg(test)]
+mod permission_motion_tests {
+    use super::*;
+    #[test]
+    fn entrance_only_translates_and_finishes_exactly_at_anchor() {
+        let destination = LogicalRect { x: -900.0, y: 500.0, w: 580.0, h: 230.0 };
+        let origin = Some((-1200.0, 80.0));
+        let start = permission_entrance_frame(destination, origin, 0.0);
+        assert_eq!((start.x + start.w/2.0, start.y + start.h/2.0), (-1200.0, 80.0));
+        for t in [0.0, 0.25, 0.5, 1.0] {
+            let frame = permission_entrance_frame(destination, origin, t);
+            assert_eq!((frame.w, frame.h), (destination.w, destination.h));
+        }
+        assert_eq!(permission_entrance_frame(destination, origin, 1.0), destination);
+        assert_eq!(permission_entrance_frame(destination, None, 0.0), destination);
+    }
+}

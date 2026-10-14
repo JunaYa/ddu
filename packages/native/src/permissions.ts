@@ -9,8 +9,10 @@ export const permissionStatus = (): Promise<PermissionStatus> => call("permissio
  * Prompt for a permission (or open its System Settings pane when macOS will
  * not prompt again). Resolves to whether it is granted afterwards.
  */
-export const requestPermission = (kind: PermissionKind): Promise<boolean> =>
-  call("permission_request", { kind });
+export const requestPermission = (
+  kind: PermissionKind,
+  origin?: { x: number; y: number },
+): Promise<boolean> => call("permission_request", origin ? { kind, origin } : { kind });
 
 /** Relaunch the app; macOS applies a new Screen Recording grant only to a fresh process. */
 export const restartApp = (): Promise<void> => call("restart_app");

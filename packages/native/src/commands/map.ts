@@ -52,7 +52,10 @@ export interface CommandMap {
   permission_open_settings: { args: { kind: PermissionKind }; result: void };
   permission_status: { args: NoArgs; result: PermissionStatus };
   /** Resolves to whether the permission is granted afterwards. */
-  permission_request: { args: { kind: PermissionKind }; result: boolean };
+  permission_request: {
+    args: { kind: PermissionKind; origin?: { x: number; y: number } };
+    result: boolean;
+  };
   restart_app: { args: NoArgs; result: void };
   /** File names (history item ids) whose indexed OCR text contains `query`. */
   search_history_text: { args: { query: string }; result: string[] };

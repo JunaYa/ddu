@@ -283,13 +283,20 @@ pub fn close_capture_window(app: &AppHandle) {
 }
 
 /// A small companion to System Settings; never takes over the settings window.
-pub fn show_permission_window(app: &AppHandle, kind: &str) -> Result<(), String> {
+pub fn show_permission_window(app: &AppHandle, kind: &str, origin: Option<(f64, f64)>) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("permission") {
         window.destroy().map_err(|e| e.to_string())?;
     }
+    let ready = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let page_ready = ready.clone();
     let window = WebviewWindowBuilder::new(
         app, "permission", WebviewUrl::App(format!("/permission.html?kind={kind}").into()),
     )
+    .on_page_load(move |_, payload| {
+        if payload.event() == tauri::webview::PageLoadEvent::Finished {
+            page_ready.store(true, std::sync::atomic::Ordering::Release);
+        }
+    })
     .title("DDU · 权限授权")
     // Transparent native backing lets the web surface clip all four corners.
     .transparent(true)
@@ -306,7 +313,7 @@ pub fn show_permission_window(app: &AppHandle, kind: &str) -> Result<(), String>
     .inner_size(580.0, 230.0)
     .build().map_err(|e| e.to_string())?;
     #[cfg(target_os = "macos")]
-    follow_permission_settings(&window);
+    follow_permission_settings(&window, origin, ready);
     #[cfg(not(target_os = "macos"))]
     {
         place_on_cursor_screen(&window);
@@ -318,7 +325,7 @@ pub fn show_permission_window(app: &AppHandle, kind: &str) -> Result<(), String>
 /// Observe only while this specific helper exists. A replacement helper gets
 /// its own lifecycle; an old queued tick must never move the new window.
 #[cfg(target_os = "macos")]
-fn follow_permission_settings(window: &WebviewWindow) {
+fn follow_permission_settings(window: &WebviewWindow, origin: Option<(f64, f64)>, ready: std::sync::Arc<std::sync::atomic::AtomicBool>) {
     use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
     use std::time::Duration;
     let closed = Arc::new(AtomicBool::new(false));
@@ -332,12 +339,19 @@ fn follow_permission_settings(window: &WebviewWindow) {
     std::thread::spawn(move || {
         let mut found_settings = false;
         let mut attempts = 0;
+        let mut entrance_started: Option<std::time::Instant> = None;
+        let mut first_display = true;
         while !closed.load(Ordering::Acquire) {
+            if !ready.load(Ordering::Acquire) {
+                std::thread::sleep(Duration::from_millis(16));
+                continue;
+            }
             let (tx, rx) = std::sync::mpsc::sync_channel(1);
             let tick_window = window.clone();
             let tick_closed = closed.clone();
             if window.run_on_main_thread(move || {
                 if tick_closed.load(Ordering::Acquire) { return; }
+                let mut displayed = false;
                 let anchor = platform::system_settings_frame();
                 let found = anchor.is_some();
                 // Wait for System Settings to launch before first paint. If
@@ -352,9 +366,27 @@ fn follow_permission_settings(window: &WebviewWindow) {
                 });
                 if let Some(anchor) = anchor {
                     if let Some(screen) = placement::screen_for(anchor, &placement::screens(&tick_window)) {
-                        let frame = placement::permission_frame(anchor, screen.work_area);
-                        if placement::window_frame(&tick_window) != Some(frame) {
+                        let destination = placement::permission_frame(anchor, screen.work_area);
+                        let progress = entrance_started.map(|t| t.elapsed().as_secs_f64() / 0.24).unwrap_or(0.0);
+                        let frame = if first_display {
+                            placement::permission_entrance_frame(destination, origin, progress)
+                        } else { destination };
+                        if first_display && entrance_started.is_none() {
+                            // AppKit's automatic window zoom must not compete with translation.
+                            use objc::{Message, runtime::{Object, Sel}};
+                            if let Ok(native) = tick_window.ns_window() {
+                                unsafe {
+                                    let native = &*(native as *mut Object);
+                                    let _: Result<(), _> = native.send_message(Sel::register("setAnimationBehavior:"), (2isize,));
+                                }
+                            }
+                        }
+                        displayed = true;
+                        let current = placement::window_frame(&tick_window);
+                        if !current.is_some_and(|f| f.w == frame.w && f.h == frame.h) {
                             let _ = tick_window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(frame.w, frame.h)));
+                        }
+                        if !current.is_some_and(|f| f.x == frame.x && f.y == frame.y) {
                             let _ = tick_window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(frame.x, frame.y)));
                         }
                         if !tick_window.is_visible().unwrap_or(false) {
@@ -366,14 +398,20 @@ fn follow_permission_settings(window: &WebviewWindow) {
                     // minimized, closed, or moved to another Space.
                     let _ = tick_window.hide();
                 }
-                let _ = tx.send(found);
+                let _ = tx.send((found, displayed));
             }).is_err() { break; }
             match rx.recv() {
-                Ok(found) => found_settings |= found,
+                Ok((found, displayed)) => {
+                    found_settings |= found;
+                    if first_display && displayed {
+                        let start = entrance_started.get_or_insert_with(std::time::Instant::now);
+                        if origin.is_none() || start.elapsed().as_millis() >= 240 { first_display = false; }
+                    }
+                },
                 Err(_) => break,
             }
             attempts += 1;
-            std::thread::sleep(Duration::from_millis(250));
+            std::thread::sleep(Duration::from_millis(if first_display && entrance_started.is_some() { 16 } else { 250 }));
         }
     });
 }

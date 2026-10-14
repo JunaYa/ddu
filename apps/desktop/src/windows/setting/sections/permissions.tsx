@@ -14,7 +14,16 @@ export function PermissionsSection() {
     refetchOnWindowFocus: "always",
     retry: false,
   });
-  const manage = useMutation({ mutationFn: requestPermission, onSettled: () => status.refetch() });
+  const manage = useMutation({
+    mutationFn: ({
+      kind,
+      origin,
+    }: {
+      kind: Parameters<typeof requestPermission>[0];
+      origin?: { x: number; y: number };
+    }) => requestPermission(kind, origin),
+    onSettled: () => status.refetch(),
+  });
   return (
     <SettingCard title="权限管理">
       <p className="text-xs text-muted-foreground">授权与撤销均由你在 macOS 系统设置中管理。</p>
@@ -33,7 +42,17 @@ export function PermissionsSection() {
             variant="primary"
             aria-label={`管理${title}权限`}
             disabled={manage.isPending}
-            onClick={() => manage.mutate(kind)}
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              const animate =
+                event.detail > 0 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+              manage.mutate({
+                kind,
+                origin: animate
+                  ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
+                  : undefined,
+              });
+            }}
           >
             {status.data?.[kind] === "granted" ? "管理" : "授权"}
           </Button>

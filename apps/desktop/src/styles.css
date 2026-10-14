@@ -12,3 +12,12 @@ html,
 body {
   background: transparent;
 }
+
+/* Keep the native drag source and panel click target stationary while pressed. */
+.permission-panel [data-slot="button"] {
+  transform: none;
+  translate: none;
+  scale: none;
+  animation: none;
+  transition: none;
+}

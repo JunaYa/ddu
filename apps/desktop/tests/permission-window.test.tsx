@@ -1,12 +1,13 @@
 import { mockNative, resetNativeMock } from "@ddu/native/testing";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, expect, test } from "vite-plus/test";
+import { afterEach, expect, test, vi } from "vite-plus/test";
 import { WindowShell } from "../src/shared/mount-window.tsx";
 import { PermissionWindow } from "../src/windows/permission/permission-window.tsx";
 import { PermissionsSection } from "../src/windows/setting/sections/permissions.tsx";
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   resetNativeMock();
   window.history.replaceState({}, "", "/");
 });
@@ -163,4 +164,28 @@ test("close remains independent of the panel settings action", async () => {
   fireEvent.click(screen.getByRole("button", { name: "关闭授权引导" }));
   await waitFor(() => expect(mock.calls.some(([cmd]) => cmd === "plugin:window|close")).toBe(true));
   expect(mock.calls.some(([cmd]) => cmd === "permission_open_settings")).toBe(false);
+});
+
+test.each([false, true])("pointer entrance respects reduced motion=%s", async (reduce) => {
+  vi.stubGlobal("matchMedia", () => ({ matches: reduce }));
+  const { mock } = setup();
+  render(
+    <WindowShell>
+      <PermissionsSection />
+    </WindowShell>,
+  );
+  const button = screen.getByRole("button", { name: "管理辅助功能权限" });
+  vi.spyOn(button, "getBoundingClientRect").mockReturnValue({
+    x: 100,
+    y: 200,
+    width: 80,
+    height: 40,
+  } as DOMRect);
+  fireEvent.click(button, { detail: 1 });
+  await waitFor(() =>
+    expect(mock.calls).toContainEqual([
+      "permission_request",
+      reduce ? { kind: "accessibility" } : { kind: "accessibility", origin: { x: 140, y: 220 } },
+    ]),
+  );
 });

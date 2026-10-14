@@ -183,8 +183,16 @@ fn open_settings_pane(kind: PermissionKind) {
 /// Opens System Settings and the permission guide. Accessibility is checked
 /// silently because users add the app by dragging it into the system list.
 /// Returns whether the permission is effective right now.
+#[derive(Clone, Copy, serde::Deserialize)]
+pub struct PermissionOrigin { x: f64, y: f64 }
+
 #[tauri::command]
-pub async fn permission_request(app: tauri::AppHandle, kind: String) -> Result<bool, String> {
+pub async fn permission_request(app: tauri::AppHandle, window: tauri::WebviewWindow, kind: String, origin: Option<PermissionOrigin>) -> Result<bool, String> {
+    let origin = origin.filter(|p| p.x.is_finite() && p.y.is_finite()).and_then(|p| {
+        let scale = window.scale_factor().ok()?;
+        let position = window.inner_position().ok()?;
+        Some((position.x as f64 / scale + p.x, position.y as f64 / scale + p.y))
+    });
     let kind =
         PermissionKind::parse(&kind).ok_or_else(|| format!("unknown permission kind: {kind}"))?;
 
@@ -201,14 +209,14 @@ pub async fn permission_request(app: tauri::AppHandle, kind: String) -> Result<b
                 microphone_status() == MicAuthStatus::Authorized
             },
         };
-        crate::window::show_permission_window(&app, kind.as_str())?;
+        crate::window::show_permission_window(&app, kind.as_str(), origin)?;
         open_settings_pane(kind);
         Ok(granted)
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        let _ = (kind, app);
+        let _ = (kind, app, origin);
         Ok(true)
     }
 }

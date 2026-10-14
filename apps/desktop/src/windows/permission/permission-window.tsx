@@ -49,7 +49,7 @@ export function PermissionWindow() {
   };
   const granted = !!kind && status.data?.[kind] === "granted";
   return (
-    <main className="relative isolate h-screen overflow-hidden rounded-2xl border border-border bg-background text-foreground antialiased">
+    <main className="permission-panel relative isolate h-screen overflow-hidden rounded-2xl border border-border bg-background text-foreground antialiased">
       <Button
         variant="ghost"
         aria-label="点击面板打开系统设置"
