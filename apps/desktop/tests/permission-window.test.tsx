@@ -15,6 +15,7 @@ function setup(kind = "accessibility", bundle = true) {
   const status = { accessibility: "denied", screenRecording: "denied", microphone: "undetermined" };
   const mock = mockNative({
     window: "permission",
+    plugins: { "plugin:window|close": () => undefined },
     commands: {
       permission_status: () => ({ ...status }),
       permission_app_path: () => {
@@ -133,4 +134,33 @@ test("a drag does not also navigate, but the next click does", async () => {
   await waitFor(() =>
     expect(mock.calls).toContainEqual(["permission_open_settings", { kind: "accessibility" }]),
   );
+});
+
+test("the whole panel opens settings and Escape closes without navigating", async () => {
+  const { mock } = setup();
+  render(
+    <WindowShell>
+      <PermissionWindow />
+    </WindowShell>,
+  );
+  const panel = screen.getByRole("button", { name: "点击面板打开系统设置" });
+  fireEvent.click(panel);
+  await waitFor(() =>
+    expect(mock.calls.filter(([cmd]) => cmd === "permission_open_settings")).toHaveLength(1),
+  );
+  fireEvent.keyDown(window, { key: "Escape" });
+  await waitFor(() => expect(mock.calls.some(([cmd]) => cmd === "plugin:window|close")).toBe(true));
+  expect(mock.calls.filter(([cmd]) => cmd === "permission_open_settings")).toHaveLength(1);
+});
+
+test("close remains independent of the panel settings action", async () => {
+  const { mock } = setup();
+  render(
+    <WindowShell>
+      <PermissionWindow />
+    </WindowShell>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "关闭授权引导" }));
+  await waitFor(() => expect(mock.calls.some(([cmd]) => cmd === "plugin:window|close")).toBe(true));
+  expect(mock.calls.some(([cmd]) => cmd === "permission_open_settings")).toBe(false);
 });

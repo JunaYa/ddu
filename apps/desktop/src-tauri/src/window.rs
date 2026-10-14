@@ -291,6 +291,9 @@ pub fn show_permission_window(app: &AppHandle, kind: &str) -> Result<(), String>
         app, "permission", WebviewUrl::App(format!("/permission.html?kind={kind}").into()),
     )
     .title("DDU · 权限授权")
+    // Transparent native backing lets the web surface clip all four corners.
+    .transparent(true)
+    .shadow(false)
     .focused(false)
     .decorations(false)
     .resizable(false)
