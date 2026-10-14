@@ -50,25 +50,13 @@ pub fn request_screen_recording_permission() -> bool {
     unsafe { CGRequestScreenCaptureAccess() }
 }
 
-fn ax_is_process_trusted(prompt: bool) -> bool {
+/// Check silently: users grant access through the draggable app guide and
+/// System Settings, so an additional macOS consent alert is unnecessary.
+pub fn check_accessibility_permissions() -> bool {
     let key = CFString::new("AXTrustedCheckOptionPrompt");
-    let value = if prompt {
-        CFBoolean::true_value()
-    } else {
-        CFBoolean::false_value()
-    };
+    let value = CFBoolean::false_value();
     let options = CFDictionary::from_CFType_pairs(&[(key, value)]);
     unsafe { AXIsProcessTrustedWithOptions(options.as_concrete_TypeRef()) }
-}
-
-pub fn check_accessibility_permissions() -> bool {
-    ax_is_process_trusted(false)
-}
-
-/// Shows the one-time system prompt for Accessibility (a no-op once the app
-/// is already listed in System Settings) and returns the current trust state.
-pub fn request_accessibility_permission() -> bool {
-    ax_is_process_trusted(true)
 }
 
 /// Raw AVAuthorizationStatus for audio capture:

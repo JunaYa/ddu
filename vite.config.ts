@@ -121,7 +121,9 @@ export default defineConfig({
     ],
   },
   run: {
-    cache: true,
+    // Wrapper scripts, servers and native builds must execute on every request.
+    // Pure checks/tests/frontend builds opt into caching in their callers.
+    cache: { scripts: false, tasks: true },
     tasks: {
       // The license gate evaluation is time-sensitive (exemption expiry checks
       // the clock, which is NOT a cache input). Caching it would let an expired

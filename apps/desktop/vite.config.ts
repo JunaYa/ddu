@@ -69,31 +69,4 @@ export default defineConfig({
     clearMocks: false,
     environment: "jsdom",
   },
-  run: {
-    tasks: {
-      // Native tasks run their own CLI and are never cached (a replayed
-      // `tauri build` would produce no bundle). Ordering lives in the task
-      // graph; tauri.conf.json's beforeBuildCommand is empty.
-      dev: { command: "tauri dev", cache: false },
-      // Signed .app; refuses to build without APPLE_SIGNING_IDENTITY.
-      "build:native": {
-        command: "sh scripts/build-macos-dev.sh",
-        cache: false,
-        dependsOn: ["build"],
-      },
-      // Unsigned .app: Screen Recording grants will not persist across builds.
-      "build:native:adhoc": {
-        command:
-          "sh scripts/stage-pdfium.sh && tauri build --bundles app --config src-tauri/tauri.bundle.conf.json",
-        cache: false,
-        dependsOn: ["build"],
-      },
-      "build:dmg": {
-        command:
-          "sh scripts/stage-pdfium.sh && tauri build --bundles dmg --config src-tauri/tauri.bundle.conf.json",
-        cache: false,
-        dependsOn: ["build"],
-      },
-    },
-  },
 });

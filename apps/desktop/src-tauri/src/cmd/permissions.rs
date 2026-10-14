@@ -180,9 +180,9 @@ fn open_settings_pane(kind: PermissionKind) {
     }
 }
 
-/// Triggers the system prompt for the given permission (when the platform
-/// supports prompting) and falls back to opening the matching System Settings
-/// pane. Returns whether the permission is effective right now.
+/// Opens System Settings and the permission guide. Accessibility is checked
+/// silently because users add the app by dragging it into the system list.
+/// Returns whether the permission is effective right now.
 #[tauri::command]
 pub async fn permission_request(app: tauri::AppHandle, kind: String) -> Result<bool, String> {
     let kind =
@@ -195,7 +195,7 @@ pub async fn permission_request(app: tauri::AppHandle, kind: String) -> Result<b
                 crate::platform::has_screen_recording_permission()
                     || crate::platform::request_screen_recording_permission()
             }
-            PermissionKind::Accessibility => crate::platform::request_accessibility_permission(),
+            PermissionKind::Accessibility => crate::platform::check_accessibility_permissions(),
             PermissionKind::Microphone => {
                 crate::platform::request_microphone_permission();
                 microphone_status() == MicAuthStatus::Authorized

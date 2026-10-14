@@ -84,36 +84,35 @@ The app has separate `main.html`, `setting.html`, `startup.html`, `capture.html`
 
 ### Check, test, and build
 
-| Command                          | Purpose                                                                                                    |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `vp run ready`                   | Format, lint/type-check, run workspace JS tests, and build frontend/packages. Formatting may modify files. |
-| `vp run -r check`                | Run package-level checks, as in CI.                                                                        |
-| `vp run -w check`                | Check root workspace configuration.                                                                        |
-| `vp run -r test`                 | Run workspace JavaScript/TypeScript tests.                                                                 |
-| `vp run desktop#test`            | Run desktop frontend tests.                                                                                |
-| `vp run desktop#check:legacy`    | Type-check the remaining Vue code.                                                                         |
-| `vp run desktop#build`           | Build frontend assets into `apps/desktop/dist`.                                                            |
-| `vp run @ddu/ui#build-storybook` | Build the component documentation.                                                                         |
-| `vp run license:gate`            | Check production JS dependency licenses and regenerate third-party notices.                                |
+Run these commands from the repository root; `vp run` can replace `pnpm run`. Script definitions live in the root and `apps/desktop/package.json`.
 
-`ready` does **not** run Cargo tests or produce a native app bundle. For native changes, build the frontend first: Tauri resolves its assets during Rust compilation.
+| Command                                          | Purpose                                                                           |
+| ------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `pnpm run dev` / `pnpm run dev:frontend`         | Start the Tauri app / frontend development server only.                           |
+| `pnpm run build`                                 | Build all workspace frontend assets and shared packages; no native bundle.        |
+| `pnpm run build:frontend`                        | Build only desktop assets into `apps/desktop/dist`.                               |
+| `pnpm run preview`                               | Preview built frontend assets without native IPC.                                 |
+| `pnpm run check:all`                             | Check all packages, root config, and React/Vue types.                             |
+| `pnpm run fmt` / `pnpm run fmt:check`            | Format files / check formatting without editing.                                  |
+| `pnpm run lint`                                  | Run frontend lint and type checks.                                                |
+| `pnpm run test` / `pnpm run test:desktop`        | Run all workspace / desktop frontend tests.                                       |
+| `pnpm --filter desktop run test:watch`           | Watch desktop frontend tests.                                                     |
+| `pnpm run check:native` / `pnpm run lint:native` | Build frontend assets, then run Cargo check / strict Clippy.                      |
+| `pnpm run test:native`                           | Build frontend assets, then run Rust unit tests.                                  |
+| `pnpm run test:smoke`                            | Run the native window lifecycle smoke test; requires a macOS desktop session.     |
+| `pnpm run ready`                                 | Check, test, and build all frontend/packages without rewriting source formatting. |
+| `pnpm run ready:native`                          | Run ready plus Clippy and Rust tests; requires macOS.                             |
+| `pnpm run license:gate`                          | Check JS dependency licenses and generate third-party notices.                    |
 
-```sh
-vp run desktop#build
-cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
-cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib
-
-# Desktop-session regression: capture teardown, repeated preview close, explicit Quit
-cargo run --manifest-path apps/desktop/src-tauri/Cargo.toml --example window_lifecycle_smoke
-```
+`ready` does not run Cargo or create native bundles; `ready:native` does not create installers either. Native scripts build frontend assets first because Tauri needs them during compilation. Pure checks, tests, and frontend builds use task caching; development servers, native packaging, and release preflight scripts are uncached by default.
 
 Some native/OCR integration tests are ignored by default because they require desktop permissions or model setup. A passing unit suite does not replace testing real capture, clipboard, multi-display placement, and permission recovery.
 
 ### Build a macOS app
 
 ```sh
-vp run desktop#build:native         # certificate-signed .app
-vp run desktop#build:native:adhoc   # local ad-hoc .app
+pnpm run build:native         # certificate-signed .app
+pnpm run build:native:adhoc   # local ad-hoc .app
 ```
 
 The signed build reads `APPLE_SIGNING_IDENTITY` from the environment or root `.env.local` and refuses to run without it. A stable certificate identity helps preserve macOS permission grants across rebuilds. Ad-hoc builds may need Screen Recording permission granted again after rebuilding.
@@ -123,11 +122,11 @@ These tasks build frontend assets first, stage `libpdfium.dylib`, and run Tauri 
 For distribution, use a Developer ID identity and follow the [macOS release checklist](docs/release-macos.md):
 
 ```sh
-vp run desktop#release:check-macos
-vp run desktop#build:dmg
+pnpm run release:check-macos
+pnpm run build:dmg
 ```
 
-The preflight checks for `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_PASSWORD`. It does not prove signing or notarization succeeded: verify the app, notarize and staple the DMG, then test it on a fresh account before publishing. Keep signing credentials outside version control.
+`build:dmg` runs the preflight automatically before building. The preflight checks for `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_PASSWORD`. It does not prove signing or notarization succeeded: verify the app, notarize and staple the DMG, then test it on a fresh account before publishing. Keep signing credentials outside version control.
 
 ## Architecture and repository layout
 

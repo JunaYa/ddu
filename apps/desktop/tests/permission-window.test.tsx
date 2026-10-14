@@ -50,7 +50,9 @@ test("dragging the bundle invokes native drag and refreshes a subsequent grant",
       <PermissionWindow />
     </WindowShell>,
   );
-  const item = await screen.findByRole("button", { name: "拖拽 DDU 到系统权限列表" });
+  const item = await screen.findByRole("button", {
+    name: "DDU：点击打开系统设置，或拖拽到权限列表",
+  });
   await waitFor(() => expect(item.getAttribute("draggable")).toBe("true"));
   fireEvent.dragStart(item);
   await waitFor(() => expect(mock.calls).toContainEqual(["permission_drag_app", {}]));
@@ -62,16 +64,19 @@ test("dragging the bundle invokes native drag and refreshes a subsequent grant",
   );
 });
 test("unbundled builds cannot drag a different installed app", async () => {
-  setup("accessibility", false);
+  const { mock } = setup("accessibility", false);
   render(
     <WindowShell>
       <PermissionWindow />
     </WindowShell>,
   );
   expect(await screen.findByRole("alert")).toHaveProperty("textContent", "请打开打包后的 DDU.app");
-  expect(
-    screen.getByRole("button", { name: "拖拽 DDU 到系统权限列表" }).hasAttribute("disabled"),
-  ).toBe(true);
+  const card = screen.getByRole("button", { name: "DDU：点击打开系统设置，或拖拽到权限列表" });
+  expect(card.getAttribute("draggable")).toBe("false");
+  fireEvent.click(card);
+  await waitFor(() =>
+    expect(mock.calls).toContainEqual(["permission_open_settings", { kind: "accessibility" }]),
+  );
 });
 test("microphone guidance does not offer unsupported file dragging", async () => {
   const { mock } = setup("microphone");
@@ -81,6 +86,51 @@ test("microphone guidance does not offer unsupported file dragging", async () =>
     </WindowShell>,
   );
   expect(await screen.findByText(/麦克风不支持拖拽添加/)).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "拖拽 DDU 到系统权限列表" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "DDU：点击打开系统设置，或拖拽到权限列表" }),
+  ).toBeNull();
   expect(mock.calls.some(([cmd]) => cmd === "permission_app_path")).toBe(false);
+});
+
+test.each(["accessibility", "screenRecording"])(
+  "clicking the granted %s card opens its settings pane",
+  async (kind) => {
+    const { mock, status } = setup(kind);
+    Object.assign(status, { [kind]: "granted" });
+    render(
+      <WindowShell>
+        <PermissionWindow />
+      </WindowShell>,
+    );
+    const card = await screen.findByRole("button", {
+      name: "DDU：点击打开系统设置，或拖拽到权限列表",
+    });
+    fireEvent.click(card);
+    await waitFor(() => expect(mock.calls).toContainEqual(["permission_open_settings", { kind }]));
+    expect(await screen.findByText(/权限已开启/)).toBeTruthy();
+    expect(mock.calls.some(([cmd]) => cmd === "permission_request")).toBe(false);
+  },
+);
+
+test("a drag does not also navigate, but the next click does", async () => {
+  const { mock } = setup();
+  render(
+    <WindowShell>
+      <PermissionWindow />
+    </WindowShell>,
+  );
+  const card = await screen.findByRole("button", {
+    name: "DDU：点击打开系统设置，或拖拽到权限列表",
+  });
+  await waitFor(() => expect(card.getAttribute("draggable")).toBe("true"));
+  fireEvent.dragStart(card);
+  await waitFor(() => expect(mock.calls).toContainEqual(["permission_drag_app", {}]));
+  await waitFor(() => expect(card.hasAttribute("disabled")).toBe(false));
+  fireEvent.click(card, { detail: 1 });
+  expect(mock.calls.some(([cmd]) => cmd === "permission_open_settings")).toBe(false);
+  fireEvent.pointerDown(card);
+  fireEvent.click(card, { detail: 1 });
+  await waitFor(() =>
+    expect(mock.calls).toContainEqual(["permission_open_settings", { kind: "accessibility" }]),
+  );
 });

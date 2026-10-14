@@ -43,12 +43,12 @@ jobs:
 
       - name: Check (per-package, cached/affected + root config)
         run: |
-          vp run -r check
-          vp run -w check
+          vp run --cache -r check
+          vp run --cache -w check
       - name: Test (cached/affected)
-        run: vp run -r test
+        run: vp run test
       - name: Build (cached/affected)
-        run: vp run -r build
+        run: vp run build
 
       - name: License gate + third-party notices
         run: vp run license:gate
@@ -107,7 +107,7 @@ jobs:
       # Frontend dist must exist first: Tauri's generate_context! resolves
       # frontendDist (../dist) at macro-expansion time, so cargo needs it.
       - if: steps.changes.outputs.desktop == 'true'
-        run: vp run desktop#build
+        run: vp run build:frontend
       - if: steps.changes.outputs.desktop == 'true'
         run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
       - if: steps.changes.outputs.desktop == 'true'

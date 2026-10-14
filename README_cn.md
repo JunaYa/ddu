@@ -84,36 +84,35 @@ vp run @ddu/ui#storybook       # 组件浏览器，端口 6006
 
 ### 检查、测试与构建
 
-| 命令                             | 用途                                                                     |
-| -------------------------------- | ------------------------------------------------------------------------ |
-| `vp run ready`                   | 格式化、lint/类型检查、工作区 JS 测试及前端/包构建；格式化可能修改文件。 |
-| `vp run -r check`                | 执行各包检查，与 CI 对齐。                                               |
-| `vp run -w check`                | 检查根工作区配置。                                                       |
-| `vp run -r test`                 | 执行工作区 JavaScript/TypeScript 测试。                                  |
-| `vp run desktop#test`            | 执行桌面前端测试。                                                       |
-| `vp run desktop#check:legacy`    | 对保留的 Vue 代码执行类型检查。                                          |
-| `vp run desktop#build`           | 构建前端资源，输出到 `apps/desktop/dist`。                               |
-| `vp run @ddu/ui#build-storybook` | 构建组件文档。                                                           |
-| `vp run license:gate`            | 检查生产 JS 依赖许可证并重新生成第三方声明。                             |
+以下命令均在仓库根目录执行，也可将 `pnpm run` 换为 `vp run`。脚本定义集中在根目录及 `apps/desktop/package.json`。
 
-`ready` **不包含 Cargo 测试，也不会生成原生应用包**。修改 Rust 后，先构建前端，再执行原生检查，因为 Tauri 在 Rust 编译阶段会解析前端资源目录。
+| 命令                                             | 用途                                                     |
+| ------------------------------------------------ | -------------------------------------------------------- |
+| `pnpm run dev` / `pnpm run dev:frontend`         | 启动完整 Tauri 应用 / 仅启动前端开发服务。               |
+| `pnpm run build`                                 | 构建所有工作区前端和共享包，不生成原生安装包。           |
+| `pnpm run build:frontend`                        | 仅构建桌面前端到 `apps/desktop/dist`。                   |
+| `pnpm run preview`                               | 预览已构建的前端；不提供原生 IPC。                       |
+| `pnpm run check:all`                             | 检查所有包、根配置及 React/Vue 类型。                    |
+| `pnpm run fmt` / `pnpm run fmt:check`            | 格式化文件 / 只检查格式。                                |
+| `pnpm run lint`                                  | 执行前端 lint 与类型检查。                               |
+| `pnpm run test` / `pnpm run test:desktop`        | 运行全部工作区 / 仅桌面前端测试。                        |
+| `pnpm --filter desktop run test:watch`           | 持续运行桌面前端测试。                                   |
+| `pnpm run check:native` / `pnpm run lint:native` | 构建前端后执行 Cargo check / 严格 Clippy 检查。          |
+| `pnpm run test:native`                           | 构建前端后运行 Rust 单元测试。                           |
+| `pnpm run test:smoke`                            | 原生窗口生命周期冒烟测试，需要 macOS 桌面会话。          |
+| `pnpm run ready`                                 | 检查、测试并构建全部前端和共享包，不自动修改源文件格式。 |
+| `pnpm run ready:native`                          | 在 ready 基础上增加 Clippy 和 Rust 测试，需要 macOS。    |
+| `pnpm run license:gate`                          | 检查 JS 依赖许可证并生成第三方声明。                     |
 
-```sh
-vp run desktop#build
-cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
-cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib
-
-# 需要桌面会话：验证截图窗口销毁、反复关闭预览以及主动退出
-cargo run --manifest-path apps/desktop/src-tauri/Cargo.toml --example window_lifecycle_smoke
-```
+`ready` 不运行 Cargo，也不打包应用；`ready:native` 同样不生成安装包。原生脚本自动先构建前端，因为 Tauri 在编译时需要前端资源。纯检查、测试和前端构建使用任务缓存；开发服务、原生打包与发布预检默认不缓存。
 
 部分原生/OCR 集成测试默认忽略，需要桌面权限或模型环境。单元测试通过不能替代真实的截图、剪贴板、多显示器位置和权限恢复验证。
 
 ### 构建 macOS 应用
 
 ```sh
-vp run desktop#build:native         # 使用证书签名的 .app
-vp run desktop#build:native:adhoc   # 本机临时签名的 .app
+pnpm run build:native         # 使用证书签名的 .app
+pnpm run build:native:adhoc   # 本机临时签名的 .app
 ```
 
 证书签名任务从环境变量或根目录 `.env.local` 读取 `APPLE_SIGNING_IDENTITY`，缺失时拒绝构建。稳定的证书身份有助于在重新构建后保留 macOS 权限授权；临时签名构建更新后可能需要重新授予屏幕录制权限。
@@ -123,11 +122,11 @@ vp run desktop#build:native:adhoc   # 本机临时签名的 .app
 对外分发应使用 Developer ID 身份，并遵循 [macOS 发布清单](docs/release-macos.md)：
 
 ```sh
-vp run desktop#release:check-macos
-vp run desktop#build:dmg
+pnpm run release:check-macos
+pnpm run build:dmg
 ```
 
-预检会确认 `APPLE_SIGNING_IDENTITY`、`APPLE_ID`、`APPLE_TEAM_ID`、`APPLE_APP_PASSWORD` 是否存在，但不代表签名或公证已经成功。发布前仍需验证应用签名、完成 DMG 公证与装订，并在全新账户上测试。签名凭据不得提交到版本库。
+`build:dmg` 会在构建前自动执行预检。预检会确认 `APPLE_SIGNING_IDENTITY`、`APPLE_ID`、`APPLE_TEAM_ID`、`APPLE_APP_PASSWORD` 是否存在，但不代表签名或公证已经成功。发布前仍需验证应用签名、完成 DMG 公证与装订，并在全新账户上测试。签名凭据不得提交到版本库。
 
 ## 技术架构与目录
 
