@@ -185,13 +185,16 @@ fn handle_tray_menu_events(app: &AppHandle, event: MenuEvent) {
                     }),
                 };
                 if let Err(e) = result {
-                    app.dialog().message(e).show(|_| {});
+                    if !e.starts_with(crate::cmd::PERMISSION_DENIED_PREFIX) {
+                        app.dialog().message(e).show(|_| {});
+                    }
                 }
             });
         }
         MenuID::CANCEL_SCROLL => crate::cmd::scroll_cancel(),
         MenuID::CAPTURE_SCREEN => {
             info!("Capture Screen");
+            if crate::cmd::ensure_screen_recording(app).is_err() { return; }
             let result = tauri::async_runtime::block_on(platform::capture_screen(app, "images".to_string()));
             crate::global_shortcut::post_capture_flow(app, result, None);
         }

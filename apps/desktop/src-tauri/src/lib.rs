@@ -104,11 +104,10 @@ pub fn run() {
                 );
             }
 
-            // First launch: show the startup window, which doubles as the
-            // permission-guide (Screen Recording / Accessibility).
+            // First launch uses the same permission management as capture failures.
             if first_run {
                 store.set("first_run".to_string(), json!({ "value": true }));
-                window::show_startup_window(app.handle());
+                window::show_permission_settings(app.handle());
             }
 
             // Enforce history retention on launch (no-op unless the user opted in).
@@ -154,8 +153,10 @@ pub fn run() {
             cmd::open_screen_capture_preferences,
             cmd::check_accessibility_permissions,
             cmd::permission_drag_app,
+            cmd::permission_move_window,
             cmd::permission_app_path,
             cmd::permission_status,
+            cmd::take_permission_navigation,
             cmd::permission_request,
             cmd::permission_open_settings,
             cmd::restart_app,

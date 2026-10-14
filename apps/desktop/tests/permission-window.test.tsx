@@ -24,6 +24,7 @@ function setup(kind = "accessibility", bundle = true) {
         return "/Applications/DDU.app";
       },
       permission_drag_app: () => undefined,
+      permission_move_window: () => undefined,
       permission_open_settings: () => undefined,
       permission_request: () => false,
     },
@@ -58,8 +59,13 @@ test("dragging the bundle invokes native drag and refreshes a subsequent grant",
   await waitFor(() => expect(item.getAttribute("draggable")).toBe("true"));
   fireEvent.dragStart(item);
   await waitFor(() => expect(mock.calls).toContainEqual(["permission_drag_app", {}]));
+  expect(mock.calls.some(([cmd]) => cmd === "plugin:window|close")).toBe(false);
   status.accessibility = "granted";
-  expect(await screen.findByText("辅助功能已授权", {}, { timeout: 2500 })).toBeTruthy();
+  await waitFor(
+    () => expect(mock.calls.filter(([cmd]) => cmd === "plugin:window|close")).toHaveLength(1),
+    { timeout: 2500 },
+  );
+  expect(await screen.findByText("辅助功能已授权")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "打开系统设置" }));
   await waitFor(() =>
     expect(mock.calls).toContainEqual(["permission_open_settings", { kind: "accessibility" }]),
@@ -110,6 +116,7 @@ test.each(["accessibility", "screenRecording"])(
     fireEvent.click(card);
     await waitFor(() => expect(mock.calls).toContainEqual(["permission_open_settings", { kind }]));
     expect(await screen.findByText(/权限已开启/)).toBeTruthy();
+    expect(mock.calls.some(([cmd]) => cmd === "plugin:window|close")).toBe(false);
     expect(mock.calls.some(([cmd]) => cmd === "permission_request")).toBe(false);
   },
 );
@@ -187,5 +194,29 @@ test.each([false, true])("pointer entrance respects reduced motion=%s", async (r
       "permission_request",
       reduce ? { kind: "accessibility" } : { kind: "accessibility", origin: { x: 140, y: 220 } },
     ]),
+  );
+});
+
+test("title dragging moves the window without dragging the app or opening settings", async () => {
+  const { mock } = setup();
+  render(
+    <WindowShell>
+      <PermissionWindow />
+    </WindowShell>,
+  );
+  const title = screen.getByRole("button", { name: "拖动授权引导窗口；点击打开系统设置" });
+  fireEvent.pointerDown(title, { button: 0, clientX: 100, clientY: 20 });
+  fireEvent.pointerMove(title, { buttons: 1, clientX: 120, clientY: 30 });
+  await waitFor(() => expect(mock.calls).toContainEqual(["permission_move_window", {}]));
+  fireEvent.pointerUp(title);
+  fireEvent.click(title, { detail: 1 });
+  expect(
+    mock.calls.some(([cmd]) => cmd === "permission_drag_app" || cmd === "permission_open_settings"),
+  ).toBe(false);
+  fireEvent.pointerDown(title, { button: 0, clientX: 100, clientY: 20 });
+  fireEvent.pointerUp(title);
+  fireEvent.click(title, { detail: 1 });
+  await waitFor(() =>
+    expect(mock.calls).toContainEqual(["permission_open_settings", { kind: "accessibility" }]),
   );
 });

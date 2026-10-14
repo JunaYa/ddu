@@ -1,6 +1,7 @@
+import { emit } from "@tauri-apps/api/event";
 import { mockNative, type MockNativeOptions, resetNativeMock } from "@ddu/native/testing";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, expect, test } from "vite-plus/test";
+import { afterEach, expect, test, vi } from "vite-plus/test";
 import { WindowShell } from "../src/shared/mount-window.tsx";
 import { SettingWindow } from "../src/windows/setting/setting-window.tsx";
 
@@ -38,6 +39,7 @@ function setup(options: MockNativeOptions = {}) {
       ...options.plugins,
     },
     commands: {
+      take_permission_navigation: () => false,
       is_recording: () => false,
       scroll_status: () => ({ active: false, frames: 0, height: 0, message: "" }),
       apply_shortcuts: () => undefined,
@@ -394,4 +396,46 @@ test("recording errors stay visible without showing a saved result", async () =>
   expect(await screen.findByText(/Microphone permission denied/)).toBeTruthy();
   expect(screen.queryByText(/^已保存：/)).toBeNull();
   expect(screen.getByRole("button", { name: "开始录屏" })).toBeTruthy();
+});
+
+test.each([true, false])("permission navigation focuses its section (cold=%s)", async (cold) => {
+  const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
+  const scroll = vi.fn();
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    value: scroll,
+    configurable: true,
+  });
+  try {
+    let pending = cold;
+    const { mock } = setup({
+      commands: {
+        take_permission_navigation: () => {
+          const requested = pending;
+          pending = false;
+          return requested;
+        },
+      },
+    });
+    const section = await screen.findByRole("region", { name: "权限管理" });
+    await waitFor(() =>
+      expect(called(mock, "take_permission_navigation").length).toBeGreaterThan(0),
+    );
+    if (!cold) {
+      expect(scroll).not.toHaveBeenCalled();
+      pending = true;
+      await act(async () => {
+        await emit("settings-permissions", null);
+      });
+    }
+    await waitFor(() => expect(document.activeElement).toBe(section));
+    expect(scroll).toHaveBeenCalledWith({ block: "start", behavior: "instant" });
+    pending = true;
+    await act(async () => {
+      await emit("settings-permissions", null);
+    });
+    await waitFor(() => expect(scroll).toHaveBeenCalledTimes(2));
+  } finally {
+    if (original) Object.defineProperty(HTMLElement.prototype, "scrollIntoView", original);
+    else Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+  }
 });

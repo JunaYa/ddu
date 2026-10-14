@@ -289,11 +289,28 @@ mod permission_tests {
     }
 }
 
-/// Native windows translate across desktop coordinates; their size stays fixed.
-/// Ease-out cubic gives immediate response and settles in 240 ms without bounce.
+pub const PERMISSION_ENTRANCE_DURATION: std::time::Duration = std::time::Duration::from_millis(420);
+
+/// cubic-bezier(0.15, 0.5, 0.85, 0.5): fast, slow, fast, without overshoot.
+/// Invert its x coordinate so progress is elapsed time, not the curve parameter.
+fn permission_entrance_progress(progress: f64) -> f64 {
+    let progress = progress.clamp(0.0, 1.0);
+    if progress == 0.0 || progress == 1.0 { return progress; }
+    let bezier = |t: f64, a: f64, b: f64| {
+        3.0 * (1.0-t).powi(2) * t * a + 3.0 * (1.0-t) * t.powi(2) * b + t.powi(3)
+    };
+    let (mut lo, mut hi) = (0.0, 1.0);
+    for _ in 0..24 {
+        let t = (lo + hi) / 2.0;
+        if bezier(t, 0.15, 0.85) < progress { lo = t; } else { hi = t; }
+    }
+    bezier((lo + hi) / 2.0, 0.5, 0.5)
+}
+
+/// Interpolate the actual desktop distance in a fixed duration. No scaling.
 pub fn permission_entrance_frame(destination: LogicalRect, origin: Option<(f64, f64)>, progress: f64) -> LogicalRect {
     let Some((x,y)) = origin else { return destination; };
-    let t = 1.0 - (1.0 - progress.clamp(0.0, 1.0)).powi(3);
+    let t = permission_entrance_progress(progress);
     let start_x = x - destination.w / 2.0;
     let start_y = y - destination.h / 2.0;
     LogicalRect { x: start_x + (destination.x - start_x)*t, y: start_y + (destination.y - start_y)*t, ..destination }
@@ -302,6 +319,29 @@ pub fn permission_entrance_frame(destination: LogicalRect, origin: Option<(f64, 
 #[cfg(test)]
 mod permission_motion_tests {
     use super::*;
+    #[test]
+    fn motion_is_fast_slow_fast_and_never_reverses() {
+        let curve = permission_entrance_progress;
+        let early = curve(0.1) - curve(0.0);
+        let middle = curve(0.55) - curve(0.45);
+        let late = curve(1.0) - curve(0.9);
+        assert!(early > middle * 2.0 && late > middle * 2.0);
+        for step in 1..=100 {
+            assert!(curve(step as f64 / 100.0) > curve((step-1) as f64 / 100.0));
+        }
+    }
+    #[test]
+    fn different_distances_share_the_same_duration() {
+        let destination = LogicalRect { x: 500.0, y: 600.0, w: 580.0, h: 230.0 };
+        for origin in [(400.0, 300.0), (-1800.0, -400.0)] {
+            let start = permission_entrance_frame(destination, Some(origin), 0.0);
+            let middle = permission_entrance_frame(destination, Some(origin), 0.5);
+            let ratio = (middle.x-start.x) / (destination.x-start.x);
+            assert!((ratio-0.5).abs() < 0.000001);
+            assert_eq!(permission_entrance_frame(destination, Some(origin), 1.0), destination);
+        }
+        assert_eq!(PERMISSION_ENTRANCE_DURATION.as_millis(), 420);
+    }
     #[test]
     fn entrance_only_translates_and_finishes_exactly_at_anchor() {
         let destination = LogicalRect { x: -900.0, y: 500.0, w: 580.0, h: 230.0 };

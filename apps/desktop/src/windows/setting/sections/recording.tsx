@@ -120,7 +120,9 @@ export function RecordingSection() {
           </div>
         </>
       )}
-      {(action.error || recording.error || scroll.error) && (
+      {((action.error && !action.error.message.includes("PERMISSION_DENIED:")) ||
+        recording.error ||
+        scroll.error) && (
         <FieldError>{(action.error || recording.error || scroll.error)?.message}</FieldError>
       )}
     </SettingCard>

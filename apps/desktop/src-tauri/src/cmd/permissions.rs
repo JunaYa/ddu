@@ -57,31 +57,23 @@ impl MicAuthStatus {
     }
 }
 
-/// Screen Recording gate shared by every capture entry point. `preflight` is
-/// the current TCC state; `request` triggers the one-shot system prompt and
-/// reports whether access is effective without a relaunch.
-fn screen_recording_gate(preflight: bool, request: impl FnOnce() -> bool) -> Result<(), String> {
-    if preflight || request() {
-        return Ok(());
-    }
-    Err(permission_denied_error(
-        PermissionKind::ScreenRecording,
-        "grant Screen Recording in System Settings, then relaunch the app",
-    ))
+/// Capture preflight is silent. Only an explicit grant action requests access.
+fn screen_recording_gate(preflight: bool) -> Result<(), String> {
+    if preflight { return Ok(()); }
+    Err(permission_denied_error(PermissionKind::ScreenRecording, "请在设置的权限管理中授权屏幕录制"))
 }
 
-/// Audio-recording gate. NotDetermined passes through: the first real use
-/// triggers the system prompt, which is attributed to this app.
+/// Audio access is requested explicitly from Settings, never during recording.
 fn microphone_gate(include_audio: bool, status: MicAuthStatus) -> Result<(), String> {
     if !include_audio {
         return Ok(());
     }
     match status {
-        MicAuthStatus::Denied | MicAuthStatus::Restricted => Err(permission_denied_error(
+        MicAuthStatus::Authorized => Ok(()),
+        _ => Err(permission_denied_error(
             PermissionKind::Microphone,
             "grant Microphone access in System Settings to record audio",
         )),
-        _ => Ok(()),
     }
 }
 
@@ -93,47 +85,33 @@ pub struct PermissionStatusDto {
     pub microphone: String,
 }
 
-/// Preflights Screen Recording before any capture entry point. On denial it
-/// opens the Screen Recording pane and raises the permission-guide (startup)
-/// window so tray/hotkey flows get the same guidance as the UI.
+/// All capture entry points route missing access to the same settings section.
 pub fn ensure_screen_recording(app: &tauri::AppHandle) -> Result<(), String> {
     #[cfg(target_os = "macos")]
-    return screen_recording_gate(crate::platform::has_screen_recording_permission(), || {
-        // Registers this process in the System Settings list and shows the
-        // system prompt (once per TCC reset). Returns true if access is
-        // already effective; after a fresh grant macOS requires a relaunch.
-        let effective = crate::platform::request_screen_recording_permission();
-        if !effective {
-            crate::platform::open_screen_capture_preferences();
-            crate::window::show_startup_window(app);
-        }
-        effective
-    });
-
-    #[cfg(not(target_os = "macos"))]
     {
-        let _ = app;
-        Ok(())
+        let result = screen_recording_gate(crate::platform::has_screen_recording_permission());
+        if result.is_err() { crate::window::show_permission_settings(app); }
+        result
     }
+    #[cfg(not(target_os = "macos"))]
+    { let _ = app; Ok(()) }
 }
 
-/// Gates audio recording on Microphone access. Denied/restricted fails and
-/// opens the Microphone pane; not-determined passes through so the first real
-/// capture raises the system prompt (attributed to this app).
-pub fn ensure_microphone(include_audio: bool) -> Result<(), String> {
+/// Missing microphone access also routes to central permission management.
+pub fn ensure_microphone(app: &tauri::AppHandle, include_audio: bool) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
         let status = MicAuthStatus::from_raw(crate::platform::microphone_auth_status_raw());
         let result = microphone_gate(include_audio, status);
         if result.is_err() {
-            crate::platform::open_microphone_preferences();
+            crate::window::show_permission_settings(app);
         }
         result
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        let _ = include_audio;
+        let _ = (app, include_audio);
         Ok(())
     }
 }
@@ -273,25 +251,9 @@ mod tests {
     }
 
     #[test]
-    fn screen_recording_gate_passes_without_prompting_when_preflight_ok() {
-        let mut requested = false;
-        let result = screen_recording_gate(true, || {
-            requested = true;
-            false
-        });
-        assert!(result.is_ok());
-        assert!(!requested, "must not show the system prompt when access is already granted");
-    }
-
-    #[test]
-    fn screen_recording_gate_passes_when_request_grants_access() {
-        assert!(screen_recording_gate(false, || true).is_ok());
-    }
-
-    #[test]
-    fn screen_recording_gate_fails_with_permission_error_when_denied() {
-        let err = screen_recording_gate(false, || false).unwrap_err();
-        assert!(err.starts_with("PERMISSION_DENIED:screenRecording:"), "got: {err}");
+    fn screen_recording_preflight_is_silent_and_reports_missing_permission() {
+        assert!(screen_recording_gate(true).is_ok());
+        assert!(screen_recording_gate(false).unwrap_err().starts_with("PERMISSION_DENIED:screenRecording:"));
     }
 
     #[test]
@@ -300,15 +262,14 @@ mod tests {
     }
 
     #[test]
-    fn microphone_gate_passes_when_authorized_or_undetermined() {
+    fn microphone_gate_passes_when_authorized() {
         assert!(microphone_gate(true, MicAuthStatus::Authorized).is_ok());
-        // NotDetermined: the first capture attempt raises the system prompt.
-        assert!(microphone_gate(true, MicAuthStatus::NotDetermined).is_ok());
+
     }
 
     #[test]
     fn microphone_gate_fails_when_denied_or_restricted() {
-        for status in [MicAuthStatus::Denied, MicAuthStatus::Restricted] {
+        for status in [MicAuthStatus::Denied, MicAuthStatus::Restricted, MicAuthStatus::NotDetermined, MicAuthStatus::Unknown] {
             let err = microphone_gate(true, status).unwrap_err();
             assert!(err.starts_with("PERMISSION_DENIED:microphone:"), "got: {err}");
         }
@@ -378,4 +339,18 @@ mod bundle_tests {
         assert_eq!(app_bundle_for_executable(Path::new("/tmp/target/debug/ddu")), None);
         assert_eq!(app_bundle_for_executable(Path::new("/tmp/fake.app/ddu")), None);
     }
+}
+
+#[tauri::command]
+pub fn take_permission_navigation() -> bool {
+    crate::window::take_permission_navigation()
+}
+
+/// Stop automatic placement before handing the gesture to the native window manager.
+#[tauri::command]
+pub fn permission_move_window(window: tauri::WebviewWindow) -> Result<(), String> {
+    use tauri::Emitter;
+    if window.label() != "permission" { return Err("Only the permission helper can be moved".into()); }
+    window.emit_to("permission", "permission-manual-move", ()).map_err(|e| e.to_string())?;
+    window.start_dragging().map_err(|e| e.to_string())
 }

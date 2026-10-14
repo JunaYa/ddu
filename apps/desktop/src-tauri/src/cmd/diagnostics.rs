@@ -155,7 +155,7 @@ fn get_permission_status() -> Vec<PlatformCapability> {
             reason: match mic {
                 super::MicAuthStatus::Authorized => None,
                 super::MicAuthStatus::NotDetermined => {
-                    Some("macOS will ask on first audio recording".to_string())
+                    Some("在设置 → 权限管理中授权麦克风".to_string())
                 }
                 _ => Some("Grant in System Settings > Privacy > Microphone".to_string()),
             },

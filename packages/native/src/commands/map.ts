@@ -17,6 +17,7 @@ export type NoArgs = Record<string, never>;
  * (specs/11 § 2.1); this table is the contract reviewers check against Rust.
  */
 export interface CommandMap {
+  take_permission_navigation: { args: NoArgs; result: boolean };
   smart_capture_start: { args: { mode: "auto" | "window" | "scroll" }; result: void };
   scroll_status: {
     args: NoArgs;
@@ -48,6 +49,7 @@ export interface CommandMap {
   delete_history_items: { args: { paths: string[] }; result: number };
   clear_ocr_index: { args: NoArgs; result: void };
   permission_app_path: { args: NoArgs; result: string };
+  permission_move_window: { args: NoArgs; result: void };
   permission_drag_app: { args: NoArgs; result: void };
   permission_open_settings: { args: { kind: PermissionKind }; result: void };
   permission_status: { args: NoArgs; result: PermissionStatus };

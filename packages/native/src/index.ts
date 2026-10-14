@@ -29,6 +29,7 @@ export {
   restartApp,
   permissionAppPath,
   dragPermissionApp,
+  movePermissionWindow,
   openPermissionSettings,
   closePermissionHelper,
 } from "./permissions.ts";

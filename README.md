@@ -25,6 +25,8 @@ This README describes the current source tree. Older packaged releases may have 
 
 **Scrolling screenshots:** choose 滚动截图 in the tray, select the scrolling content (exclude sticky headers), then scroll down slowly, pausing between steps and keeping at least a quarter of the previous view visible. DDU collects stable frames and appends only confidently matched content. The tray title shows the collected count; its tooltip and Settings show alignment guidance. Finish or cancel from the tray. A completed PNG opens in the normal preview, with copy, OCR, and editing. Sessions stop collecting after five minutes or when image/memory limits are reached; finish to save collected content. Animated, repeated, or fixed content can prevent alignment; scroll back and retry. Cloud sync/upload and AI services are not available. GIF conversion and workflow commands remain backend-only. The file-naming template is stored by Settings but is not yet applied by the capture backend.
 
+First launch and capture attempts without permission open Settings and focus the Permissions section. DDU does not show a separate Startup permission dialog or automatically request access during capture. Use **Grant** to initiate authorization.
+
 Settings → **Permissions** shows Accessibility, Screen Recording, and Microphone access. Click Authorize or Manage to open System Settings and a floating guide. For Accessibility and Screen Recording, drag the running DDU.app from the guide into the system list and enable its switch. Microphone access uses the system consent prompt; it cannot be granted by dragging. The guide refreshes status and offers a restart for Screen Recording. Dragging requires a bundled app; development binaries show manual guidance.
 
 ## Using DDU

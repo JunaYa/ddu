@@ -200,6 +200,7 @@ pub fn tauri_plugin_global_shortcut() -> TauriPlugin<tauri::Wry> {
             let result = match action {
                 CaptureAction::FullScreen => {
                     info!("Capture Screen Pressed!");
+                    if cmd::ensure_screen_recording(app).is_err() { return; }
                     tauri::async_runtime::block_on(platform::capture_screen(app, "images".to_string()))
                 }
                 CaptureAction::Region => {

@@ -25,3 +25,5 @@ export const dragPermissionApp = (): Promise<void> => call("permission_drag_app"
 export const openPermissionSettings = (kind: PermissionKind): Promise<void> =>
   call("permission_open_settings", { kind });
 export const closePermissionHelper = (): Promise<void> => getCurrentWindow().close();
+
+export const movePermissionWindow = (): Promise<void> => call("permission_move_window");

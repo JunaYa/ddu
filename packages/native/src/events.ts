@@ -13,6 +13,7 @@ export interface CapturePrepared {
 
 /** Events Rust pushes to windows, by name. */
 export interface EventMap {
+  "settings-permissions": null;
   /** A capture finished and is ready for the preview window. */
   "image-prepared": CapturePrepared;
 }

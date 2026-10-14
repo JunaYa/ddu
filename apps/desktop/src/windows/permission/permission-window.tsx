@@ -1,6 +1,7 @@
 import {
   closePermissionHelper,
   dragPermissionApp,
+  movePermissionWindow,
   openPermissionSettings,
   permissionAppPath,
   permissionStatus,
@@ -33,6 +34,10 @@ export function PermissionWindow() {
   });
   const action = useMutation({ mutationFn: (fn: () => Promise<void>) => fn() });
   const dragged = useRef(false);
+  const moveStart = useRef<{ x: number; y: number } | null>(null);
+  const moved = useRef(false);
+  const awaitingGrant = useRef(false);
+  const autoClosed = useRef(false);
   const { mutate } = action;
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -48,6 +53,19 @@ export function PermissionWindow() {
     if (kind) action.mutate(() => openPermissionSettings(kind));
   };
   const granted = !!kind && status.data?.[kind] === "granted";
+  useEffect(() => {
+    const current = kind && status.data?.[kind];
+    if (current && current !== "granted" && current !== "unknown") awaitingGrant.current = true;
+    if (
+      current === "granted" &&
+      awaitingGrant.current &&
+      !autoClosed.current &&
+      !action.isPending
+    ) {
+      autoClosed.current = true;
+      mutate(closePermissionHelper);
+    }
+  }, [kind, status.data, action.isPending, mutate]);
   return (
     <main className="permission-panel relative isolate h-screen overflow-hidden rounded-2xl border border-border bg-background text-foreground antialiased">
       <Button
@@ -59,7 +77,42 @@ export function PermissionWindow() {
       />
       <div className="pointer-events-none relative flex h-full flex-col gap-3 overflow-y-auto p-4">
         <header className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 text-sm font-semibold">
+          <Button
+            variant="ghost"
+            aria-label="拖动授权引导窗口；点击打开系统设置"
+            title="拖动标题移动窗口；点击打开系统设置"
+            className="pointer-events-auto min-h-11 h-auto min-w-0 flex-1 justify-start gap-2 whitespace-normal px-0 text-left text-sm font-semibold cursor-grab active:cursor-grabbing"
+            onPointerDown={(event) => {
+              if (event.button !== 0) return;
+              moved.current = false;
+              event.currentTarget.setPointerCapture?.(event.pointerId);
+              moveStart.current = { x: event.clientX, y: event.clientY };
+            }}
+            onPointerMove={(event) => {
+              const start = moveStart.current;
+              if (!start || !(event.buttons & 1) || moved.current) return;
+              if (Math.hypot(event.clientX - start.x, event.clientY - start.y) < 5) return;
+              moved.current = true;
+              moveStart.current = null;
+              if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+              }
+              action.mutate(movePermissionWindow);
+            }}
+            onPointerUp={() => {
+              moveStart.current = null;
+            }}
+            onPointerCancel={() => {
+              moveStart.current = null;
+            }}
+            onClick={(event) => {
+              if (moved.current && event.detail !== 0) {
+                moved.current = false;
+                return;
+              }
+              openSettings();
+            }}
+          >
             {granted ? (
               <Check aria-hidden className="pointer-events-none size-5 shrink-0 text-foreground" />
             ) : (
@@ -70,7 +123,7 @@ export function PermissionWindow() {
               : kind === "microphone"
                 ? "在系统设置中允许 DDU 使用麦克风"
                 : `将 DDU 拖入上方的「${permission?.title ?? "权限"}」列表`}
-          </div>
+          </Button>
           <Button
             size="icon"
             className="pointer-events-auto size-11 shrink-0 focus-visible:border-foreground/40 focus-visible:ring-foreground/30"

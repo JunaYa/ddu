@@ -106,7 +106,7 @@ pub async fn start_recording(
         return Err("此 macOS 版本不支持原生系统音频录制".into());
     }
     super::ensure_screen_recording(&app_handle)?;
-    super::ensure_microphone(config.include_audio)?;
+    super::ensure_microphone(&app_handle, config.include_audio)?;
     let mut slot = RECORDING.lock().map_err(|e| e.to_string())?;
     if slot.is_some() {
         return Err("请先停止当前录屏".into());

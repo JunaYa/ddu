@@ -1,4 +1,4 @@
-use tauri::{AppHandle, Manager, WebviewWindow};
+use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 #[cfg(target_os = "macos")]
 use tauri::window::{Effect, EffectState, EffectsBuilder};
@@ -146,29 +146,6 @@ pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {
     }
 }
 
-pub fn get_startup_window(app: &AppHandle) -> WebviewWindow {
-    if let Some(window) = app.get_webview_window(STARTUP_WINDOW) {
-        window
-    } else {
-        let win_builder =
-            WebviewWindowBuilder::new(app, STARTUP_WINDOW, WebviewUrl::App("/startup.html".into()))
-                .title("Startup")
-                .decorations(true)
-                .transparent(true)
-                // Shown by platform::show_* once placed on the right display.
-                .visible(false)
-                .skip_taskbar(false)
-                .shadow(true)
-                .resizable(false)
-                .inner_size(380.0, 420.0);
-
-        #[cfg(target_os = "macos")]
-        let win_builder = win_builder.effects(macos_glass_effect());
-
-        win_builder.build().unwrap()
-    }
-}
-
 /// `anchor` is the captured area in global logical points; the floater opens
 /// beside it on the same display. `None` uses the display under the cursor.
 pub fn show_preview_window(
@@ -220,9 +197,18 @@ pub fn hide_setting_window(app: &AppHandle) {
     }
 }
 
-pub fn show_startup_window(app: &AppHandle) {
-    let window = get_startup_window(app);
-    platform::show_startup_window(&window);
+static PERMISSION_NAVIGATION: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn take_permission_navigation() -> bool {
+    PERMISSION_NAVIGATION.swap(false, std::sync::atomic::Ordering::AcqRel)
+}
+
+pub fn show_permission_settings(app: &AppHandle) {
+    // Persist before creation: the first mount must not depend on receiving an event.
+    PERMISSION_NAVIGATION.store(true, std::sync::atomic::Ordering::Release);
+    if let Some(startup) = app.get_webview_window(STARTUP_WINDOW) { let _ = startup.hide(); }
+    show_setting_window(app);
+    let _ = app.emit_to(SETTING_WINDOW, "settings-permissions", ());
 }
 
 /// Frameless, opaque, always-on-top overlay covering one monitor. Recreated
@@ -328,11 +314,19 @@ pub fn show_permission_window(app: &AppHandle, kind: &str, origin: Option<(f64, 
 fn follow_permission_settings(window: &WebviewWindow, origin: Option<(f64, f64)>, ready: std::sync::Arc<std::sync::atomic::AtomicBool>) {
     use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
     use std::time::Duration;
+    use tauri::Listener;
+    let manual = Arc::new(AtomicBool::new(false));
+    let on_manual = manual.clone();
+    let listener = window.listen("permission-manual-move", move |_| {
+        on_manual.store(true, Ordering::Release);
+    });
+    let app = window.app_handle().clone();
     let closed = Arc::new(AtomicBool::new(false));
     let on_close = closed.clone();
     window.on_window_event(move |event| {
         if matches!(event, tauri::WindowEvent::Destroyed) {
             on_close.store(true, Ordering::Release);
+            app.unlisten(listener);
         }
     });
     let window = window.clone();
@@ -349,6 +343,7 @@ fn follow_permission_settings(window: &WebviewWindow, origin: Option<(f64, f64)>
             let (tx, rx) = std::sync::mpsc::sync_channel(1);
             let tick_window = window.clone();
             let tick_closed = closed.clone();
+            let tick_manual = manual.clone();
             if window.run_on_main_thread(move || {
                 if tick_closed.load(Ordering::Acquire) { return; }
                 let mut displayed = false;
@@ -367,7 +362,7 @@ fn follow_permission_settings(window: &WebviewWindow, origin: Option<(f64, f64)>
                 if let Some(anchor) = anchor {
                     if let Some(screen) = placement::screen_for(anchor, &placement::screens(&tick_window)) {
                         let destination = placement::permission_frame(anchor, screen.work_area);
-                        let progress = entrance_started.map(|t| t.elapsed().as_secs_f64() / 0.24).unwrap_or(0.0);
+                        let progress = entrance_started.map(|t| t.elapsed().as_secs_f64() / placement::PERMISSION_ENTRANCE_DURATION.as_secs_f64()).unwrap_or(0.0);
                         let frame = if first_display {
                             placement::permission_entrance_frame(destination, origin, progress)
                         } else { destination };
@@ -383,11 +378,13 @@ fn follow_permission_settings(window: &WebviewWindow, origin: Option<(f64, f64)>
                         }
                         displayed = true;
                         let current = placement::window_frame(&tick_window);
-                        if !current.is_some_and(|f| f.w == frame.w && f.h == frame.h) {
-                            let _ = tick_window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(frame.w, frame.h)));
-                        }
-                        if !current.is_some_and(|f| f.x == frame.x && f.y == frame.y) {
-                            let _ = tick_window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(frame.x, frame.y)));
+                        if !tick_manual.load(Ordering::Acquire) {
+                            if !current.is_some_and(|f| f.w == frame.w && f.h == frame.h) {
+                                let _ = tick_window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(frame.w, frame.h)));
+                            }
+                            if !current.is_some_and(|f| f.x == frame.x && f.y == frame.y) {
+                                let _ = tick_window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(frame.x, frame.y)));
+                            }
                         }
                         if !tick_window.is_visible().unwrap_or(false) {
                             let _ = tick_window.show();
@@ -405,7 +402,7 @@ fn follow_permission_settings(window: &WebviewWindow, origin: Option<(f64, f64)>
                     found_settings |= found;
                     if first_display && displayed {
                         let start = entrance_started.get_or_insert_with(std::time::Instant::now);
-                        if origin.is_none() || start.elapsed().as_millis() >= 240 { first_display = false; }
+                        if origin.is_none() || start.elapsed() >= placement::PERMISSION_ENTRANCE_DURATION { first_display = false; }
                     }
                 },
                 Err(_) => break,
