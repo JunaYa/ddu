@@ -18,12 +18,12 @@ interface ToolbarProps {
 
 export function Toolbar(props: ToolbarProps) {
   return (
-    <header className="surface-glass flex items-center justify-between gap-4 rounded-lg px-3 py-2">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
       <h1 className="text-lg font-bold">SnapVault</h1>
-      <div className="flex flex-1 items-center justify-end gap-4">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <Input
           type="search"
-          className="w-56"
+          className="w-48"
           placeholder="搜索截图文字 Search text"
           aria-label="搜索截图中的文字 Search text in screenshots"
           value={props.query}
@@ -40,7 +40,7 @@ export function Toolbar(props: ToolbarProps) {
             props.ascending ? "Sort by datetime, oldest first" : "Sort by datetime, newest first"
           }
         >
-          <span className="text-sm">Sort by Datetime</span>
+          <span className="hidden text-sm lg:inline">拍摄时间</span>
           {props.ascending ? (
             <ArrowUpNarrowWide className="text-primary" />
           ) : (
@@ -52,7 +52,7 @@ export function Toolbar(props: ToolbarProps) {
           onClick={props.onToggleDisplay}
           aria-label={props.display === "grid" ? "Display as list" : "Display as grid"}
         >
-          <span className="text-sm">Display</span>
+          <span className="sr-only">Display</span>
           {props.display === "grid" ? (
             <LayoutGrid className="text-primary" />
           ) : (

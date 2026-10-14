@@ -404,3 +404,46 @@ test("deleting in the grid keeps retained images visible throughout a delayed re
     observer.disconnect();
   }
 });
+
+test("grid selection survives layout changes and clears from the floating toolbar", async () => {
+  stubLayout();
+  setup();
+  fireEvent.click(await screen.findByRole("checkbox", { name: `选择 ${NEW.filename}` }));
+  expect(screen.getByRole("toolbar", { name: "所选截图操作" }).textContent).toContain("已选 1 项");
+  await showList();
+  expect(
+    screen.getByRole("checkbox", { name: `选择 ${NEW.filename}` }).getAttribute("aria-checked"),
+  ).toBe("true");
+  fireEvent.click(screen.getByRole("button", { name: `选择截图 ${OLD.filename}` }));
+  expect(screen.getByRole("toolbar").textContent).toContain("已选 2 项");
+  fireEvent.click(screen.getByRole("button", { name: "取消选择" }));
+  expect(screen.queryByRole("toolbar")).toBeNull();
+});
+
+test("shift selection uses display order, including reversed sorting", async () => {
+  const middle = item("middle.png", "2026-10-01T12:00:00Z");
+  setup({ items: [OLD, middle, NEW] });
+  await showList();
+  fireEvent.click(await screen.findByRole("button", { name: `选择截图 ${NEW.filename}` }));
+  fireEvent.click(screen.getByRole("button", { name: `选择截图 ${OLD.filename}` }), {
+    shiftKey: true,
+  });
+  expect(screen.getByRole("toolbar").textContent).toContain("已选 3 项");
+  fireEvent.click(screen.getByRole("button", { name: "Sort by datetime, newest first" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: `选择 ${NEW.filename}` }), {
+    shiftKey: true,
+  });
+  expect(screen.queryByRole("toolbar")).toBeNull();
+});
+
+test("select-all and escape shortcuts leave text editing alone", async () => {
+  setup();
+  await showList();
+  await screen.findByRole("checkbox", { name: `选择 ${NEW.filename}` });
+  fireEvent.keyDown(screen.getByRole("searchbox"), { key: "a", metaKey: true });
+  expect(screen.queryByRole("toolbar")).toBeNull();
+  fireEvent.keyDown(document.body, { key: "a", ctrlKey: true });
+  expect(screen.getByRole("toolbar").textContent).toContain("已选 2 项");
+  fireEvent.keyDown(document.body, { key: "Escape" });
+  expect(screen.queryByRole("toolbar")).toBeNull();
+});

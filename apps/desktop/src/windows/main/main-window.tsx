@@ -11,7 +11,15 @@ import { Empty, EmptyDescription } from "@ddu/ui/empty";
 import { VirtualMasonry } from "@ddu/ui/virtual-masonry";
 import type { RenderComponentProps } from "@ddu/ui/virtual-masonry";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { composeImages, type CompositeLayout } from "./composite.ts";
 import emptyImage from "./empty.png";
 import { historyKeys, useDebouncedValue, useHistoryItems, useTextSearch } from "./history-data.ts";
@@ -21,13 +29,25 @@ import { type DisplayMode, Toolbar } from "./toolbar.tsx";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
-/** Lets masonry cells (rendered by masonic) reach the window's delete action. */
-const DeleteContext = createContext<((item: HistoryItem) => void) | null>(null);
+/** Keep the masonry renderer stable while sharing selection and actions. */
+const ItemContext = createContext<{
+  selected: ReadonlySet<string>;
+  onDelete: (item: HistoryItem) => void;
+  onSelect: (id: string, checked: boolean, shiftKey?: boolean) => void;
+} | null>(null);
 
 function MasonryCell({ data }: RenderComponentProps<HistoryItem>) {
-  const onDelete = useContext(DeleteContext);
-  if (!onDelete) throw new Error("MasonryCell rendered outside DeleteContext");
-  return <HistoryCard item={data} onDelete={onDelete} />;
+  const context = useContext(ItemContext);
+  if (!context) throw new Error("MasonryCell rendered outside ItemContext");
+  return (
+    <HistoryCard
+      item={data}
+      onDelete={context.onDelete}
+      checked={context.selected.has(data.id)}
+      selectionMode={context.selected.size > 0}
+      onSelect={context.onSelect}
+    />
+  );
 }
 
 const capturedAt = (item: HistoryItem) =>
@@ -45,6 +65,7 @@ export function MainWindow() {
   const [ascending, setAscending] = useState(false);
   const [display, setDisplay] = useState<DisplayMode>("grid");
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const anchor = useRef<string | null>(null);
   const [indexNotice, setIndexNotice] = useState<string | null>(null);
 
   const sorted = useMemo(() => {
@@ -63,18 +84,51 @@ export function MainWindow() {
 
   function changeQuery(next: string) {
     setQuery(next);
+    anchor.current = null;
     // Only visible items stay selectable, so actions never touch hidden ones.
     setSelected(new Set());
   }
 
-  function toggle(id: string, checked: boolean) {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (checked) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  }
+  const toggle = useCallback(
+    (id: string, checked: boolean, shiftKey = false) => {
+      const start = visible.findIndex((item) => item.id === anchor.current);
+      const end = visible.findIndex((item) => item.id === id);
+      const ids =
+        shiftKey && start >= 0 && end >= 0
+          ? visible.slice(Math.min(start, end), Math.max(start, end) + 1).map((item) => item.id)
+          : [id];
+      anchor.current = id;
+      setSelected((current) => {
+        const next = new Set(current);
+        for (const key of ids) {
+          if (checked) next.add(key);
+          else next.delete(key);
+        }
+        return next;
+      });
+    },
+    [visible],
+  );
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (
+        event.target instanceof HTMLElement &&
+        event.target.closest("input, textarea, [contenteditable=true], [role=dialog]")
+      )
+        return;
+      if (event.key === "Escape") {
+        setSelected(new Set());
+        anchor.current = null;
+      } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        setSelected(new Set(visible.map((item) => item.id)));
+        anchor.current = visible[0]?.id ?? null;
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [visible]);
 
   const refresh = () =>
     Promise.all([
@@ -129,7 +183,7 @@ export function MainWindow() {
   const searching = query.trim().length > 0;
 
   return (
-    <main ref={scrollRef} className="h-screen overflow-y-auto bg-background/60 p-4">
+    <main ref={scrollRef} className="h-screen overflow-y-auto bg-background p-4 pb-28">
       <Toolbar
         query={query}
         onQueryChange={changeQuery}
@@ -173,27 +227,28 @@ export function MainWindow() {
 
       {visible.length > 0 ? (
         display === "grid" ? (
-          <DeleteContext value={deleteOne}>
+          <ItemContext value={{ selected, onDelete: deleteOne, onSelect: toggle }}>
             <VirtualMasonry
               items={visible}
               getItemKey={(item) => item.id}
               renderItem={MasonryCell}
               scrollRef={scrollRef}
-              columnWidth={{ base: 280, md: 300 }}
-              gap={16}
+              columnWidth={{ base: 160, sm: 192, lg: 240 }}
+              gap={12}
               itemHeightEstimate={280}
               role="grid"
             />
-          </DeleteContext>
+          </ItemContext>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             {visible.map((item) => (
               <HistoryRow
                 key={item.id}
                 item={item}
                 onDelete={deleteOne}
                 checked={selected.has(item.id)}
-                onCheckedChange={(checked) => toggle(item.id, checked)}
+                selectionMode={selectedItems.length > 0}
+                onSelect={toggle}
               />
             ))}
           </div>
