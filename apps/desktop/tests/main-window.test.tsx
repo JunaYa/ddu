@@ -362,3 +362,45 @@ test("typing quickly searches only the settled query", async () => {
     called(mock, "search_history_text").map(([, args]) => (args as { query: string }).query),
   ).toEqual(["error"]);
 });
+
+test("deleting in the grid keeps retained images visible throughout a delayed refresh", async () => {
+  stubLayout();
+  let reads = 0;
+  let finishRefresh: (() => void) | undefined;
+  const { mock, answerNextDialog } = setup({
+    commands: {
+      list_history_items: () => {
+        if (++reads === 1) return [OLD, NEW];
+        return new Promise<HistoryItem[]>((resolve) => {
+          finishRefresh = () => resolve([OLD]);
+        });
+      },
+    },
+  });
+  const retained = await screen.findByRole("img", { name: OLD.filename });
+  const cell = retained.closest('[role="gridcell"]') as HTMLElement;
+  await waitFor(() => expect(cell.style.visibility).not.toBe("hidden"));
+  const imageReads = called(mock, "get_image_base64").length;
+  const mutations: MutationRecord[] = [];
+  const observer = new MutationObserver((records) => mutations.push(...records));
+  observer.observe(cell, { attributes: true, attributeFilter: ["style"], attributeOldValue: true });
+  try {
+    answerNextDialog("Ok");
+    fireEvent.click(screen.getByRole("button", { name: `删除 ${NEW.filename}` }));
+    await waitFor(() => expect(finishRefresh).toBeTypeOf("function"));
+    expect(screen.getByRole("img", { name: OLD.filename })).toBe(retained);
+    expect(cell.style.visibility).not.toBe("hidden");
+    finishRefresh!();
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: `删除 ${NEW.filename}` })).toBeNull(),
+    );
+    mutations.push(...observer.takeRecords());
+    expect(screen.getByRole("img", { name: OLD.filename })).toBe(retained);
+    expect(retained.closest('[role="gridcell"]')).toBe(cell);
+    expect(mutations.some((record) => record.oldValue?.includes("visibility: hidden"))).toBe(false);
+    expect(cell.style.visibility).not.toBe("hidden");
+    expect(called(mock, "get_image_base64")).toHaveLength(imageReads);
+  } finally {
+    observer.disconnect();
+  }
+});

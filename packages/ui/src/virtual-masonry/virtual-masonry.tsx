@@ -1,6 +1,14 @@
-import type { RenderComponentProps } from "masonic";
-import { useMasonry, usePositioner, useResizeObserver } from "masonic";
-import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
+import type { Positioner, RenderComponentProps } from "masonic";
+import { createPositioner, useMasonry, usePositioner, useResizeObserver } from "masonic";
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const RESIZE_WIDTH_COMMIT_DELAY_MS = 120;
 
@@ -138,10 +146,39 @@ function VirtualMasonryInner<T>({
     layoutVersionRef.current = layoutVersion;
   });
 
-  const positioner = usePositioner(
+  // Let masonic resolve responsive column geometry, while keeping its index-
+  // based cache separate from our identity-based measurement restoration.
+  const geometry = usePositioner(
     { width, columnWidth: resolvedColumnWidth, columnGutter: gap, rowGutter: gap },
     [width, resolvedColumnWidth, gap, layoutVersion],
   );
+  const positioner = useMemo(
+    () => createPositioner(geometry.columnCount, geometry.columnWidth, gap, gap),
+    [geometry, gap],
+  );
+  const committedLayout = useRef<{ keys: (string | number)[]; positioner: Positioner } | null>(
+    null,
+  );
+  const previous = committedLayout.current;
+  if (previous && previous.positioner !== positioner && positioner.size() === 0) {
+    const heights = new Map<string | number, number>();
+    previous.keys.slice(0, previous.positioner.size()).forEach((key, index) => {
+      const measurement = previous.positioner.get(index);
+      if (measurement) heights.set(key, measurement.height);
+    });
+    // Seed through the last retained measured card. Masonic requires contiguous
+    // indices, so new cards between retained ones get an estimate until observed.
+    let lastMeasured = -1;
+    currentKeys.forEach((key, index) => {
+      if (heights.has(key)) lastMeasured = index;
+    });
+    for (let index = 0; index <= lastMeasured; index++) {
+      positioner.set(index, heights.get(currentKeys[index]!) ?? itemHeightEstimate);
+    }
+  }
+  useLayoutEffect(() => {
+    committedLayout.current = { keys: currentKeys, positioner };
+  });
   const resizeObserver = useResizeObserver(positioner);
   const { scrollTop, isScrolling, height } = useElementScroller(scrollRef);
 

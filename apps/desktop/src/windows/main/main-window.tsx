@@ -76,7 +76,11 @@ export function MainWindow() {
     });
   }
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: historyKeys.list });
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: historyKeys.list, exact: true }),
+      queryClient.invalidateQueries({ queryKey: ["history", "search"] }),
+    ]);
 
   const removeItems = useMutation({
     mutationFn: async ({ items, message }: { items: HistoryItem[]; message: string }) => {
