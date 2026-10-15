@@ -117,21 +117,20 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
 
         let window = win_builder.build().unwrap();
         #[cfg(target_os = "macos")]
-        hide_setting_secondary_buttons(&window);
+        hide_macos_window_buttons(&window, &[1, 2]);
         window
     }
 }
 
-/// Disabling these controls leaves grey traffic lights on macOS. Hide the
-/// native buttons explicitly while retaining the close button and resizing.
+/// Hide native traffic lights without changing title-bar dragging or resizing.
 #[cfg(target_os = "macos")]
-fn hide_setting_secondary_buttons(window: &WebviewWindow) {
+pub(crate) fn hide_macos_window_buttons(window: &WebviewWindow, kinds: &'static [libc::c_ulong]) {
     use objc::runtime::{Object, Sel, YES};
     use objc::Message;
 
-    with_ns_window_on_main_thread(window, |ns_window| unsafe {
-        // NSWindowMiniaturizeButton = 1, NSWindowZoomButton = 2.
-        for kind in [1 as libc::c_ulong, 2] {
+    with_ns_window_on_main_thread(window, move |ns_window| unsafe {
+        // NSWindowCloseButton = 0, MiniaturizeButton = 1, ZoomButton = 2.
+        for &kind in kinds {
             let button: Result<*mut Object, _> =
                 (&*ns_window).send_message(Sel::register("standardWindowButton:"), (kind,));
             match button {
@@ -139,10 +138,10 @@ fn hide_setting_secondary_buttons(window: &WebviewWindow) {
                     let result: Result<(), _> =
                         (&*button).send_message(Sel::register("setHidden:"), (YES,));
                     if let Err(e) = result {
-                        info!("failed to hide settings window button: {e}");
+                        info!("failed to hide native window button: {e}");
                     }
                 }
-                Err(e) => info!("failed to find settings window button: {e}"),
+                Err(e) => info!("failed to find native window button: {e}"),
                 _ => {}
             }
         }

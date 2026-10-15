@@ -27,6 +27,7 @@ pub fn update_preview_window(window: &WebviewWindow) {
     let _ = window.set_decorations(true);
     let _ = window.set_focus();
     let _ = window.set_resizable(true);
+    window::hide_macos_window_buttons(window, &[0, 1, 2]);
     let _ = window.set_always_on_top(false);
 
     let Some(current) = placement::window_frame(window) else { return };
