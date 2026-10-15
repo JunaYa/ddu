@@ -96,7 +96,7 @@ vp run @ddu/ui#storybook       # 组件浏览器，端口 6006
 | `pnpm run build`                                 | 构建所有工作区前端和共享包，不生成原生安装包。           |
 | `pnpm run build:frontend`                        | 仅构建桌面前端到 `apps/desktop/dist`。                   |
 | `pnpm run preview`                               | 预览已构建的前端；不提供原生 IPC。                       |
-| `pnpm run check:all`                             | 检查所有包、根配置及 React/Vue 类型。                    |
+| `pnpm run check:all`                             | 检查所有包、根配置及 TypeScript 类型。                   |
 | `pnpm run fmt` / `pnpm run fmt:check`            | 格式化文件 / 只检查格式。                                |
 | `pnpm run lint`                                  | 执行前端 lint 与类型检查。                               |
 | `pnpm run test` / `pnpm run test:desktop`        | 运行全部工作区 / 仅桌面前端测试。                        |
@@ -134,13 +134,12 @@ pnpm run build:dmg
 
 ## 技术架构与目录
 
-DDU 使用 Tauri 2 和 Rust 实现原生能力，前端正在迁移到 React 19、Tailwind CSS 4 和共享设计系统。目前历史、设置、首次启动、截图窗口已使用 React；预览与编辑器仍使用 Vue 3、UnoCSS 和 Fabric.js。迁移期间桌面构建同时支持两套前端。
+DDU 使用 Tauri 2 和 Rust 实现原生能力，所有桌面窗口统一使用 React 19、TypeScript、Tailwind CSS 4 和共享设计系统 `@ddu/ui`。React 图片编辑器使用 Fabric.js 实现画布标注。
 
 ```text
 apps/desktop/
   src/windows/       React 窗口：main、setting、startup、capture、permission
   src/shared/        窗口挂载、主题与错误边界
-  src/legacy/        Vue 预览/编辑器及隔离样式
   src-tauri/         Rust 命令、捕获引擎、平台适配和应用生命周期
   tests/             前端行为与架构契约测试
   scripts/           签名预检、原生构建、PDFium 准备脚本
@@ -158,7 +157,7 @@ docs/               调研、计划与发布流程
 
 React 窗口通过 `@ddu/native` 或 `@ddu/hooks` 调用原生能力，不直接导入 Tauri API。`@ddu/native` 不依赖 React；`@ddu/ui` 通过 props 接收数据，不依赖原生桥接。跨包使用声明的 exports，不直接导入其他包的 `src/` 内部路径。这些边界由根目录 lint 配置约束。
 
-剩余 Vue 窗口隔离在 `src/legacy` 中。维护时保持其样式与 React 窗口隔离，在最后一个窗口完成迁移前，保留 Vue/UnoCSS 依赖和桌面包的 TypeScript 兼容版本。
+预览和编辑器位于 `src/windows/preview`。Fabric 控制器独立于 UI 框架，原生调用统一经过 `@ddu/native`，控件统一使用 `@ddu/ui`。桌面构建仅保留 React/Tailwind 流程，并使用工作区统一的 TypeScript 版本。
 
 ## 常见问题
 

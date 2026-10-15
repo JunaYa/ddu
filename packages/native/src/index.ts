@@ -49,3 +49,17 @@ export {
 } from "./settings/schema.ts";
 export { getSetting, onSettingChange, setSetting } from "./settings/store.ts";
 export { currentWindowLabel, isWindowLabel, WINDOW, type WindowLabel } from "./windows.ts";
+
+export {
+  hidePreview,
+  expandPreview,
+  dragPreview,
+  copyCapture,
+  copyText,
+  recognizeText,
+  saveAnnotatedImage,
+  copyImageBytes,
+  type OcrRegion,
+  type OcrBlock,
+  type OcrResult,
+} from "./preview.ts";

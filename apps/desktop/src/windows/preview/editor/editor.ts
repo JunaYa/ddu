@@ -1,0 +1,548 @@
+import {
+  Canvas,
+  PencilBrush,
+  FabricObject,
+  FabricImage,
+  Rect,
+  Ellipse,
+  Line,
+  Textbox,
+  Path,
+  Circle,
+  Group,
+  FabricText,
+} from "fabric";
+
+export type ToolType =
+  | "select"
+  | "arrow"
+  | "line"
+  | "rect"
+  | "ellipse"
+  | "freehand"
+  | "highlight"
+  | "text"
+  | "step"
+  | "blur"
+  | "pixelate";
+
+export interface ImageRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface EditorStyle {
+  strokeColor: string;
+  fillColor: string;
+  strokeWidth: number;
+  fontSize: number;
+  opacity: number;
+}
+
+const DEFAULT_STYLE: EditorStyle = {
+  strokeColor: "#ff0000",
+  fillColor: "transparent",
+  strokeWidth: 3,
+  fontSize: 20,
+  opacity: 1,
+};
+
+export function createEditor(onChange: () => void = () => {}) {
+  const abort = new AbortController();
+  let canvas: Canvas | null = null;
+  let currentTool: ToolType = "select";
+  let style: EditorStyle = { ...DEFAULT_STYLE };
+  let stepCounter = 1;
+  let canUndo = false;
+  let canRedo = false;
+  let isDrawing = false;
+
+  let undoStack: string[] = [];
+  let redoStack: string[] = [];
+  let drawStart: { x: number; y: number } | null = null;
+  let tempObject: FabricObject | null = null;
+  let bgImage: FabricImage | null = null;
+  let suppressHistory = false;
+
+  function initCanvas(canvasEl: HTMLCanvasElement, width: number, height: number) {
+    const c = new Canvas(canvasEl, {
+      width,
+      height,
+      backgroundColor: "#ffffff",
+      selection: true,
+      preserveObjectStacking: true,
+    });
+    canvas = c;
+    c.freeDrawingBrush = new PencilBrush(c);
+
+    c.on("mouse:down", onMouseDown);
+    c.on("mouse:move", onMouseMove);
+    c.on("mouse:up", onMouseUp);
+    c.on("object:modified", saveState);
+    c.on("path:created", saveState);
+    c.on("text:editing:exited", saveState);
+
+    return c;
+  }
+
+  async function loadImage(src: string) {
+    if (!canvas) return;
+    const c = canvas;
+    const img = await FabricImage.fromURL(
+      src,
+      { signal: abort.signal },
+      { crossOrigin: "anonymous" },
+    );
+    if (abort.signal.aborted || canvas !== c) return;
+    bgImage = img;
+
+    const scale = Math.min(c.width! / img.width!, c.height! / img.height!, 1);
+    img.set({
+      scaleX: scale,
+      scaleY: scale,
+      left: (c.width! - img.width! * scale) / 2,
+      top: (c.height! - img.height! * scale) / 2,
+      selectable: false,
+      evented: false,
+      erasable: false,
+    });
+    c.backgroundImage = img;
+    c.renderAll();
+    saveState();
+  }
+
+  function saveState() {
+    if (suppressHistory || !canvas) return;
+    const json = JSON.stringify({ canvas: canvas.toJSON(), step: stepCounter });
+    undoStack.push(json);
+    redoStack = [];
+    if (undoStack.length > 100) undoStack.shift();
+    canUndo = undoStack.length > 1;
+    canRedo = false;
+    onChange();
+  }
+
+  async function restore(json: string) {
+    const c = canvas;
+    if (!c) return;
+    suppressHistory = true;
+    onChange();
+    try {
+      const state = JSON.parse(json);
+      await c.loadFromJSON(state.canvas, undefined, { signal: abort.signal });
+      if (abort.signal.aborted) return;
+      bgImage = c.backgroundImage instanceof FabricImage ? c.backgroundImage : null;
+      stepCounter = state.step;
+      setTool(currentTool);
+      c.renderAll();
+    } finally {
+      suppressHistory = false;
+      canUndo = undoStack.length > 1;
+      canRedo = redoStack.length > 0;
+      if (!abort.signal.aborted) onChange();
+    }
+  }
+
+  async function undo() {
+    if (!canvas || suppressHistory || undoStack.length <= 1) return;
+    const current = undoStack.pop()!;
+    redoStack.push(current);
+    await restore(undoStack[undoStack.length - 1]!);
+  }
+
+  async function redo() {
+    if (!canvas || suppressHistory || redoStack.length === 0) return;
+    const next = redoStack.pop()!;
+    undoStack.push(next);
+    await restore(next);
+  }
+
+  function setTool(tool: ToolType) {
+    currentTool = tool;
+    if (!canvas) return;
+
+    const c = canvas;
+    c.isDrawingMode = tool === "freehand" || tool === "highlight";
+    c.selection = tool === "select";
+
+    if (tool === "freehand") {
+      c.freeDrawingBrush!.color = style.strokeColor;
+      c.freeDrawingBrush!.width = style.strokeWidth;
+    } else if (tool === "highlight") {
+      c.freeDrawingBrush!.color = style.strokeColor + "60";
+      c.freeDrawingBrush!.width = style.strokeWidth * 4;
+    }
+
+    c.getObjects().forEach((obj) => {
+      if (obj !== bgImage) {
+        obj.selectable = tool === "select";
+        obj.evented = tool === "select";
+      }
+    });
+    c.discardActiveObject();
+    c.renderAll();
+    onChange();
+  }
+
+  function onMouseDown(opt: { e: MouseEvent | TouchEvent | PointerEvent }) {
+    const tool = currentTool;
+    if (suppressHistory || tool === "select" || tool === "freehand" || tool === "highlight") return;
+    if (!canvas) return;
+
+    const pointer = canvas.getScenePoint(opt.e);
+    drawStart = { x: pointer.x, y: pointer.y };
+    isDrawing = true;
+
+    if (tool === "text") {
+      addText(pointer.x, pointer.y);
+      isDrawing = false;
+      drawStart = null;
+      return;
+    }
+
+    if (tool === "step") {
+      addStep(pointer.x, pointer.y);
+      isDrawing = false;
+      drawStart = null;
+      return;
+    }
+
+    if (tool === "rect" || tool === "blur" || tool === "pixelate") {
+      tempObject = new Rect({
+        left: pointer.x,
+        top: pointer.y,
+        width: 0,
+        height: 0,
+        fill: tool === "rect" ? style.fillColor : "rgba(128,128,128,0.5)",
+        stroke: tool === "rect" ? style.strokeColor : "transparent",
+        strokeWidth: tool === "rect" ? style.strokeWidth : 0,
+        opacity: style.opacity,
+        selectable: false,
+        evented: false,
+      });
+      canvas.add(tempObject);
+    } else if (tool === "ellipse") {
+      tempObject = new Ellipse({
+        left: pointer.x,
+        top: pointer.y,
+        rx: 0,
+        ry: 0,
+        fill: style.fillColor,
+        stroke: style.strokeColor,
+        strokeWidth: style.strokeWidth,
+        opacity: style.opacity,
+        selectable: false,
+        evented: false,
+      });
+      canvas.add(tempObject);
+    } else if (tool === "line" || tool === "arrow") {
+      tempObject = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+        stroke: style.strokeColor,
+        strokeWidth: style.strokeWidth,
+        opacity: style.opacity,
+        selectable: false,
+        evented: false,
+      });
+      canvas.add(tempObject);
+    }
+  }
+
+  function onMouseMove(opt: { e: MouseEvent | TouchEvent | PointerEvent }) {
+    if (!isDrawing || !drawStart || !tempObject || !canvas) return;
+
+    const pointer = canvas.getScenePoint(opt.e);
+    const tool = currentTool;
+
+    if (tool === "rect" || tool === "blur" || tool === "pixelate") {
+      const left = Math.min(drawStart.x, pointer.x);
+      const top = Math.min(drawStart.y, pointer.y);
+      tempObject.set({
+        left,
+        top,
+        width: Math.abs(pointer.x - drawStart.x),
+        height: Math.abs(pointer.y - drawStart.y),
+      });
+    } else if (tool === "ellipse") {
+      const rx = Math.abs(pointer.x - drawStart.x) / 2;
+      const ry = Math.abs(pointer.y - drawStart.y) / 2;
+      tempObject.set({
+        left: Math.min(drawStart.x, pointer.x),
+        top: Math.min(drawStart.y, pointer.y),
+        rx,
+        ry,
+      });
+    } else if (tool === "line" || tool === "arrow") {
+      tempObject.set({ x2: pointer.x, y2: pointer.y });
+    }
+
+    canvas.renderAll();
+  }
+
+  function onMouseUp(_opt: { e: MouseEvent | TouchEvent | PointerEvent }) {
+    if (!isDrawing || !canvas) return;
+    isDrawing = false;
+
+    const tool = currentTool;
+
+    if (tempObject) {
+      tempObject.set({ selectable: false, evented: false });
+      // Sized during the drag via set(); refresh the hit box or Fabric keeps
+      // the zero-size one from mouse-down and the shape can never be selected.
+      tempObject.setCoords();
+
+      if (tool === "arrow" && drawStart) {
+        const pointer = canvas.getScenePoint(_opt.e);
+        canvas.remove(tempObject);
+        addArrow(drawStart.x, drawStart.y, pointer.x, pointer.y);
+      } else if (tool === "blur" || tool === "pixelate") {
+        if (tempObject instanceof Rect) applyPrivacyEffect(tempObject, tool);
+      }
+
+      tempObject = null;
+    }
+
+    drawStart = null;
+    saveState();
+  }
+
+  function addArrow(x1: number, y1: number, x2: number, y2: number) {
+    if (!canvas) return;
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const headLen = 15;
+
+    const line = new Line([x1, y1, x2, y2], {
+      stroke: style.strokeColor,
+      strokeWidth: style.strokeWidth,
+    });
+
+    const head = new Path(`M 0 0 L ${-headLen} ${headLen / 2} L ${-headLen} ${-headLen / 2} Z`, {
+      fill: style.strokeColor,
+      left: x2,
+      top: y2,
+      angle: (angle * 180) / Math.PI,
+      originX: "center",
+      originY: "center",
+    });
+
+    const group = new Group([line, head], {
+      selectable: true,
+      evented: true,
+    });
+    canvas.add(group);
+  }
+
+  function addText(x: number, y: number) {
+    if (!canvas) return;
+    const text = new Textbox("Text", {
+      left: x,
+      top: y,
+      fontSize: style.fontSize,
+      fill: style.strokeColor,
+      fontFamily: "Arial",
+      width: 200,
+      editable: true,
+    });
+    canvas.add(text);
+    canvas.setActiveObject(text);
+    text.enterEditing();
+    saveState();
+  }
+
+  function addStep(x: number, y: number) {
+    if (!canvas) return;
+    const num = stepCounter++;
+    const radius = 16;
+    const circle = new Circle({
+      radius,
+      fill: style.strokeColor,
+      originX: "center",
+      originY: "center",
+    });
+    const text = new FabricText(String(num), {
+      fontSize: 16,
+      fill: "#ffffff",
+      fontFamily: "Arial",
+      fontWeight: "bold",
+      originX: "center",
+      originY: "center",
+    });
+    const group = new Group([circle, text], {
+      left: x - radius,
+      top: y - radius,
+      selectable: true,
+      evented: true,
+    });
+    canvas.add(group);
+    saveState();
+  }
+
+  // Replace the drawn rect with an opaque patch whose pixels are actually
+  // destroyed, so the redaction survives export/copy and cannot be recovered
+  // (the previous implementation just laid a translucent grey rect over the
+  // original, which bled through and was reversible). Pixelate is the
+  // irreversible guarantee; blur is best-effort (a low-pass filter is partly
+  // recoverable — the toolbar labels it accordingly).
+  function applyPrivacyEffect(rect: Rect, type: "blur" | "pixelate") {
+    const c = canvas;
+    if (!c || !bgImage) return;
+    const bg = bgImage;
+    const el = bg.getElement() as CanvasImageSource;
+    const scaleX = bg.scaleX || 1;
+    const scaleY = bg.scaleY || 1;
+    const natW = bg.width || 0;
+    const natH = bg.height || 0;
+
+    // Map the scene-space rect to a pixel region of the ORIGINAL image. Floor
+    // the origin and ceil the size to over-cover, so no 1px sliver of the
+    // original survives along the patch border.
+    let sx = Math.floor(((rect.left ?? 0) - (bg.left ?? 0)) / scaleX);
+    let sy = Math.floor(((rect.top ?? 0) - (bg.top ?? 0)) / scaleY);
+    let sw = Math.ceil((rect.width ?? 0) / scaleX);
+    let sh = Math.ceil((rect.height ?? 0) / scaleY);
+    sx = Math.max(0, Math.min(sx, natW));
+    sy = Math.max(0, Math.min(sy, natH));
+    sw = Math.max(1, Math.min(sw, natW - sx));
+    sh = Math.max(1, Math.min(sh, natH - sy));
+
+    const off = document.createElement("canvas");
+    off.width = sw;
+    off.height = sh;
+    const ctx = off.getContext("2d");
+    if (!ctx) return;
+
+    if (type === "pixelate") {
+      // Downsample to a tiny canvas then scale back up with smoothing off — a
+      // real mosaic that discards the original detail.
+      const factor = 0.08;
+      const small = document.createElement("canvas");
+      small.width = Math.max(1, Math.round(sw * factor));
+      small.height = Math.max(1, Math.round(sh * factor));
+      const sctx = small.getContext("2d");
+      if (!sctx) return;
+      sctx.drawImage(el, sx, sy, sw, sh, 0, 0, small.width, small.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(small, 0, 0, small.width, small.height, 0, 0, sw, sh);
+    } else {
+      const radius = Math.max(4, Math.round(Math.min(sw, sh) / 12));
+      ctx.filter = `blur(${radius}px)`;
+      ctx.drawImage(el, sx, sy, sw, sh, 0, 0, sw, sh);
+      ctx.filter = "none";
+    }
+
+    // Place the processed patch exactly over the sampled original region.
+    const patch = new FabricImage(off, {
+      left: (bg.left ?? 0) + sx * scaleX,
+      top: (bg.top ?? 0) + sy * scaleY,
+      scaleX,
+      scaleY,
+      selectable: true,
+      evented: true,
+    });
+    c.remove(rect);
+    c.add(patch);
+    c.setActiveObject(patch);
+    c.renderAll();
+  }
+
+  function deleteSelected() {
+    if (!canvas || suppressHistory) return;
+    const active = canvas.getActiveObjects();
+    active.forEach((obj) => {
+      if (obj !== bgImage) canvas!.remove(obj);
+    });
+    canvas.discardActiveObject();
+    canvas.renderAll();
+    saveState();
+  }
+
+  function exportImage(format: "png" | "jpeg" = "png"): string {
+    if (!canvas) return "";
+    canvas.discardActiveObject();
+    canvas.renderAll();
+    return canvas.toDataURL({
+      format,
+      quality: format === "jpeg" ? 0.92 : 1,
+      left: bgImage?.left ?? 0,
+      top: bgImage?.top ?? 0,
+      width: bgImage?.getScaledWidth() ?? canvas.width,
+      height: bgImage?.getScaledHeight() ?? canvas.height,
+      multiplier: bgImage ? 1 / bgImage.scaleX : 1,
+    });
+  }
+
+  function clearAnnotations() {
+    if (!canvas || suppressHistory) return;
+    const objects = canvas.getObjects().filter((obj) => obj !== bgImage);
+    objects.forEach((obj) => canvas!.remove(obj));
+    stepCounter = 1;
+    canvas.renderAll();
+    saveState();
+  }
+
+  /** Map an image-pixel rect onto canvas coordinates (e.g. to outline OCR text). */
+  function imageRectToCanvas(rect: ImageRect): ImageRect | null {
+    if (!bgImage) return null;
+    const scaleX = bgImage.scaleX || 1;
+    const scaleY = bgImage.scaleY || 1;
+    return {
+      x: (bgImage.left ?? 0) + rect.x * scaleX,
+      y: (bgImage.top ?? 0) + rect.y * scaleY,
+      width: rect.width * scaleX,
+      height: rect.height * scaleY,
+    };
+  }
+
+  /** The selected annotation's footprint in image pixels, clipped to the image. */
+  function selectedImageRegion(): ImageRect | null {
+    const active = canvas?.getActiveObject();
+    if (!active || !bgImage) return null;
+    const bounds = active.getBoundingRect();
+    const scaleX = bgImage.scaleX || 1;
+    const scaleY = bgImage.scaleY || 1;
+    const x0 = Math.max(0, Math.floor((bounds.left - (bgImage.left ?? 0)) / scaleX));
+    const y0 = Math.max(0, Math.floor((bounds.top - (bgImage.top ?? 0)) / scaleY));
+    const x1 = Math.min(
+      bgImage.width || 0,
+      Math.ceil((bounds.left + bounds.width - (bgImage.left ?? 0)) / scaleX),
+    );
+    const y1 = Math.min(
+      bgImage.height || 0,
+      Math.ceil((bounds.top + bounds.height - (bgImage.top ?? 0)) / scaleY),
+    );
+    if (x1 <= x0 || y1 <= y0) return null;
+    return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+  }
+
+  function destroy() {
+    abort.abort();
+    if (canvas) {
+      void canvas.dispose();
+      canvas = null;
+    }
+    undoStack = [];
+    redoStack = [];
+  }
+
+  return {
+    getState: () => ({ currentTool, style, canUndo, canRedo, restoring: suppressHistory }),
+    updateStyle(update: Partial<EditorStyle>) {
+      style = { ...style, ...update };
+      setTool(currentTool);
+    },
+    initCanvas,
+    loadImage,
+    setTool,
+    undo,
+    redo,
+    deleteSelected,
+    exportImage,
+    clearAnnotations,
+    imageRectToCanvas,
+    selectedImageRegion,
+    destroy,
+  };
+}
+
+export type Editor = ReturnType<typeof createEditor>;

@@ -7,17 +7,13 @@ export default defineConfig({
     "*": "vp check --fix",
   },
   fmt: {
-    // Legacy Vue code is frozen until it is deleted (specs/12 § 4); reformatting
-    // it would only add churn to the window-by-window migration diffs.
-    ignorePatterns: ["apps/desktop/src/legacy/**", "**/src-tauri/**", ".agents/**", ".claude/**"],
+    ignorePatterns: ["**/src-tauri/**", ".agents/**", ".claude/**"],
   },
   lint: {
     options: { typeAware: true, typeCheck: true },
     // Template default rule set (correctness); stricter categories would flag
     // the unmodified design-system packages copied from the template (D2).
-    // Legacy Vue windows are type-checked by vue-tsc (`desktop#check:legacy`)
-    // and are not linted; they only shrink until Phase 8 deletes them.
-    ignorePatterns: ["apps/desktop/src/legacy/**", "**/src-tauri/**", "**/dist/**"],
+    ignorePatterns: ["**/src-tauri/**", "**/dist/**"],
     rules: {
       // Packages are consumed only through their `exports` entries; deep imports
       // into a package's src bypass that boundary (specs/10 § 3).

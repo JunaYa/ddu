@@ -1,3 +1,4 @@
+import type { OcrRegion, OcrResult } from "../preview.ts";
 import type {
   CaptureSession,
   DiagnosticsBundle,
@@ -17,6 +18,13 @@ export type NoArgs = Record<string, never>;
  * (specs/11 § 2.1); this table is the contract reviewers check against Rust.
  */
 export interface CommandMap {
+  hide_preview_window: { args: NoArgs; result: void };
+  update_preview_window: { args: NoArgs; result: void };
+  copy_image_to_clipboard: { args: { path: string }; result: void };
+  copy_text: { args: { text: string }; result: void };
+  perform_ocr: { args: { path: string; region: OcrRegion | null }; result: OcrResult };
+  save_annotated_image: { args: { base64: string; sourcePath: string }; result: string };
+  copy_image_bytes: { args: { base64: string }; result: void };
   take_permission_navigation: { args: NoArgs; result: boolean };
   smart_capture_start: { args: { mode: "auto" | "window" | "scroll" }; result: void };
   scroll_status: {

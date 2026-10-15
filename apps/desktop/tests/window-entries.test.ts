@@ -17,13 +17,11 @@ describe("window entries", () => {
     );
   });
 
-  test.each(labels)("%s.html loads a single legacy or React entry", (label) => {
+  test.each(labels)("%s.html loads a single React entry", (label) => {
     const scripts = [...read(`${label}.html`).matchAll(/<script[^>]*src="([^"]+)"/g)].map(
       (m) => m[1],
     );
     expect(scripts).toHaveLength(1);
-    expect(scripts[0]).toMatch(
-      new RegExp(`^/src/(legacy/pages/${label}/main\\.ts|windows/${label}/main\\.tsx)$`),
-    );
+    expect(scripts[0]).toMatch(new RegExp(`^/src/windows/${label}/main\\.tsx$`));
   });
 });

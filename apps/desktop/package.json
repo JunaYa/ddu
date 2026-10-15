@@ -6,14 +6,13 @@
   "scripts": {
     "dev": "tauri dev",
     "dev:frontend": "vp dev",
-    "build": "vue-tsc --noEmit && vp build",
+    "build": "tsc --noEmit && vp build",
     "build:native": "vp run --cache build && sh scripts/build-macos-dev.sh",
     "build:native:adhoc": "vp run --cache build && sh scripts/stage-pdfium.sh && tauri build --bundles app --config src-tauri/tauri.bundle.conf.json",
     "build:dmg": "sh scripts/check-macos-release-env.sh && vp run --cache build && sh scripts/stage-pdfium.sh && tauri build --bundles dmg --config src-tauri/tauri.bundle.conf.json",
     "preview": "vp preview",
     "check": "vp check",
-    "check:legacy": "vue-tsc --noEmit",
-    "typecheck": "vue-tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "check:native": "vp run --cache build && cargo check --locked --manifest-path src-tauri/Cargo.toml",
     "lint:native": "vp run --cache build && cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
     "test": "vp test",
@@ -41,12 +40,10 @@
     "@tauri-apps/plugin-shell": "catalog:",
     "@tauri-apps/plugin-store": "catalog:",
     "@tauri-apps/plugin-window-state": "catalog:",
-    "@vueuse/core": "14.3.0",
     "fabric": "catalog:",
     "lucide-react": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:",
-    "vue": "3.5.34"
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
@@ -55,16 +52,12 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@unocss/preset-mini": "66.7.0",
     "@vitejs/plugin-react": "catalog:",
-    "@vitejs/plugin-vue": "6.0.7",
     "jsdom": "catalog:",
     "tailwindcss": "catalog:",
-    "typescript": "5.9.3",
-    "unocss": "66.7.0",
+    "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plus": "catalog:",
-    "vue-tsc": "3.3.1"
+    "vite-plus": "catalog:"
   },
   "dmg": {
     "background": "./images/",

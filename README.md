@@ -96,7 +96,7 @@ Run these commands from the repository root; `vp run` can replace `pnpm run`. Sc
 | `pnpm run build`                                 | Build all workspace frontend assets and shared packages; no native bundle.        |
 | `pnpm run build:frontend`                        | Build only desktop assets into `apps/desktop/dist`.                               |
 | `pnpm run preview`                               | Preview built frontend assets without native IPC.                                 |
-| `pnpm run check:all`                             | Check all packages, root config, and React/Vue types.                             |
+| `pnpm run check:all`                             | Check all packages, root config, and TypeScript types.                            |
 | `pnpm run fmt` / `pnpm run fmt:check`            | Format files / check formatting without editing.                                  |
 | `pnpm run lint`                                  | Run frontend lint and type checks.                                                |
 | `pnpm run test` / `pnpm run test:desktop`        | Run all workspace / desktop frontend tests.                                       |
@@ -134,13 +134,12 @@ pnpm run build:dmg
 
 ## Architecture and repository layout
 
-DDU uses Tauri 2 and Rust for native operations. The UI is migrating to React 19, Tailwind CSS 4, and shared design-system packages. History, settings, startup, and capture windows are React; the preview/editor still uses Vue 3, UnoCSS, and Fabric.js. Both stacks are intentionally supported by the desktop build during migration.
+DDU uses Tauri 2 and Rust for native operations. All desktop windows use React 19, TypeScript, Tailwind CSS 4, and the shared `@ddu/ui` design system. The React image editor uses Fabric.js for canvas annotations.
 
 ```text
 apps/desktop/
   src/windows/       React windows: main, setting, startup, capture, permission
   src/shared/        Window mounting, theme, error boundary
-  src/legacy/        Vue preview/editor and its isolated styles
   src-tauri/         Rust commands, capture engine, platform adapters, app lifecycle
   tests/             Frontend behavior and architecture contract tests
   scripts/           Signing preflight, native build, PDFium staging
@@ -158,7 +157,7 @@ docs/               Research, plans, and release procedures
 
 React windows call `@ddu/native`, directly or through `@ddu/hooks`; they do not import Tauri APIs themselves. `@ddu/native` is framework-independent, and `@ddu/ui` receives data through props without depending on the native bridge. Consume packages through their declared exports rather than importing their `src/` internals. These boundaries are enforced in the root lint configuration.
 
-The remaining Vue window is isolated under `src/legacy`. Keep its styles and migration changes separate from React windows; do not remove Vue/UnoCSS or the desktop TypeScript compatibility pin until that window has migrated.
+Preview and editor components live under `src/windows/preview`. The Fabric controller is framework-independent, native commands go through `@ddu/native`, and all controls use `@ddu/ui`. The desktop build uses a single React/Tailwind pipeline and the workspace TypeScript version.
 
 ## Troubleshooting
 

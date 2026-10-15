@@ -15,10 +15,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "paths": {
-      "~/*": ["./src/legacy/*"]
-    }
+    "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "tests"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tests"]
 }
