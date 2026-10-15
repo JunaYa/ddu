@@ -10,3 +10,5 @@ pub use window::*;
 
 mod permission_window;
 pub use permission_window::*;
+
+mod home_window;
