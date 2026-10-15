@@ -177,6 +177,8 @@ pub fn run() {
             cmd::save_annotated_image,
             cmd::get_image_info,
             cmd::perform_ocr,
+            cmd::open_image_for_ocr,
+            cmd::take_imported_image,
             cmd::copy_text,
             cmd::ocr_index_items,
             cmd::search_history_text,

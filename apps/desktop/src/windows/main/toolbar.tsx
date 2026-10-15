@@ -14,6 +14,8 @@ interface ToolbarProps {
   onToggleSort: () => void;
   display: DisplayMode;
   onToggleDisplay: () => void;
+  onOpenImage: () => void;
+  openingImage: boolean;
 }
 
 export function Toolbar(props: ToolbarProps) {
@@ -21,6 +23,9 @@ export function Toolbar(props: ToolbarProps) {
     <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
       <h1 className="text-lg font-bold">SnapVault</h1>
       <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button onClick={props.onOpenImage} disabled={props.openingImage}>
+          {props.openingImage ? "正在打开…" : "打开图片识别文字"}
+        </Button>
         <Input
           type="search"
           className="w-48"

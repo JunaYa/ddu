@@ -1,4 +1,5 @@
 import type { OcrRegion, OcrResult } from "../preview.ts";
+import type { CapturePrepared } from "../events.ts";
 import type {
   CaptureSession,
   DiagnosticsBundle,
@@ -18,6 +19,8 @@ export type NoArgs = Record<string, never>;
  * (specs/11 § 2.1); this table is the contract reviewers check against Rust.
  */
 export interface CommandMap {
+  open_image_for_ocr: { args: NoArgs; result: boolean };
+  take_imported_image: { args: NoArgs; result: CapturePrepared | null };
   hide_preview_window: { args: NoArgs; result: void };
   update_preview_window: { args: NoArgs; result: void };
   copy_image_to_clipboard: { args: { path: string }; result: void };

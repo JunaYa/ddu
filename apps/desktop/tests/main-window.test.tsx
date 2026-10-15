@@ -109,6 +109,31 @@ async function showList() {
 const rowNames = () =>
   screen.getAllByRole("checkbox", { name: /^选择 / }).map((box) => box.getAttribute("aria-label"));
 
+test("opening an image invokes the native picker and cancellation keeps history intact", async () => {
+  const { mock } = setup({ commands: { open_image_for_ocr: () => false } });
+  await showList();
+  fireEvent.click(screen.getByRole("button", { name: "打开图片识别文字" }));
+  await waitFor(() => expect(called(mock, "open_image_for_ocr")).toHaveLength(1));
+  await screen.findByRole("button", { name: "打开图片识别文字" });
+  expect(rowNames()).toHaveLength(2);
+});
+
+test("an invalid imported image reports an actionable error", async () => {
+  stubLayout();
+  setup({
+    commands: {
+      open_image_for_ocr: () => {
+        throw "无法解码图片";
+      },
+    },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "打开图片识别文字" }));
+  await screen.findByText(/打开图片失败.*无法解码图片/);
+  expect(screen.getByRole("button", { name: "打开图片识别文字" }).hasAttribute("disabled")).toBe(
+    false,
+  );
+});
+
 test("lists screenshots newest first and toggles the order", async () => {
   setup();
   await showList();

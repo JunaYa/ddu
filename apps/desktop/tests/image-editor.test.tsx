@@ -1,5 +1,5 @@
 import { mockNative, resetNativeMock } from "@ddu/native/testing";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { ImageEditor } from "../src/windows/preview/editor/image-editor.tsx";
 
@@ -114,4 +114,58 @@ test("OCR recognizes the selected image region and exposes line highlights", asy
     "perform_ocr",
     { path: "/shots/source.png", region: { x: 10, y: 20, width: 30, height: 40 } },
   ]);
+});
+
+test("imported images automatically recognize the whole image and can retry after failure", async () => {
+  let fail = true;
+  const mock = mockNative({
+    commands: {
+      perform_ocr: () => {
+        if (fail) throw "unavailable";
+        return { text: "Imported text", language: "en", engine: "test", blocks: [] };
+      },
+    },
+  });
+  render(
+    <ImageEditor
+      imagePath="/shots/import.png"
+      imageSrc="source"
+      autoOcr
+      onClose={() => {}}
+      onSaved={() => {}}
+    />,
+  );
+  expect((await screen.findByRole("alert")).textContent).toContain("unavailable");
+  expect(mock.calls).toContainEqual(["perform_ocr", { path: "/shots/import.png", region: null }]);
+  fail = false;
+  fireEvent.click(screen.getByRole("button", { name: "提取文字 Extract text" }));
+  await screen.findByText("Imported text");
+});
+
+test("closing the OCR panel discards an in-flight result", async () => {
+  let finish!: (value: { text: string; language: string; engine: string; blocks: [] }) => void;
+  mockNative({
+    commands: {
+      perform_ocr: () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    },
+  });
+  render(
+    <ImageEditor
+      imagePath="/shots/import.png"
+      imageSrc="source"
+      autoOcr
+      onClose={() => {}}
+      onSaved={() => {}}
+    />,
+  );
+  await screen.findByText("正在识别…");
+  fireEvent.click(screen.getByRole("button", { name: "关闭文字面板 Close text panel" }));
+  await act(async () => {
+    finish({ text: "Stale text", language: "en", engine: "test", blocks: [] });
+  });
+  expect(screen.queryByText("Stale text")).toBeNull();
+  expect(screen.queryByRole("complementary")).toBeNull();
 });

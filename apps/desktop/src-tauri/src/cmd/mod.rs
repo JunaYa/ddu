@@ -1,4 +1,6 @@
 mod common;
+mod import_image;
+pub use import_image::*;
 mod diagnostics;
 mod permissions;
 mod export;

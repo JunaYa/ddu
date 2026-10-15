@@ -7,6 +7,7 @@ import {
   imageDataUrl,
   on,
   recognizeText,
+  takeImportedImage,
   type CapturePrepared,
 } from "@ddu/native";
 import { Button } from "@ddu/ui/button";
@@ -30,29 +31,48 @@ export function PreviewWindow() {
 
   useEffect(() => {
     let disposed = false;
-    let unlisten: (() => void) | undefined;
-    void on("image-prepared", (next) => {
+    const stops: Array<() => void> = [];
+    function receive(next: CapturePrepared) {
       if (disposed) return;
       generation.current++;
       pending.current = false;
       setCapture(next);
       setImage("");
-      setEditing(false);
+      setEditing(next.mode === "imported");
       setBusy(false);
       setNotice("");
       setError(next.copyError ?? "");
-    })
-      .then((stop) => {
-        if (disposed) stop();
-        else unlisten = stop;
-      })
-      .catch((cause: unknown) => {
+    }
+    async function receiveImport() {
+      const version = generation.current;
+      try {
+        const next = await takeImportedImage();
+        if (!disposed && version === generation.current && next) receive(next);
+      } catch (cause) {
         if (!disposed) setError(String(cause));
-      });
+      }
+    }
+    async function subscribe() {
+      for (const subscription of [
+        () => on("image-prepared", receive),
+        () => on("imported-image-ready", () => void receiveImport()),
+      ]) {
+        const stop = await subscription();
+        if (disposed) {
+          stop();
+          return;
+        }
+        stops.push(stop);
+      }
+      await receiveImport();
+    }
+    void subscribe().catch((cause: unknown) => {
+      if (!disposed) setError(String(cause));
+    });
     return () => {
       disposed = true;
       generation.current++;
-      unlisten?.();
+      stops.forEach((stop) => stop());
     };
   }, []);
 
@@ -109,8 +129,15 @@ export function PreviewWindow() {
         key={capture.fullPath}
         imageSrc={image}
         imagePath={capture.fullPath}
-        onClose={() => setEditing(false)}
-        onSaved={() => setEditing(false)}
+        autoOcr={capture.mode === "imported"}
+        onClose={() => {
+          setEditing(false);
+          if (capture.mode === "imported") void perform(hidePreview);
+        }}
+        onSaved={() => {
+          setEditing(false);
+          if (capture.mode === "imported") void perform(hidePreview);
+        }}
       />
     );
 

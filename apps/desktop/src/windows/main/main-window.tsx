@@ -5,6 +5,7 @@ import {
   imageDataUrl,
   indexHistoryItems,
   openCombinedImage,
+  openImageForOcr,
 } from "@ddu/native";
 import { Alert, AlertDescription } from "@ddu/ui/alert";
 import { Empty, EmptyDescription } from "@ddu/ui/empty";
@@ -181,10 +182,18 @@ export function MainWindow() {
   });
 
   const searching = query.trim().length > 0;
+  const openImage = useMutation({
+    mutationFn: openImageForOcr,
+    onSuccess: (imported) => {
+      if (imported) return refresh();
+    },
+  });
 
   return (
     <main ref={scrollRef} className="h-screen overflow-y-auto bg-background p-4 pb-28">
       <Toolbar
+        onOpenImage={() => openImage.mutate()}
+        openingImage={openImage.isPending}
         query={query}
         onQueryChange={changeQuery}
         matches={matches ? visible.length : null}
@@ -217,6 +226,7 @@ export function MainWindow() {
         search.error && `搜索失败：${search.error.message}`,
         removeItems.error && `删除失败：${removeItems.error.message}`,
         combine.error && `拼合失败：${combine.error.message}`,
+        openImage.error && `打开图片失败：${openImage.error.message}`,
       ]
         .filter((message): message is string => Boolean(message))
         .map((message) => (

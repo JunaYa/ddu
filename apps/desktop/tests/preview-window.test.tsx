@@ -6,7 +6,9 @@ import { WindowShell } from "../src/shared/mount-window.tsx";
 import { PreviewWindow } from "../src/windows/preview/preview-window.tsx";
 
 vi.mock("../src/windows/preview/editor/image-editor.tsx", () => ({
-  ImageEditor: () => <div>React image editor</div>,
+  ImageEditor: ({ autoOcr }: { autoOcr?: boolean }) => (
+    <div>{autoOcr ? "Automatic OCR editor" : "React image editor"}</div>
+  ),
 }));
 afterEach(() => {
   cleanup();
@@ -27,6 +29,7 @@ async function setup() {
     window: "preview",
     commands: {
       get_image_base64: () => "QUJD",
+      take_imported_image: () => null,
       hide_preview_window: () => undefined,
       update_preview_window: () => undefined,
       copy_image_to_clipboard: () => undefined,
@@ -55,6 +58,45 @@ test("preview uses the guarded image command, copies images and OCR text", async
   fireEvent.click(screen.getByRole("button", { name: "提取并复制文字 Copy text" }));
   await screen.findByText("已复制 2 行文字");
   expect(mock.calls).toContainEqual(["copy_text", { text: "hello\n世界" }]);
+});
+
+test("a cold preview consumes a pending import and opens the OCR editor", async () => {
+  const mock = mockNative({
+    window: "preview",
+    commands: {
+      take_imported_image: () => ({ ...capture, mode: "imported" }),
+      get_image_base64: () => "QUJD",
+    },
+  });
+  render(
+    <WindowShell>
+      <PreviewWindow />
+    </WindowShell>,
+  );
+  await screen.findByText("Automatic OCR editor");
+  expect(mock.calls).toContainEqual(["get_image_base64", { path: capture.fullPath }]);
+  expect(mock.calls.some(([name]) => name === "hide_preview_window")).toBe(false);
+});
+
+test("an already mounted preview consumes an import notification", async () => {
+  let pending = false;
+  mockNative({
+    commands: {
+      take_imported_image: () => (pending ? { ...capture, mode: "imported" } : null),
+      get_image_base64: () => "QUJD",
+    },
+  });
+  render(
+    <WindowShell>
+      <PreviewWindow />
+    </WindowShell>,
+  );
+  await act(async () => {});
+  pending = true;
+  await act(async () => {
+    await emit("imported-image-ready", null);
+  });
+  await screen.findByText("Automatic OCR editor");
 });
 
 test("editing expands the native window and renders the React editor", async () => {

@@ -9,11 +9,13 @@ import { OcrPanel, type OcrState } from "./ocr-panel.tsx";
 export function ImageEditor({
   imageSrc,
   imagePath,
+  autoOcr = false,
   onClose,
   onSaved,
 }: {
   imageSrc: string;
   imagePath: string;
+  autoOcr?: boolean;
   onClose: () => void;
   onSaved: (path: string) => void;
 }) {
@@ -114,10 +116,13 @@ export function ImageEditor({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  async function readText() {
+  async function readText(wholeImage = false) {
     if (!editor) return;
     const request = ++ocrRequest.current;
-    const region = editor.getState().currentTool === "select" ? editor.selectedImageRegion() : null;
+    const region =
+      !wholeImage && editor.getState().currentTool === "select"
+        ? editor.selectedImageRegion()
+        : null;
     setHovered(null);
     setOcr({ loading: true, error: "", partial: !!region, lines: [] });
     try {
@@ -134,6 +139,13 @@ export function ImageEditor({
         });
     }
   }
+
+  const startAutoOcr = useEffectEvent(() => {
+    void readText(true);
+  });
+  useEffect(() => {
+    if (autoOcr && editor) startAutoOcr();
+  }, [autoOcr, editor, imagePath]);
 
   const box = hovered === null ? null : ocr?.lines[hovered]?.box;
   const highlight = box && editor?.imageRectToCanvas(box);

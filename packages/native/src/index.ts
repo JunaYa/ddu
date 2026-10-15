@@ -52,6 +52,8 @@ export { currentWindowLabel, isWindowLabel, WINDOW, type WindowLabel } from "./w
 
 export {
   hidePreview,
+  openImageForOcr,
+  takeImportedImage,
   expandPreview,
   dragPreview,
   copyCapture,

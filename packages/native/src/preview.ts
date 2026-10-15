@@ -19,6 +19,8 @@ export interface OcrResult {
 }
 
 export const hidePreview = () => call("hide_preview_window");
+export const openImageForOcr = () => call("open_image_for_ocr");
+export const takeImportedImage = () => call("take_imported_image");
 export const expandPreview = () => call("update_preview_window");
 export const dragPreview = () => getCurrentWindow().startDragging();
 export const copyCapture = (path: string) => call("copy_image_to_clipboard", { path });
