@@ -75,7 +75,11 @@ jobs:
   # don't touch apps/desktop never pay the Rust cost. ddu's Rust code only
   # compiles on macOS (specs/99 D11), so this lane runs on a macOS runner.
   desktop:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -88,6 +92,8 @@ jobs:
               - 'apps/desktop/**'
               - 'packages/**'
               - 'pnpm-lock.yaml'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/publish.yml'
 
       - if: steps.changes.outputs.desktop == 'true'
         uses: dtolnay/rust-toolchain@stable

@@ -27,7 +27,13 @@
     "ready:native": "vp run ready && vp run lint:native && vp run test:native",
     "release:check-macos": "vp run desktop#release:check-macos",
     "license:gate": "pnpm licenses list -r --prod --json > .licenses.json && vp run license:check && vp exec pnpm-licenses generate-disclaimer --prod --json-input-file .licenses.json --output-file THIRD_PARTY_NOTICES.txt",
-    "prepare": "vp config"
+    "prepare": "vp config",
+    "build:native:arm64": "vp run desktop#build:native:arm64",
+    "build:native:x64": "vp run desktop#build:native:x64",
+    "build:native:adhoc:arm64": "vp run desktop#build:native:adhoc:arm64",
+    "build:native:adhoc:x64": "vp run desktop#build:native:adhoc:x64",
+    "build:dmg:arm64": "vp run desktop#build:dmg:arm64",
+    "build:dmg:x64": "vp run desktop#build:dmg:x64"
   },
   "devDependencies": {
     "@quantco/pnpm-licenses": "catalog:",

@@ -15,10 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest # for Arm based macs (M1 and above).
-            args: --target aarch64-apple-darwin
-          - platform: macos-latest # for Intel based macs.
-            args: --target x86_64-apple-darwin
+          - platform: macos-15
+            target: aarch64-apple-darwin
+            architecture: arm64
+          - platform: macos-15-intel
+            target: x86_64-apple-darwin
+            architecture: x64
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -31,8 +33,7 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.target }}
 
       - uses: voidzero-dev/setup-vp@v1.21.1
         with:
@@ -45,9 +46,26 @@ jobs:
       # task graph), so the frontend must be built before tauri-action runs.
       - run: vp run desktop#build
 
+      - name: Check release credentials
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: sh apps/desktop/scripts/check-macos-release-env.sh
+
+      - name: Stage matching PDFium library
+        run: sh apps/desktop/scripts/stage-pdfium.sh ${{ matrix.target }}
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         with:
           projectPath: apps/desktop
           tauriScript: vp exec tauri
@@ -58,4 +76,4 @@ jobs:
             See the assets to download this version and install.
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.args }}
+          args: --target ${{ matrix.target }} --bundles dmg --config src-tauri/tauri.bundle.${{ matrix.architecture }}.json

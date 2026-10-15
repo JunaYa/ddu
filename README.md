@@ -117,22 +117,26 @@ Some native/OCR integration tests are ignored by default because they require de
 ### Build a macOS app
 
 ```sh
-pnpm run build:native         # certificate-signed .app
-pnpm run build:native:adhoc   # local ad-hoc .app
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+pnpm run build:native:arm64  # Apple Silicon, certificate-signed .app
+pnpm run build:native:x64    # Intel, certificate-signed .app
+pnpm run build:native        # defaults to the Rust toolchain host architecture
+pnpm run build:native:adhoc:arm64 # explicit ad-hoc signing; :x64 also available
 ```
 
 The signed build reads `APPLE_SIGNING_IDENTITY` from the environment or root `.env.local` and refuses to run without it. A stable certificate identity helps preserve macOS permission grants across rebuilds. Ad-hoc builds may need Screen Recording permission granted again after rebuilding.
 
-These tasks build frontend assets first, stage `libpdfium.dylib`, and run Tauri with the bundle configuration. Native artifacts are normally under `apps/desktop/src-tauri/target/release/bundle/`. `PDFIUM_LIB_PATH` can override the OCR runtime’s PDFium location when debugging.
+These tasks build frontend assets, stage and verify the matching `libpdfium.dylib`, then run Tauri with an architecture-specific bundle configuration. Outputs are under `apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/` and `apps/desktop/src-tauri/target/x86_64-apple-darwin/release/bundle/`; `CARGO_TARGET_DIR` overrides the build root. OCR libraries are staged separately to prevent overwrites. Cross-compilation still needs matching native dependencies; CI builds and tests on separate Apple Silicon and Intel runners.
 
 For distribution, use a Developer ID identity and follow the [macOS release checklist](docs/release-macos.md):
 
 ```sh
 pnpm run release:check-macos
-pnpm run build:dmg
+pnpm run build:dmg:arm64
+pnpm run build:dmg:x64
 ```
 
-`build:dmg` runs the preflight automatically before building. The preflight checks for `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_PASSWORD`. It does not prove signing or notarization succeeded: verify the app, notarize and staple the DMG, then test it on a fresh account before publishing. Keep signing credentials outside version control.
+`build:dmg` defaults to the host architecture. Each DMG task runs a preflight before native compilation, requiring a Developer ID Application identity plus `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_PASSWORD`. The script maps the password to Tauri's `APPLE_PASSWORD`. This does not prove signing or notarization succeeded: verify the app, notarize and staple the DMG, then test on fresh accounts on both chip families. Keep signing credentials outside version control.
 
 ## Architecture and repository layout
 

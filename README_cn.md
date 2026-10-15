@@ -117,22 +117,26 @@ vp run @ddu/ui#storybook       # 组件浏览器，端口 6006
 ### 构建 macOS 应用
 
 ```sh
-pnpm run build:native         # 使用证书签名的 .app
-pnpm run build:native:adhoc   # 本机临时签名的 .app
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+pnpm run build:native:arm64  # Apple Silicon，证书签名的 .app
+pnpm run build:native:x64    # Intel，证书签名的 .app
+pnpm run build:native        # 默认使用 Rust 工具链的宿主架构
+pnpm run build:native:adhoc:arm64 # 明确选择临时签名；也支持 :x64
 ```
 
 证书签名任务从环境变量或根目录 `.env.local` 读取 `APPLE_SIGNING_IDENTITY`，缺失时拒绝构建。稳定的证书身份有助于在重新构建后保留 macOS 权限授权；临时签名构建更新后可能需要重新授予屏幕录制权限。
 
-这些任务会先构建前端、准备 `libpdfium.dylib`，再使用 bundle 配置调用 Tauri。原生产物通常位于 `apps/desktop/src-tauri/target/release/bundle/`。调试 OCR 时，可用 `PDFIUM_LIB_PATH` 覆盖 PDFium 动态库查找位置。
+这些任务会先构建前端、准备对应架构的 `libpdfium.dylib` 并校验架构，再使用独立的 bundle 配置调用 Tauri。产物分别位于 `apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/` 和 `apps/desktop/src-tauri/target/x86_64-apple-darwin/release/bundle/`，可用 `CARGO_TARGET_DIR` 更改构建根目录。两种架构的 OCR 库分开暂存，避免相互覆盖。交叉编译仍需对应架构的原生依赖；CI 分别使用 Apple Silicon 和 Intel runner 构建、测试。
 
 对外分发应使用 Developer ID 身份，并遵循 [macOS 发布清单](docs/release-macos.md)：
 
 ```sh
 pnpm run release:check-macos
-pnpm run build:dmg
+pnpm run build:dmg:arm64
+pnpm run build:dmg:x64
 ```
 
-`build:dmg` 会在构建前自动执行预检。预检会确认 `APPLE_SIGNING_IDENTITY`、`APPLE_ID`、`APPLE_TEAM_ID`、`APPLE_APP_PASSWORD` 是否存在，但不代表签名或公证已经成功。发布前仍需验证应用签名、完成 DMG 公证与装订，并在全新账户上测试。签名凭据不得提交到版本库。
+`build:dmg` 默认构建宿主架构，各 DMG 任务在原生构建前执行预检，要求 Developer ID Application 身份及 `APPLE_ID`、`APPLE_TEAM_ID`、`APPLE_APP_PASSWORD`。脚本将密码映射为 Tauri 公证所需的 `APPLE_PASSWORD`。预检不代表签名或公证成功；发布前仍需验证应用签名、完成 DMG 公证与装订，并在两种芯片的全新账户上测试。签名凭据不得提交到版本库。
 
 ## 技术架构与目录
 

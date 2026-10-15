@@ -7,9 +7,9 @@
     "dev": "tauri dev",
     "dev:frontend": "vp dev",
     "build": "tsc --noEmit && vp build",
-    "build:native": "vp run --cache build && sh scripts/build-macos-dev.sh",
-    "build:native:adhoc": "vp run --cache build && sh scripts/stage-pdfium.sh && tauri build --bundles app --config src-tauri/tauri.bundle.conf.json",
-    "build:dmg": "sh scripts/check-macos-release-env.sh && vp run --cache build && sh scripts/stage-pdfium.sh && tauri build --bundles dmg --config src-tauri/tauri.bundle.conf.json",
+    "build:native": "vp run --cache build && sh scripts/build-macos.sh signed",
+    "build:native:adhoc": "vp run --cache build && sh scripts/build-macos.sh adhoc",
+    "build:dmg": "vp run --cache build && sh scripts/build-macos.sh dmg",
     "preview": "vp preview",
     "check": "vp check",
     "typecheck": "tsc --noEmit",
@@ -19,7 +19,13 @@
     "test:watch": "vp test --watch",
     "test:native": "vp run --cache build && cargo test --locked --manifest-path src-tauri/Cargo.toml --lib",
     "test:smoke": "vp run --cache build && cargo run --locked --manifest-path src-tauri/Cargo.toml --example window_lifecycle_smoke",
-    "release:check-macos": "sh scripts/check-macos-release-env.sh"
+    "release:check-macos": "sh scripts/check-macos-release-env.sh",
+    "build:native:arm64": "vp run --cache build && sh scripts/build-macos.sh signed arm64",
+    "build:native:x64": "vp run --cache build && sh scripts/build-macos.sh signed x64",
+    "build:native:adhoc:arm64": "vp run --cache build && sh scripts/build-macos.sh adhoc arm64",
+    "build:native:adhoc:x64": "vp run --cache build && sh scripts/build-macos.sh adhoc x64",
+    "build:dmg:arm64": "vp run --cache build && sh scripts/build-macos.sh dmg arm64",
+    "build:dmg:x64": "vp run --cache build && sh scripts/build-macos.sh dmg x64"
   },
   "dependencies": {
     "@ddu/hooks": "workspace:*",

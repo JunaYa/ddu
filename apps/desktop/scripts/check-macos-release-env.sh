@@ -15,4 +15,9 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
+case "$APPLE_SIGNING_IDENTITY" in
+  "Developer ID Application:"*) ;;
+  *) echo "DMG releases require a Developer ID Application signing identity." >&2; exit 1 ;;
+esac
+
 echo "macOS release signing and notarization inputs are present."
