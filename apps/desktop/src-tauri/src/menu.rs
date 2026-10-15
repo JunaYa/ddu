@@ -43,11 +43,15 @@ pub fn create_tray(app: &mut tauri::App) -> Result<(), tauri::Error> {
 pub fn get_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {
     let tray = Menu::with_id(app, "tray_menu")?;
 
+    if crate::cmd::scroll_is_active() {
+        tray.append_items(&[
+            &MenuItem::with_id(app, MenuID::FINISH_SCROLL.to_string(), "完成滚动截图", true, None::<&str>)?,
+            &MenuItem::with_id(app, MenuID::CANCEL_SCROLL.to_string(), "取消滚动截图", true, None::<&str>)?,
+        ])?;
+    } else {
+        tray.append(&MenuItem::with_id(app, MenuID::CAPTURE_SCROLL.to_string(), "滚动截图", true, None::<&str>)?)?;
+    }
     tray.append_items(&[
-        &MenuItem::with_id(app, MenuID::CAPTURE_SCROLL.to_string(), "滚动截图（选区后向下滚动）", true, None::<&str>)?,
-        &MenuItem::with_id(app, MenuID::FINISH_SCROLL.to_string(), "完成滚动截图", true, None::<&str>)?,
-        &MenuItem::with_id(app, MenuID::CANCEL_SCROLL.to_string(), "取消滚动截图", true, None::<&str>)?,
-        &MenuItem::with_id(app, MenuID::STOP_RECORDING.to_string(), "停止录屏并保存", true, None::<&str>)?,
         &PredefinedMenuItem::separator(app)?,
         &MenuItem::with_id(
             app,
@@ -90,6 +94,21 @@ pub fn get_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> 
     ])?;
 
     Ok(tray)
+}
+
+pub fn refresh_tray_menu(app: &AppHandle) {
+    let handle = app.clone();
+    // Read the current session when this runs, rather than enqueueing stale state.
+    if let Err(error) = app.run_on_main_thread(move || {
+        if let Some(tray) = handle.tray_by_id("main-tray") {
+            let result = get_tray_menu(&handle).and_then(|menu| tray.set_menu(Some(menu)));
+            if let Err(error) = result {
+                tracing::warn!("Could not update tray menu: {error}");
+            }
+        }
+    }) {
+        tracing::warn!("Could not dispatch tray menu update: {error}");
+    }
 }
 
 pub fn get_app_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {

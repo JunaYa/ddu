@@ -15,6 +15,10 @@ use std::{
 
 static SAVING: AtomicBool = AtomicBool::new(false);
 static SESSION: Mutex<Option<ScrollSession>> = Mutex::new(None);
+
+pub fn scroll_is_active() -> bool {
+    SESSION.lock().unwrap().is_some()
+}
 struct ScrollSession {
     stop: Arc<AtomicBool>,
     data: Arc<Mutex<ScrollData>>,
@@ -106,6 +110,8 @@ pub fn begin_scroll(
         rect,
         app: app.clone(),
     });
+    drop(session);
+    crate::menu::refresh_tray_menu(app);
     let app = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let started = Instant::now();
@@ -233,12 +239,14 @@ pub fn scroll_status() -> ScrollStatus {
 }
 #[tauri::command]
 pub fn scroll_cancel() {
-    if let Some(s) = SESSION.lock().unwrap().take() {
+    let session = SESSION.lock().unwrap().take();
+    if let Some(s) = session {
         s.stop.store(true, Ordering::Relaxed);
         if let Some(tray) = s.app.tray_by_id("main-tray") {
             let _ = tray.set_title(None::<&str>);
             let _ = tray.set_tooltip(Some("DDU"));
         }
+        crate::menu::refresh_tray_menu(&s.app);
     }
 }
 #[tauri::command]
@@ -288,6 +296,7 @@ pub async fn scroll_finish(app: tauri::AppHandle) -> Result<(), String> {
             }
             session.take();
             drop(session);
+            crate::menu::refresh_tray_menu(&app);
             if let Some(tray) = app.tray_by_id("main-tray") {
                 let _ = tray.set_title(None::<&str>);
                 let _ = tray.set_tooltip(Some("DDU"));
