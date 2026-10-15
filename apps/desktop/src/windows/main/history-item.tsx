@@ -3,7 +3,7 @@ import { Button } from "@ddu/ui/button";
 import { Card } from "@ddu/ui/card";
 import { Checkbox } from "@ddu/ui/checkbox";
 import { cn } from "@ddu/ui/lib/utils";
-import { ImageIcon, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { memo } from "react";
 import { FileInfo } from "./file-info.tsx";
 import { Thumbnail } from "./thumbnail.tsx";
@@ -45,16 +45,10 @@ function HistoryItemView({
         )}
         onClick={(event) => onSelect(item.id, !checked, event.shiftKey)}
       >
-        {!list && (
-          <div className="flex items-center gap-1.5 px-3 py-2.5 pr-12 text-xs text-muted-foreground">
-            <ImageIcon className="size-3.5" />
-            截图
-          </div>
-        )}
         <div
           className={cn(
             "overflow-hidden bg-muted/40",
-            list ? "h-10 w-14 shrink-0 rounded-md" : "mx-1 rounded-lg",
+            list ? "h-10 w-14 shrink-0 rounded-md" : "mx-1 mt-1 rounded-lg",
           )}
         >
           <Thumbnail

@@ -109,7 +109,15 @@ pub struct SmartSession {
 }
 
 #[derive(Default)]
-pub struct SmartCaptureState(pub std::sync::Mutex<Option<SmartSession>>);
+pub struct SmartCaptureState(pub std::sync::Mutex<std::collections::HashMap<String, SmartSession>>);
+
+/// Atomically claim the selected display and discard its sibling sessions.
+/// A second finalize (or a stale window) cannot consume a newer capture.
+pub fn take_capture_session(sessions: &mut std::collections::HashMap<String, SmartSession>, label: &str) -> Option<SmartSession> {
+    let selected = sessions.remove(label)?;
+    sessions.clear();
+    Some(selected)
+}
 
 #[cfg(test)]
 mod tests {
@@ -117,6 +125,48 @@ mod tests {
 
     fn rect(x: f64, y: f64, w: f64, h: f64) -> LogicalRect {
         LogicalRect { x, y, w, h }
+    }
+
+    fn display_session(origin: (f64, f64), scale: f64, color: [u8; 4]) -> SmartSession {
+        SmartSession {
+            mode: "auto".into(),
+            monitor_rect: rect(origin.0, origin.1, 100.0, 80.0),
+            scale_factor: scale,
+            snapshot: image::RgbaImage::from_pixel((100.0 * scale) as u32, (80.0 * scale) as u32, image::Rgba(color)),
+            windows: Vec::new(),
+            ax_available: false,
+            session_id: 1,
+            handshake_done: true,
+        }
+    }
+
+    #[test]
+    fn selecting_secondary_display_uses_its_pixels_and_scale_and_consumes_all_displays() {
+        let mut sessions = std::collections::HashMap::from([
+            ("capture-1-0".into(), display_session((0.0, 0.0), 2.0, [255, 0, 0, 255])),
+            ("capture-1-1".into(), display_session((-100.0, -80.0), 1.0, [0, 255, 0, 255])),
+        ]);
+        let selected = take_capture_session(&mut sessions, "capture-1-1").unwrap();
+        let (x, y, w, h) = selection_to_snapshot_pixels(
+            rect(-90.0, -60.0, 30.0, 40.0),
+            (selected.monitor_rect.x, selected.monitor_rect.y), selected.scale_factor,
+            selected.snapshot.width(), selected.snapshot.height(),
+        ).unwrap();
+        assert_eq!((x, y, w, h), (10, 20, 30, 40));
+        let cropped = image::imageops::crop_imm(&selected.snapshot, x, y, w, h).to_image();
+        assert_eq!(cropped.get_pixel(0, 0).0, [0, 255, 0, 255]);
+        assert!(sessions.is_empty());
+        assert!(take_capture_session(&mut sessions, "capture-1-0").is_none());
+    }
+
+    #[test]
+    fn stale_overlay_cannot_consume_a_new_capture() {
+        let mut sessions = std::collections::HashMap::from([
+            ("capture-2-0".into(), display_session((0.0, 0.0), 2.0, [255, 0, 0, 255])),
+        ]);
+        assert!(take_capture_session(&mut sessions, "capture-1-0").is_none());
+        assert_eq!(sessions.len(), 1);
+        assert!(take_capture_session(&mut sessions, "capture-2-0").is_some());
     }
 
     // --- selection_to_snapshot_pixels ---

@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use chrono::Local;
@@ -14,7 +14,7 @@ use crate::global_shortcut::post_capture_flow;
 use crate::platform;
 use crate::smart_capture::{
     dedupe_chain, selection_to_snapshot_pixels, topmost_window_at, ChainNode, LogicalRect,
-    SmartCaptureState, SmartSession,
+    take_capture_session, SmartCaptureState, SmartSession,
 };
 use crate::window;
 
@@ -39,99 +39,72 @@ pub struct HitTestDto {
     pub app_name: String,
 }
 
-/// Freeze the cursor's monitor, cache the session and raise the overlay.
-/// Shared by the `smart_capture_start` command, global hotkeys and the tray.
+// Serialize startup so two hotkeys cannot freeze each other's overlays.
+static STARTING: AtomicBool = AtomicBool::new(false);
+struct CaptureStartup;
+impl Drop for CaptureStartup {
+    fn drop(&mut self) { STARTING.store(false, Ordering::Release); }
+}
+
+/// Freeze all displays before showing any overlay. Each window owns its
+/// display's pixels, coordinates and scale; finishing one ends the whole batch.
 pub async fn start_smart_capture(app: &tauri::AppHandle, mode: &str) -> Result<(), String> {
-    info!("start_smart_capture: mode={mode}");
+    if STARTING.swap(true, Ordering::AcqRel) { return Ok(()); }
+    let _startup = CaptureStartup;
+    if !app.state::<SmartCaptureState>().0.lock().unwrap().is_empty() { return Ok(()); }
     if super::scroll_status().active {
         return Err("请先完成或取消当前滚动截图".into());
     }
-
-    // C1: preflight Screen Recording permission before touching xcap. xcap
-    // succeeds silently without it (returns blanked frames for other apps), so
-    // the old error path after freeze_screen_at never fired in practice.
-    super::ensure_screen_recording(app)
-        .inspect_err(|e| info!("screen recording gate blocked capture: {e}"))?;
-
+    super::ensure_screen_recording(app)?;
+    let screens = platform::freeze_all_screens()?;
     let (cursor_x, cursor_y) = platform::cursor_position_logical();
-    let frozen = platform::freeze_screen_at(cursor_x, cursor_y)
-        .inspect_err(|_| platform::open_screen_capture_preferences())?;
-
-    let windows = platform::list_windows_on_monitor(&frozen.monitor_rect);
     let ax_available = platform::check_accessibility_permissions();
-    let monitor_rect = frozen.monitor_rect;
-
-    // Multi-monitor diagnostics: a display left of or above the primary has a
-    // negative origin, and every downstream rect derives from it.
-    info!(
-        "smart capture: cursor=({cursor_x:.0},{cursor_y:.0}) monitor=({:.0},{:.0} {:.0}x{:.0}) scale={} snapshot={}x{} windows={}",
-        monitor_rect.x,
-        monitor_rect.y,
-        monitor_rect.w,
-        monitor_rect.h,
-        frozen.scale_factor,
-        frozen.snapshot.width(),
-        frozen.snapshot.height(),
-        windows.len(),
-    );
-
     let session_id = SESSION_COUNTER.fetch_add(1, Ordering::Relaxed);
-
-    {
-        let state = app.state::<SmartCaptureState>();
-        *state.0.lock().unwrap() = Some(SmartSession {
+    let mut overlays = Vec::new();
+    let mut sessions = std::collections::HashMap::new();
+    for (index, frozen) in screens.into_iter().enumerate() {
+        let label = format!("capture-{session_id}-{index}");
+        let monitor_rect = frozen.monitor_rect;
+        overlays.push((label.clone(), monitor_rect));
+        sessions.insert(label, SmartSession {
             mode: mode.to_string(),
             monitor_rect,
             scale_factor: frozen.scale_factor,
             snapshot: frozen.snapshot,
-            windows,
+            windows: platform::list_windows_on_monitor(&monitor_rect),
             ax_available,
             session_id,
             handshake_done: false,
         });
     }
-
-    // I2: create_capture_window is now fallible; on failure, clean up the
-    // session so the app is not stranded in a started-but-windowless state.
-    match window::create_capture_window(app, monitor_rect.x, monitor_rect.y, monitor_rect.w, monitor_rect.h) {
-        Err(e) => {
-            app.state::<SmartCaptureState>().0.lock().unwrap().take();
-            return Err(e);
+    *app.state::<SmartCaptureState>().0.lock().unwrap() = sessions;
+    // Keep the session lock through creation: no fast overlay can finalize
+    // while sibling windows are still being built.
+    {
+        let state = app.state::<SmartCaptureState>();
+        let mut guard = state.0.lock().unwrap();
+        for (label, rect) in &overlays {
+            if let Err(e) = window::create_capture_window(app, label, rect.x, rect.y, rect.w, rect.h) {
+                window::close_capture_window(app);
+                guard.clear();
+                return Err(e);
+            }
         }
-        // Requested geometry is logical and global; the actual geometry is
-        // physical. They must describe the same rectangle once scaled, or the
-        // overlay landed on the wrong display.
-        Ok(overlay) => info!(
-            "capture overlay: requested=({:.0},{:.0} {:.0}x{:.0}) actual_outer={:?} actual_inner={:?}",
-            monitor_rect.x,
-            monitor_rect.y,
-            monitor_rect.w,
-            monitor_rect.h,
-            overlay.outer_position(),
-            overlay.inner_size(),
-        ),
     }
-
-    // I3: watchdog — if the overlay page never calls smart_capture_get_session
-    // within 3 s, tear down the session so the user is never stranded behind a
-    // frozen overlay with no JS escape hatch.
+    if let Some((label, _)) = overlays.iter().find(|(_, rect)| rect.contains(cursor_x, cursor_y)).or(overlays.first()) {
+        if let Some(overlay) = app.get_webview_window(label) { let _ = overlay.set_focus(); }
+    }
     let app_handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         std::thread::sleep(std::time::Duration::from_secs(3));
         let state = app_handle.state::<SmartCaptureState>();
         let mut guard = state.0.lock().unwrap();
-        let tear_down = guard
-            .as_ref()
-            .map(|s| s.session_id == session_id && !s.handshake_done)
-            .unwrap_or(false);
-        if tear_down {
-            guard.take();
-            drop(guard);
-            info!("capture overlay never handshook; tearing down");
+        if guard.values().any(|s| s.session_id == session_id && !s.handshake_done) {
+            info!("capture overlay never handshook; tearing down all displays");
             window::close_capture_window(&app_handle);
+            guard.clear();
         }
     });
-
     Ok(())
 }
 
@@ -141,13 +114,13 @@ pub async fn smart_capture_start(app: tauri::AppHandle, mode: String) -> Result<
 }
 
 #[tauri::command]
-pub async fn smart_capture_get_session(app: tauri::AppHandle) -> Result<SessionDto, String> {
+pub async fn smart_capture_get_session(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<SessionDto, String> {
     // Copy the raw pixels out under the lock, then encode with the lock released
     // so concurrent hit_test calls are never starved.
     let (raw, width, height, mode, ax_available, monitor, scale_factor) = {
         let state = app.state::<SmartCaptureState>();
         let mut guard = state.0.lock().unwrap();
-        let session = guard.as_mut().ok_or("no active capture session")?;
+        let session = guard.get_mut(window.label()).ok_or("no active capture session")?;
         // I3: mark handshake complete so the watchdog knows the overlay loaded.
         session.handshake_done = true;
         (
@@ -179,14 +152,14 @@ pub async fn smart_capture_get_session(app: tauri::AppHandle) -> Result<SessionD
 }
 
 #[tauri::command]
-pub async fn smart_capture_hit_test(app: tauri::AppHandle, x: f64, y: f64) -> Result<HitTestDto, String> {
+pub async fn smart_capture_hit_test(app: tauri::AppHandle, window: tauri::WebviewWindow, x: f64, y: f64) -> Result<HitTestDto, String> {
     // Copy what we need and drop the lock before the potentially slow AX call.
     // C2: also extract the window pid so we can scope AX to that app, avoiding
     // resolution into our own screensaver-level overlay.
     let (window_node, app_name, ax_available, window_pid) = {
         let state = app.state::<SmartCaptureState>();
         let guard = state.0.lock().unwrap();
-        let session = guard.as_ref().ok_or("no active capture session")?;
+        let session = guard.get(window.label()).ok_or("no active capture session")?;
         match topmost_window_at(&session.windows, x, y) {
             Some(i) => {
                 let win = &session.windows[i];
@@ -208,6 +181,10 @@ pub async fn smart_capture_hit_test(app: tauri::AppHandle, x: f64, y: f64) -> Re
         }
     };
 
+    // Keyboard actions follow the display being hovered, without requiring
+    // an initial click (which would otherwise capture immediately).
+    if !window.is_focused().unwrap_or(false) { let _ = window.set_focus(); }
+
     let mut chain = if ax_available {
         if let Some(pid) = window_pid {
             // AX calls can block on slow apps; keep them off the async runtime.
@@ -227,6 +204,7 @@ pub async fn smart_capture_hit_test(app: tauri::AppHandle, x: f64, y: f64) -> Re
 #[tauri::command]
 pub async fn smart_capture_finalize(
     app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
     x: f64,
     y: f64,
     w: f64,
@@ -234,12 +212,15 @@ pub async fn smart_capture_finalize(
 ) -> Result<(), String> {
     let session = {
         let state = app.state::<SmartCaptureState>();
-        let session = state.0.lock().unwrap().take();
-        session
+        let mut guard = state.0.lock().unwrap();
+        let session = take_capture_session(&mut guard, window.label()).ok_or("no active capture session")?;
+        // Destroy siblings before releasing the batch; stale finalizers cannot
+        // close windows belonging to a later capture.
+        window::close_capture_window(&app);
+        Some(session)
     };
 
     if session.as_ref().is_some_and(|s| s.mode == "scroll") {
-        window::close_capture_window(&app);
         let s = session.unwrap();
         let rect = LogicalRect { x, y, w, h };
         let result = (|| {
@@ -290,9 +271,7 @@ pub async fn smart_capture_finalize(
         })
     })();
 
-    // Whatever happened above, the overlay must come down — never leave the
-    // user stuck behind a frozen screen (R8).
-    window::close_capture_window(&app);
+    // All overlays were closed atomically when claiming this session.
 
     match result {
         Ok(capture) => {
@@ -307,10 +286,13 @@ pub async fn smart_capture_finalize(
 }
 
 #[tauri::command]
-pub async fn smart_capture_cancel(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn smart_capture_cancel(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<(), String> {
     let state = app.state::<SmartCaptureState>();
-    state.0.lock().unwrap().take();
-    window::close_capture_window(&app);
+    let mut guard = state.0.lock().unwrap();
+    if guard.contains_key(window.label()) {
+        window::close_capture_window(&app);
+        guard.clear();
+    }
     Ok(())
 }
 

@@ -126,6 +126,20 @@ pub fn freeze_screen_at(x: f64, y: f64) -> Result<FrozenScreen, String> {
     Ok(FrozenScreen { monitor_rect, scale_factor, snapshot })
 }
 
+/// Freeze every display before creating any overlay, preserving each display's
+/// backing scale instead of resampling a mixed-DPI virtual desktop.
+pub fn freeze_all_screens() -> Result<Vec<FrozenScreen>, String> {
+    let monitors = Monitor::all().map_err(|e| e.to_string())?;
+    if monitors.is_empty() { return Err("no monitors detected".into()); }
+    monitors.iter().map(|monitor| {
+        Ok(FrozenScreen {
+            monitor_rect: monitor_rect_of(monitor)?,
+            scale_factor: monitor.scale_factor().map_err(|e| e.to_string())? as f64,
+            snapshot: monitor.capture_image().map_err(|e| e.to_string())?,
+        })
+    }).collect()
+}
+
 /// System shell surfaces that would otherwise win every hit-test.
 const EXCLUDED_APPS: &[&str] = &["Window Server", "Dock"];
 

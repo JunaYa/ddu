@@ -250,13 +250,12 @@ mod tests {
     fn centers_home_on_the_screen_whose_menu_bar_contains_the_cursor() {
         let screens = two_screens();
         for (cursor, expected) in [
-            (rect(700.0, 10.0, 0.0, 0.0), (356.0, 173.0)),
+            (rect(700.0, 10.0, 0.0, 0.0), (356.0, 191.0)),
             (rect(-900.0, -290.0, 0.0, 0.0), (-1360.0, -60.0)),
         ] {
             let screen = screen_for(cursor, &screens).unwrap();
-            // Select using full screen bounds (including its menu bar), then
-            // center within the work area so the menu bar/Dock are excluded.
-            assert_eq!(center_in((800.0, 600.0), screen.work_area), expected);
+            // Both screen selection and centering include the menu bar and Dock.
+            assert_eq!(center_in((800.0, 600.0), screen.bounds), expected);
         }
     }
 }

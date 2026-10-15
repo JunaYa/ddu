@@ -36,7 +36,7 @@ pub fn run() {
     use_bundled_pdfium();
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_window_state::Builder::new().with_denylist(&["permission"]).build())
+        .plugin(tauri_plugin_window_state::Builder::new().with_denylist(&["permission"]).with_filter(|label| !window::is_capture_window(label)).build())
         .plugin(tauri_plugin_positioner::init())
         .manage(smart_capture::SmartCaptureState::default())
         .plugin(tauri_plugin_os::init())

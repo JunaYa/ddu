@@ -215,10 +215,8 @@ pub fn show_permission_settings(app: &AppHandle) {
 /// from scratch on every session so repeated hotkey presses never stack.
 /// Returns `Err` if the webview window could not be built; callers must clean
 /// up any session state on error.
-pub fn create_capture_window(app: &AppHandle, x: f64, y: f64, w: f64, h: f64) -> Result<WebviewWindow, String> {
-    close_capture_window(app);
-
-    let window = WebviewWindowBuilder::new(app, CAPTURE_WINDOW, WebviewUrl::App("/capture.html".into()))
+pub fn create_capture_window(app: &AppHandle, label: &str, x: f64, y: f64, w: f64, h: f64) -> Result<WebviewWindow, String> {
+    let window = WebviewWindowBuilder::new(app, label, WebviewUrl::App("/capture.html".into()))
         .title("capture")
         .decorations(false)
         .shadow(false)
@@ -227,7 +225,7 @@ pub fn create_capture_window(app: &AppHandle, x: f64, y: f64, w: f64, h: f64) ->
         .always_on_top(true)
         .visible_on_all_workspaces(true)
         .accept_first_mouse(true)
-        .focused(true)
+        .focused(false)
         .position(x, y)
         .inner_size(w, h)
         .build()
@@ -236,7 +234,6 @@ pub fn create_capture_window(app: &AppHandle, x: f64, y: f64, w: f64, h: f64) ->
     #[cfg(target_os = "macos")]
     raise_capture_window_above_menu_bar(&window);
 
-    let _ = window.set_focus();
     Ok(window)
 }
 
@@ -261,11 +258,15 @@ fn raise_capture_window_above_menu_bar(window: &WebviewWindow) {
 }
 
 pub fn close_capture_window(app: &AppHandle) {
-    if let Some(window) = app.get_webview_window(CAPTURE_WINDOW) {
-        // I2: destroy() is immediate teardown (no close-event delay) and
-        // shrinks the race window when a new session rebuilds the overlay.
-        let _ = window.destroy();
+    for (label, window) in app.webview_windows() {
+        if is_capture_window(&label) {
+            let _ = window.destroy();
+        }
     }
+}
+
+pub fn is_capture_window(label: &str) -> bool {
+    label == CAPTURE_WINDOW || label.starts_with("capture-")
 }
 
 /// A small companion to System Settings; never takes over the settings window.
