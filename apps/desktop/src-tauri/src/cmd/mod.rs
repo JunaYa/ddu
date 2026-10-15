@@ -30,3 +30,6 @@ pub use self::xcreenshot::*;
 
 mod scrolling;
 pub use self::scrolling::*;
+
+mod settings;
+pub use settings::*;

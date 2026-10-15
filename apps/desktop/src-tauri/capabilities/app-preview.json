@@ -1,0 +1,9 @@
+{
+  "identifier": "preview-commands",
+  "windows": [
+    "preview"
+  ],
+  "permissions": [
+    "preview-commands"
+  ]
+}

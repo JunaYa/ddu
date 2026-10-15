@@ -1,0 +1,9 @@
+{
+  "identifier": "setting-commands",
+  "windows": [
+    "setting"
+  ],
+  "permissions": [
+    "setting-commands"
+  ]
+}

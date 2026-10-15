@@ -1,6 +1,5 @@
 use std::path::Path;
 
-use base64::{engine::general_purpose, Engine as _};
 use tauri::Emitter;
 
 use crate::common::{
@@ -29,9 +28,7 @@ pub async fn copy_image_bytes(
     app_handle: tauri::AppHandle,
     base64: String,
 ) -> Result<(), String> {
-    let bytes = general_purpose::STANDARD
-        .decode(base64.as_bytes())
-        .map_err(|e| e.to_string())?;
+    let bytes = crate::image_limits::decode_base64(&base64)?;
     copy_image_bytes_to_clipboard(app_handle, bytes).await
 }
 
@@ -52,10 +49,9 @@ pub async fn open_combined_image(
     app_handle: tauri::AppHandle,
     base64: String,
 ) -> Result<(), String> {
-    let bytes = general_purpose::STANDARD
-        .decode(base64.as_bytes())
-        .map_err(|e| e.to_string())?;
+    let bytes = crate::image_limits::decode_base64(&base64)?;
 
+    crate::image_limits::decode_image(&bytes)?;
     let images_dir = get_images_dir(&app_handle, "images".to_string())?;
     let filename = format!(
         "screenshot_{}_combined.png",

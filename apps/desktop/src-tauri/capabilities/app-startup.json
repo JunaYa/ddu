@@ -1,0 +1,9 @@
+{
+  "identifier": "startup-commands",
+  "windows": [
+    "startup"
+  ],
+  "permissions": [
+    "startup-commands"
+  ]
+}

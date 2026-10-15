@@ -1,0 +1,10 @@
+{
+  "identifier": "capture-commands",
+  "windows": [
+    "capture",
+    "capture-*"
+  ],
+  "permissions": [
+    "capture-commands"
+  ]
+}

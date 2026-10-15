@@ -1,0 +1,29 @@
+[[permission]]
+identifier = "main-commands"
+description = "Commands used by the main window"
+commands.allow = ["open_image_for_ocr", "get_image_base64", "list_history_items", "delete_history_items", "search_history_text", "ocr_index_items", "open_combined_image", "copy_image_to_clipboard"]
+
+[[permission]]
+identifier = "preview-commands"
+description = "Commands used by the preview window"
+commands.allow = ["take_imported_image", "hide_preview_window", "update_preview_window", "copy_image_to_clipboard", "copy_image_bytes", "copy_text", "perform_ocr", "save_annotated_image", "get_image_base64"]
+
+[[permission]]
+identifier = "setting-commands"
+description = "Commands used by the setting window"
+commands.allow = ["read_setting", "write_setting", "choose_screenshot_directory", "apply_shortcuts", "get_diagnostics_bundle", "list_history_items", "delete_history_items", "clear_ocr_index", "take_permission_navigation", "permission_status", "permission_request", "restart_app", "is_recording", "start_recording", "stop_recording", "scroll_status", "scroll_cancel", "scroll_finish"]
+
+[[permission]]
+identifier = "startup-commands"
+description = "Commands used by the startup window"
+commands.allow = ["permission_status", "permission_request", "restart_app"]
+
+[[permission]]
+identifier = "permission-commands"
+description = "Commands used by the permission window"
+commands.allow = ["permission_app_path", "permission_move_window", "permission_drag_app", "permission_open_settings", "permission_status"]
+
+[[permission]]
+identifier = "capture-commands"
+description = "Commands used by the capture window"
+commands.allow = ["smart_capture_get_session", "smart_capture_hit_test", "smart_capture_finalize", "smart_capture_cancel"]

@@ -83,10 +83,9 @@ pub fn index_enabled(app: &tauri::AppHandle) -> bool {
 }
 
 fn index_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    app.path()
-        .app_local_data_dir()
-        .map(|dir| dir.join(INDEX_DIR))
-        .map_err(|e| e.to_string())
+    let dir = app.path().app_local_data_dir().map_err(|e| e.to_string())?.join(INDEX_DIR);
+    crate::private_files::prepare_directory(&dir)?;
+    Ok(dir)
 }
 
 fn entry_path(dir: &Path, image: &Path) -> Option<PathBuf> {
@@ -105,7 +104,7 @@ pub fn save(app: &tauri::AppHandle, image: &Path, result: &OcrResult) -> Result<
         .unwrap_or_default();
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let json = serde_json::to_vec(&OcrIndexEntry::new(filename, result)).map_err(|e| e.to_string())?;
-    fs::write(path, json).map_err(|e| e.to_string())
+    crate::private_files::atomic_write(&path, &json)
 }
 
 /// Drop the index entry for a screenshot that is being deleted.
@@ -120,6 +119,7 @@ fn read_entries(dir: &Path) -> Vec<(PathBuf, OcrIndexEntry)> {
         return Vec::new();
     };
     read.flatten()
+        .filter(|e| e.file_type().is_ok_and(|t| t.is_file()))
         .map(|e| e.path())
         .filter(|p| p.extension().is_some_and(|ext| ext == "json"))
         .filter_map(|p| {

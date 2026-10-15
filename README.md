@@ -52,6 +52,8 @@ These bindings are configurable in Settings. In smart capture, use the scroll wh
 ### Storage and privacy
 
 - Screenshots are written to the `images/` subdirectory of the configured save directory. The initial directory is Tauri’s app-local-data directory for `com.ddu.app`; Settings shows the configured location.
+- Save directories can only be changed through the native folder picker. Window-specific IPC permissions restrict settings writes and image operations. Editor image inputs are limited to 50 MiB and 40 million pixels.
+- On macOS/Linux, OCR index directories use mode `0700` and files use `0600`; existing entries are repaired when accessed. The index remains unencrypted and is readable by processes running as the same user.
 - Settings persist locally in `settings.json`. OCR results are stored separately under the app-local-data `ocr-index/` directory, even when screenshots are saved elsewhere.
 - DDU does not require a login or upload screenshots for OCR. The OCR engine may download model files on first use; local processing does **not** mean every first-run operation is offline. Native builds also fetch the PDFium dependency.
 - Text indexing is enabled by default, but screenshots become searchable only after OCR/indexing runs. Disabling the index clears the saved text index.

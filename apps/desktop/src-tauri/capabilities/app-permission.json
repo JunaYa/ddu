@@ -1,0 +1,9 @@
+{
+  "identifier": "permission-commands",
+  "windows": [
+    "permission"
+  ],
+  "permissions": [
+    "permission-commands"
+  ]
+}

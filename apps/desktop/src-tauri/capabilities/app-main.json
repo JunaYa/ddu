@@ -1,0 +1,9 @@
+{
+  "identifier": "main-commands",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "main-commands"
+  ]
+}

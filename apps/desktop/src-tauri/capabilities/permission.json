@@ -2,6 +2,10 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "permission",
   "description": "Permission helper window controls",
-  "windows": ["permission"],
-  "permissions": ["core:default", "core:window:allow-close", "core:window:allow-start-dragging"]
+  "windows": [
+    "permission"
+  ],
+  "permissions": [
+    "core:window:allow-close"
+  ]
 }

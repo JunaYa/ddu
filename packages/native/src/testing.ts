@@ -88,6 +88,17 @@ export function mockNative(options: MockNativeOptions = {}): NativeMock {
       if (cmd.startsWith("plugin:store|")) expectStore(args);
 
       switch (cmd) {
+        case "read_setting": {
+          const key = args.key as string;
+          const reply = settings.get(key) ?? null;
+          options.onStoreGet?.(key, settings);
+          return reply;
+        }
+        case "write_setting":
+          settings.set(args.key as string, { value: args.value });
+          void changed(args.key as string, { value: args.value });
+          return null;
+
         case "plugin:store|load":
         case "plugin:store|get_store":
           return STORE_RID;

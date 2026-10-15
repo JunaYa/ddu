@@ -1,3 +1,5 @@
+mod private_files;
+mod image_limits;
 use serde_json::json;
 use tauri::{ActivationPolicy, Manager};
 use tauri_plugin_store::StoreExt;
@@ -176,6 +178,9 @@ pub fn run() {
             cmd::export_image,
             cmd::save_annotated_image,
             cmd::get_image_info,
+            cmd::read_setting,
+            cmd::write_setting,
+            cmd::choose_screenshot_directory,
             cmd::perform_ocr,
             cmd::open_image_for_ocr,
             cmd::take_imported_image,
@@ -194,7 +199,6 @@ pub fn run() {
             cmd::scroll_status,
             cmd::scroll_cancel,
             cmd::scroll_finish,
-            cmd::convert_to_gif,
             cmd::get_platform_capabilities,
             cmd::get_diagnostics_bundle,
             global_shortcut::apply_shortcuts,
@@ -282,3 +286,6 @@ mod tests {
         assert_eq!(conf["productName"], "Ddu");
     }
 }
+
+#[cfg(test)]
+mod security_tests;

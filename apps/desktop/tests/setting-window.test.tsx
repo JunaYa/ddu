@@ -33,12 +33,14 @@ function setup(options: MockNativeOptions = {}) {
       "plugin:autostart|disable": () => {
         autostartOn = false;
       },
-      "plugin:path|resolve_directory": () => "/Users/me",
-      "plugin:dialog|open": () => "/Users/me/Shots",
       "plugin:dialog|message": () => dialogAnswers.shift() ?? "Cancel",
       ...options.plugins,
     },
     commands: {
+      choose_screenshot_directory: async () => {
+        await mock.externalWrite("screenshot_path", { value: "/Users/me/Shots" });
+        return "/Users/me/Shots";
+      },
       take_permission_navigation: () => false,
       is_recording: () => false,
       scroll_status: () => ({ active: false, frames: 0, height: 0, message: "" }),
@@ -179,7 +181,7 @@ test("history: confirming clears the index, then turns it off", async () => {
   await waitFor(() => expect(mock.settings.get("ocr_index_enabled")).toEqual({ value: false }));
   expect(called(mock, "clear_ocr_index")).toHaveLength(1);
   const order = mock.calls.map(([cmd, args]) =>
-    cmd === "plugin:store|set" ? `set:${(args as { key: string }).key}` : cmd,
+    cmd === "write_setting" ? `set:${(args as { key: string }).key}` : cmd,
   );
   expect(order.indexOf("clear_ocr_index")).toBeLessThan(order.indexOf("set:ocr_index_enabled"));
 });
@@ -312,15 +314,15 @@ test("storage: cancelling the picker keeps the path; a picker error is shown", a
   let fail = false;
   const { mock } = setup({
     settings: { screenshot_path: { value: "/Users/me/Desktop" } },
-    plugins: {
-      "plugin:dialog|open": () => {
+    commands: {
+      choose_screenshot_directory: () => {
         if (fail) throw "dialog unavailable";
         return null;
       },
     },
   });
   fireEvent.click(await screen.findByRole("button", { name: "选择目录" }));
-  await waitFor(() => expect(called(mock, "plugin:dialog|open")).toHaveLength(1));
+  await waitFor(() => expect(called(mock, "choose_screenshot_directory")).toHaveLength(1));
   expect(mock.settings.get("screenshot_path")).toEqual({ value: "/Users/me/Desktop" });
 
   fail = true;

@@ -48,7 +48,7 @@ test("setSetting persists the value in the { value } shape (N4)", async () => {
   const mock = mockNative();
   await setSetting("hotkey_region", "CmdOrCtrl+Shift+R");
   expect(mock.settings.get("hotkey_region")).toEqual({ value: "CmdOrCtrl+Shift+R" });
-  expect(mock.calls.map(([cmd]) => cmd)).toContain("plugin:store|save");
+  expect(mock.calls.map(([cmd]) => cmd)).toContain("write_setting");
 });
 
 test("an empty hotkey reads as the default, as Rust treats it (global_shortcut.rs)", async () => {

@@ -1,16 +1,15 @@
 import { useSetting } from "@ddu/hooks";
-import { pickDirectory } from "@ddu/native";
+import { call } from "@ddu/native";
 import { Button } from "@ddu/ui/button";
 import { Field, FieldContent, FieldDescription, FieldError, FieldTitle } from "@ddu/ui/field";
 import { useMutation } from "@tanstack/react-query";
 import { SettingCard } from "../setting-card.tsx";
 
 export function StorageSection() {
-  const [path, setPath, status] = useSetting("screenshot_path");
+  const [path, , status] = useSetting("screenshot_path");
   const choose = useMutation({
     mutationFn: async () => {
-      const selected = await pickDirectory({ title: "选择目录" });
-      if (selected) await setPath(selected);
+      await call("choose_screenshot_directory");
     },
   });
 

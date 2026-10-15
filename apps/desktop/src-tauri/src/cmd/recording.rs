@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
-use tracing::info;
 
 struct Recording {
     child: Child,
@@ -112,8 +111,7 @@ pub async fn start_recording(
         return Err("请先停止当前录屏".into());
     }
     let images = get_images_dir(&app_handle, path)?;
-    let dir = images.parent().unwrap_or(&images).join("recordings");
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let dir = crate::common::prepare_recordings_dir(&images)?;
     let output = dir.join(format!(
         "recording_{}.mov",
         Local::now().format("%Y%m%d_%H%M%S_%3f")
@@ -202,53 +200,5 @@ mod tests {
         assert!(!recording_args(&c).unwrap().contains(&"-A"));
         c.mode = "invalid".into();
         assert!(recording_args(&c).is_err());
-    }
-}
-
-#[tauri::command]
-pub async fn convert_to_gif(
-    input_path: String,
-    output_path: String,
-    fps: u32,
-    width: u32,
-) -> Result<String, String> {
-    #[cfg(target_os = "macos")]
-    {
-        let filter = format!(
-            "fps={},scale={}:-1:flags=lanczos",
-            fps.min(15),
-            width.min(800)
-        );
-        let output = Command::new("ffmpeg")
-            .args([
-                "-i",
-                &input_path,
-                "-vf",
-                &filter,
-                "-loop",
-                "0",
-                "-y",
-                &output_path,
-            ])
-            .output()
-            .map_err(|e| {
-                format!(
-                    "ffmpeg not found or failed: {}. Install with: brew install ffmpeg",
-                    e
-                )
-            })?;
-
-        if output.status.success() {
-            info!("Converted to GIF: {}", output_path);
-            Ok(output_path)
-        } else {
-            let err = String::from_utf8_lossy(&output.stderr);
-            Err(format!("GIF conversion failed: {}", err))
-        }
-    }
-
-    #[cfg(not(target_os = "macos"))]
-    {
-        Err("GIF conversion not available on this platform yet".to_string())
     }
 }

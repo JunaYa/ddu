@@ -7,6 +7,7 @@ use tauri_plugin_store::StoreExt;
 use tracing::info;
 
 pub fn get_images_dir(app_handle: &tauri::AppHandle, path: String) -> Result<PathBuf, String> {
+    validate_images_subdirectory(&path)?;
     let store = app_handle
         .get_store("settings.json")
         .ok_or_else(|| "Could not get settings store".to_string())?;
@@ -36,21 +37,33 @@ pub fn get_images_dir(app_handle: &tauri::AppHandle, path: String) -> Result<Pat
     };
     info!("app_local_data: {:?}", app_local_data);
 
-    // 创建 images 文件夹
-    // path 如果为空，则使用 app_local_data
-    let images_dir = if path.is_empty() {
-        app_local_data
-    } else {
-        app_local_data.join(path)
-    };
+    prepare_images_dir(&app_local_data)
+}
 
-    info!("images_dir: {:?}", images_dir);
-    std::fs::create_dir_all(&images_dir).map_err(|e| e.to_string())?;
+fn prepare_images_dir(root: &Path) -> Result<PathBuf, String> {
+    prepare_storage_subdirectory(root, "images")
+}
 
-    // let filename = format!("screenshot_{}.png", Local::now().format("%Y%m%d_%H%M%S"));
-    // let output_path = images_dir.join(&filename);
+pub(crate) fn prepare_recordings_dir(images: &Path) -> Result<PathBuf, String> {
+    prepare_storage_subdirectory(images.parent().ok_or("missing storage root")?, "recordings")
+}
 
-    Ok(images_dir)
+fn prepare_storage_subdirectory(root: &Path, name: &str) -> Result<PathBuf, String> {
+    if !root.is_absolute() {
+        return Err("screenshot root must be absolute".into());
+    }
+    std::fs::create_dir_all(root).map_err(|e| e.to_string())?;
+    let root = std::fs::canonicalize(root).map_err(|e| e.to_string())?;
+    let images = root.join(name);
+    if std::fs::symlink_metadata(&images).is_ok_and(|m| m.file_type().is_symlink()) {
+        return Err("screenshot directory must not be a symbolic link".into());
+    }
+    std::fs::create_dir_all(&images).map_err(|e| e.to_string())?;
+    let images = std::fs::canonicalize(images).map_err(|e| e.to_string())?;
+    if !images.starts_with(&root) {
+        return Err("screenshot directory escaped its root".into());
+    }
+    Ok(images)
 }
 
 /// Resolve the controlled screenshot directory (`<screenshot_path>/images`),
@@ -131,7 +144,7 @@ pub async fn copy_image_bytes_to_clipboard(
     app_handle: tauri::AppHandle,
     bytes: Vec<u8>,
 ) -> Result<(), String> {
-    let img = image::load_from_memory(&bytes).map_err(|e| e.to_string())?;
+    let img = crate::image_limits::decode_image(&bytes)?;
     let rgba = img.into_rgba8();
     let width = rgba.width();
     let height = rgba.height();
@@ -161,4 +174,53 @@ pub async fn get_image_base64_by_path(path: String) -> Result<String, String> {
     let b64 = general_purpose::STANDARD.encode(bytes);
 
     Ok(b64)
+}
+
+/// IPC callers cannot choose a second root or traverse out of the selected directory.
+fn validate_images_subdirectory(path: &str) -> Result<(), String> {
+    if path == "images" {
+        Ok(())
+    } else {
+        Err("unsupported screenshot directory".into())
+    }
+}
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+    #[test]
+    fn accepts_only_the_images_directory() {
+        assert!(validate_images_subdirectory("images").is_ok());
+        for path in [
+            "",
+            "/tmp",
+            "../images",
+            "images/../other",
+            "images/child",
+            "C:\\temp",
+            "images\\child",
+        ] {
+            assert!(validate_images_subdirectory(path).is_err(), "{path}");
+        }
+    }
+    #[cfg(unix)]
+    #[test]
+    fn images_subdirectory_cannot_redirect_outside_the_selected_root() {
+        use std::os::unix::fs::symlink;
+        let base = std::env::temp_dir().join(format!("ddu-root-{}", std::process::id()));
+        let chosen = base.join("chosen");
+        let outside = base.join("outside");
+        std::fs::create_dir_all(&outside).unwrap();
+        let images = prepare_images_dir(&chosen).unwrap();
+        assert!(images.starts_with(std::fs::canonicalize(&chosen).unwrap()));
+        let recordings = prepare_recordings_dir(&images).unwrap();
+        std::fs::remove_dir(&recordings).unwrap();
+        symlink(&outside, chosen.join("recordings")).unwrap();
+        assert!(prepare_recordings_dir(&images).is_err());
+        std::fs::remove_dir(&images).unwrap();
+        symlink(&outside, chosen.join("images")).unwrap();
+        assert!(prepare_images_dir(&chosen).is_err());
+        assert!(prepare_images_dir(Path::new("relative")).is_err());
+        std::fs::remove_dir_all(base).unwrap();
+    }
 }

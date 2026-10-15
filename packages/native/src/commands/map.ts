@@ -19,6 +19,10 @@ export type NoArgs = Record<string, never>;
  * (specs/11 § 2.1); this table is the contract reviewers check against Rust.
  */
 export interface CommandMap {
+  read_setting: { args: { key: string }; result: unknown };
+  write_setting: { args: { key: string; value: unknown }; result: void };
+  choose_screenshot_directory: { args: NoArgs; result: string | null };
+
   open_image_for_ocr: { args: NoArgs; result: boolean };
   take_imported_image: { args: NoArgs; result: CapturePrepared | null };
   hide_preview_window: { args: NoArgs; result: void };

@@ -1,9 +1,9 @@
-import { LazyStore } from "@tauri-apps/plugin-store";
+import { listen } from "@tauri-apps/api/event";
+import { call } from "../commands/call.ts";
 import { z } from "zod";
 import { type SettingKey, type SettingValue, settingsSchema } from "./schema.ts";
 
 /** Rust owns the same file; values are stored as `{ "value": … }` (N4). */
-const store = new LazyStore("settings.json");
 
 /**
  * Decode a raw stored entry. Missing or invalid values (e.g. written by an
@@ -19,7 +19,7 @@ function decode<K extends SettingKey>(key: K, raw: unknown): SettingValue<K> {
 }
 
 export async function getSetting<K extends SettingKey>(key: K): Promise<SettingValue<K>> {
-  return decode(key, await store.get<unknown>(key));
+  return decode(key, await call("read_setting", { key }));
 }
 
 /** Validate, write and persist one setting. Invalid values throw a `ZodError`. */
@@ -28,8 +28,7 @@ export async function setSetting<K extends SettingKey>(
   value: SettingValue<K>,
 ): Promise<void> {
   const valid = settingsSchema[key].schema.parse(value);
-  await store.set(key, { value: valid });
-  await store.save();
+  await call("write_setting", { key, value: valid });
 }
 
 /**
@@ -40,5 +39,7 @@ export async function onSettingChange<K extends SettingKey>(
   key: K,
   handler: (value: SettingValue<K>) => void,
 ): Promise<() => void> {
-  return store.onKeyChange<unknown>(key, (raw) => handler(decode(key, raw)));
+  return listen<{ key: string; value: unknown }>("store://change", ({ payload }) => {
+    if (payload.key === key) handler(decode(key, payload.value));
+  });
 }

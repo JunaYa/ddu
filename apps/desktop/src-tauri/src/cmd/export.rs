@@ -3,12 +3,10 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
-use base64::{engine::general_purpose, Engine as _};
 use image::ImageReader;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-const MAX_ANNOTATED_IMAGE_BYTES: usize = 50 * 1024 * 1024;
 static ANNOTATED_IMAGE_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
 fn annotated_filename(original_filename: &str, sequence: u64) -> String {
@@ -80,14 +78,8 @@ pub async fn save_annotated_image(
     source_path: String,
 ) -> Result<String, String> {
     let source = crate::common::ensure_within_images_dir(&app_handle, Path::new(&source_path))?;
-    let bytes = general_purpose::STANDARD
-        .decode(base64.as_bytes())
-        .map_err(|e| e.to_string())?;
-    if bytes.len() > MAX_ANNOTATED_IMAGE_BYTES {
-        return Err("edited image is too large to save".to_string());
-    }
-
-    image::load_from_memory(&bytes).map_err(|e| format!("edited image is invalid: {e}"))?;
+    let bytes = crate::image_limits::decode_base64(&base64)?;
+    crate::image_limits::decode_image(&bytes)?;
 
     let images_dir = crate::common::get_images_dir(&app_handle, "images".to_string())?;
     let filename = annotated_filename(
@@ -103,8 +95,9 @@ pub async fn save_annotated_image(
 }
 
 #[tauri::command]
-pub fn get_image_info(path: String) -> Result<ImageInfo, String> {
-    let p = Path::new(&path);
+pub fn get_image_info(app_handle: tauri::AppHandle, path: String) -> Result<ImageInfo, String> {
+    let guarded = crate::common::ensure_within_images_dir(&app_handle, Path::new(&path))?;
+    let p = guarded.as_path();
     if !p.exists() {
         return Err("File not found".to_string());
     }
