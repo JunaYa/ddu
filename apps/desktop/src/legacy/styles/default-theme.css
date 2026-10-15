@@ -1,2 +1,0 @@
-/* Compatibility wrapper. New code should import `~/styles/tokens/index.css`. */
-@import "./tokens/primitives.css";

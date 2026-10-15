@@ -115,8 +115,38 @@ pub fn get_setting_window(app: &AppHandle) -> WebviewWindow {
         #[cfg(target_os = "macos")]
         let win_builder = win_builder.effects(macos_glass_effect());
 
-        win_builder.build().unwrap()
+        let window = win_builder.build().unwrap();
+        #[cfg(target_os = "macos")]
+        hide_setting_secondary_buttons(&window);
+        window
     }
+}
+
+/// Disabling these controls leaves grey traffic lights on macOS. Hide the
+/// native buttons explicitly while retaining the close button and resizing.
+#[cfg(target_os = "macos")]
+fn hide_setting_secondary_buttons(window: &WebviewWindow) {
+    use objc::runtime::{Object, Sel, YES};
+    use objc::Message;
+
+    with_ns_window_on_main_thread(window, |ns_window| unsafe {
+        // NSWindowMiniaturizeButton = 1, NSWindowZoomButton = 2.
+        for kind in [1 as libc::c_ulong, 2] {
+            let button: Result<*mut Object, _> =
+                (&*ns_window).send_message(Sel::register("standardWindowButton:"), (kind,));
+            match button {
+                Ok(button) if !button.is_null() => {
+                    let result: Result<(), _> =
+                        (&*button).send_message(Sel::register("setHidden:"), (YES,));
+                    if let Err(e) = result {
+                        info!("failed to hide settings window button: {e}");
+                    }
+                }
+                Err(e) => info!("failed to find settings window button: {e}"),
+                _ => {}
+            }
+        }
+    });
 }
 
 pub fn get_preview_window(app: &AppHandle) -> WebviewWindow {

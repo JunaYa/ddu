@@ -116,8 +116,7 @@ pub fn begin_scroll(
                     let d = data.lock().unwrap();
                     (d.frames.len(), d.message.clone())
                 };
-                let _ = tray.set_title(Some(&format!("长图 {count}")));
-                let _ = tray.set_tooltip(Some(&message));
+                let _ = tray.set_tooltip(Some(&format!("滚动截图：已采集 {count} 帧\n{message}")));
             }
             std::thread::sleep(Duration::from_millis(450));
             if stop.load(Ordering::Relaxed) {

@@ -1,4 +1,0 @@
-/* Compatibility wrapper. New code should import `~/styles/tokens/index.css`. */
-@import "./tokens/semantics.css";
-@import "./tokens/effects.css";
-@import "./tokens/radius.css";
